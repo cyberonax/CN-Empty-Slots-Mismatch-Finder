@@ -52,7 +52,7 @@ def get_working_zip_url(debug=False):
     The file number is composed as:
       <date_prefix><suffix>
     where:
-      date_prefix = f"{current_month}{current_day}{current_year}"
+      date_prefix = f"{today.month}{today.day}{today.year}"
       suffix = constant extracted from the original base number (e.g., "510002")
     
     Returns:
@@ -158,6 +158,10 @@ def display_trade_circle_df(circle, condition):
     """Display a trade circle in a Streamlit dataframe."""
     circle_data = []
     for player in circle:
+        # Build Alliance Drill Link if 'Alliance ID' exists.
+        alliance_drill_link = ""
+        if player.get('Alliance ID', ''):
+            alliance_drill_link = "https://www.cybernations.net/nation_drill_display.asp?Nation_ID=" + str(player.get('Alliance ID', ''))
         circle_data.append({
             'Nation ID': player.get('Nation ID', ''),
             'Ruler Name': player.get('Ruler Name', ''),
@@ -165,7 +169,8 @@ def display_trade_circle_df(circle, condition):
             'Current Resources': player.get('Current Resources', ''),
             'Activity': player.get('Activity', ''),
             'Days Old': player.get('Days Old', ''),
-            f'Assigned {condition} Resources': ", ".join(player.get('Assigned Resources', []))
+            f'Assigned {condition} Resources': ", ".join(player.get('Assigned Resources', [])),
+            'Alliance Drill Link': alliance_drill_link
         })
     circle_df = pd.DataFrame(circle_data)
     st.dataframe(circle_df, use_container_width=True)
@@ -355,6 +360,10 @@ def main():
                     if circles:
                         for idx, circle in enumerate(circles, start=1):
                             for player in circle:
+                                # Build Alliance Drill Link if 'Alliance ID' exists.
+                                alliance_drill_link = ""
+                                if player.get('Alliance ID', ''):
+                                    alliance_drill_link = "https://www.cybernations.net/nation_drill_display.asp?Nation_ID=" + str(player.get('Alliance ID', ''))
                                 trade_circle_entries.append({
                                     "Circle Type": circle_type,
                                     "Circle Number": idx,
@@ -364,7 +373,8 @@ def main():
                                     "Current Resources": player.get('Current Resources', ''),
                                     "Activity": player.get('Activity', ''),
                                     "Days Old": player.get('Days Old', ''),
-                                    "Assigned Resources": ", ".join(player.get('Assigned Resources', []))
+                                    "Assigned Resources": ", ".join(player.get('Assigned Resources', [])),
+                                    "Alliance Drill Link": alliance_drill_link
                                 })
                 if trade_circle_entries:
                     trade_circles_df = pd.DataFrame(trade_circle_entries)
