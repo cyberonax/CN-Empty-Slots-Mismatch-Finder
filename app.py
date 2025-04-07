@@ -604,12 +604,12 @@ def main():
                         # Peacetime mismatch messages:
                         if not peacetime_df.empty:
                             for idx, row in peacetime_df.iterrows():
-                                msg = f'Notify {row["Nation Name"]} (Nation ID: {row["Nation ID"]}, Ruler: {row["Ruler Name"]}) that your extra resource(s) {row["Extra Resources"]} must be exchanged for the missing resource(s) {row["Missing Peacetime Resources"]} to complete your peacetime trade circle.'
+                                msg = f'To The Ruler: {row["Ruler Name"]}, your extra resource(s) {row["Extra Resources"]} must be exchanged for the missing resource(s) {row["Missing Peacetime Resources"]} to complete your peacetime trade circle. -Lord of Growth.'
                                 messages.append({"Message Type": "Peacetime Mismatch", "Message": msg})
                         # Wartime mismatch messages:
                         if not wartime_df.empty:
                             for idx, row in wartime_df.iterrows():
-                                msg = f'Notify {row["Nation Name"]} (Nation ID: {row["Nation ID"]}, Ruler: {row["Ruler Name"]}) that your extra resource(s) {row["Extra Resources"]} must be exchanged for the missing resource(s) {row["Missing Wartime Resources"]} to meet wartime requirements.'
+                                msg = f'To The Ruler: {row["Ruler Name"]}, your extra resource(s) {row["Extra Resources"]} must be exchanged for the missing resource(s) {row["Missing Wartime Resources"]} to meet wartime requirements. -Lord of Growth.'
                                 messages.append({"Message Type": "Wartime Mismatch", "Message": msg})
                         
                         # Trade circle messages: include partner information
@@ -618,7 +618,7 @@ def main():
                                 nation_names = [player.get('Nation Name','') for player in circle]
                                 for player in circle:
                                     partners = [name for name in nation_names if name != player.get('Nation Name','')]
-                                    msg = f'Contact {player.get("Nation Name","")} (Nation ID: {player.get("Nation ID","")}) and inform them to join Trade Circle #{circle_type} with partners {", ".join(partners)}. Your assigned resource pair is {", ".join(player.get("Assigned Resources", []))}. Confirm your participation immediately.'
+                                    msg = f'To The Ruler: {row["Ruler Name"]}, please join Trade Circle #{circle_type} with partners {", ".join(partners)}. Your assigned resource pair is {", ".join(player.get("Assigned Resources", []))}. Confirm your participation immediately. -Lord of Growth.'
                                     messages.append({"Message Type": f"{circle_type} Trade Circle", "Message": msg})
                         
                         if trade_circles_peace:
