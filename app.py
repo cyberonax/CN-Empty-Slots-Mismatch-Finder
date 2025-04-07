@@ -650,10 +650,10 @@ def main():
                         # Trade circle messages: include partner information
                         def generate_trade_circle_messages(circles, circle_type):
                             for circle in circles:
-                                nation_names = [player.get('Nation Name','') for player in circle]
+                                nation_names = [player.get('Ruler Name','') for player in circle]
                                 for player in circle:
-                                    partners = [name for name in nation_names if name != player.get('Nation Name','')]
-                                    msg = f'To The Ruler: {row["Ruler Name"]}, please join a Trade Circle with partners: {", ".join(partners)}. Your assigned resource pair is {", ".join(player.get("Assigned Resources", []))}. Confirm your participation immediately. -Lord of Growth.'
+                                    partners = [name for name in nation_names if name != player.get('Ruler Name','')]
+                                    msg = f'To The Ruler: {player.get("Ruler Name","")}, please can you join a Trade Circle with partners: {", ".join(partners)}. Your assigned resource pair is {", ".join(player.get("Assigned Resources", []))}. Confirm your participation immediately. -Lord of Growth.'
                                     messages.append({"Message Type": f"{circle_type} Trade Circle", "Message": msg})
 
                         if trade_circles_peace:
