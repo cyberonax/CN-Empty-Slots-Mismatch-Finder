@@ -375,7 +375,9 @@ def main():
                             'Current Resource 1+2': get_resource_1_2(row),
                             'Duplicate Resources': dup_str,  # New column for duplicate resources
                             'Missing Peacetime Resources': ", ".join(sorted(missing_peace)) if missing_peace else "None",
-                            'Extra Resources': ", ".join(sorted(extra_peace)) if extra_peace else "None"
+                            'Extra Resources': ", ".join(sorted(extra_peace)) if extra_peace else "None",
+                            'Activity': row['Activity'],
+                            'Days Old': row['Days Old']
                         })
                     
                     # Only add to the list if there is a mismatch for wartime resources
@@ -388,7 +390,9 @@ def main():
                             'Current Resource 1+2': get_resource_1_2(row),
                             'Duplicate Resources': dup_str,  # New column for duplicate resources
                             'Missing Wartime Resources': ", ".join(sorted(missing_war)) if missing_war else "None",
-                            'Extra Resources': ", ".join(sorted(extra_war)) if extra_war else "None"
+                            'Extra Resources': ", ".join(sorted(extra_war)) if extra_war else "None",
+                            'Activity': row['Activity'],
+                            'Days Old': row['Days Old']
                         })
 
                 st.markdown("**Peacetime Resource Mismatches:**")
