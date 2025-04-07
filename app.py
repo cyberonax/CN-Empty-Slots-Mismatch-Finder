@@ -251,6 +251,48 @@ def main():
 
                 st.markdown("**Players with a complete trade circle (no empty slots):**")
                 st.dataframe(players_full[display_cols].reset_index(drop=True), use_container_width=True)
+                
+                # -----------------------
+                # NEW: Check resource matching for complete trade circle players
+                # -----------------------
+                peacetime_mismatch = []
+                wartime_mismatch = []
+
+                for idx, row in players_full.iterrows():
+                    # Parse current resources into a list
+                    current_resources = [res.strip() for res in row['Current Resources'].split(',') if res.strip()]
+                    current_set = set(current_resources)
+                    peacetime_set = set(peacetime_resources)
+                    wartime_set = set(wartime_resources)
+                    
+                    missing_peace = peacetime_set - current_set
+                    extra_peace = current_set - peacetime_set
+                    missing_war = wartime_set - current_set
+                    extra_war = current_set - wartime_set
+                    
+                    peacetime_mismatch.append({
+                        'Nation ID': row['Nation ID'],
+                        'Ruler Name': row['Ruler Name'],
+                        'Nation Name': row['Nation Name'],
+                        'Current Resources': row['Current Resources'],
+                        'Missing Peacetime Resources': ", ".join(sorted(missing_peace)) if missing_peace else "None",
+                        'Extra Resources': ", ".join(sorted(extra_peace)) if extra_peace else "None"
+                    })
+                    
+                    wartime_mismatch.append({
+                        'Nation ID': row['Nation ID'],
+                        'Ruler Name': row['Ruler Name'],
+                        'Nation Name': row['Nation Name'],
+                        'Current Resources': row['Current Resources'],
+                        'Missing Wartime Resources': ", ".join(sorted(missing_war)) if missing_war else "None",
+                        'Extra Resources': ", ".join(sorted(extra_war)) if extra_war else "None"
+                    })
+
+                st.markdown("**Peacetime Resource Mismatches:**")
+                st.dataframe(pd.DataFrame(peacetime_mismatch), use_container_width=True)
+
+                st.markdown("**Wartime Resource Mismatches:**")
+                st.dataframe(pd.DataFrame(wartime_mismatch), use_container_width=True)
 
                 # Sort players by Nation ID (or another criterion) from the empty slots list
                 players_empty_sorted = players_empty.sort_values('Nation ID')
