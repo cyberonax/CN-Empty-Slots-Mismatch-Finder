@@ -585,9 +585,9 @@ def main():
             # -----------------------
             # DOWNLOAD ALL DATA EXCEL (positioned at the bottom of the page)
             # -----------------------
-            st.markdown("### Download All Processed Data Excel")
+            st.markdown("### Download All Processed Data")
             if excel_data:
-                st.download_button("Download Full Trade Analysis Excel", excel_data, file_name="full_trade_analysis.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+                st.download_button("Download Summary Report", excel_data, file_name="full_summary_report.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
             else:
                 st.info("No data available for download.")
     else:
