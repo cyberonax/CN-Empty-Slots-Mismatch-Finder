@@ -632,7 +632,7 @@ def main():
                         for r in dataframe_to_rows(messages_df, index=False, header=True):
                             messages_ws.append(r)
                         # Adjust column widths for Message Templates
-                        messages_ws.column_dimensions["A"].width = 35
+                        messages_ws.column_dimensions["A"].width = 25
                         messages_ws.column_dimensions["B"].width = 150
                     output.seek(0)
                     excel_data = output.read()
