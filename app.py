@@ -596,22 +596,7 @@ def main():
                     )
                     players_empty_all = original_df[mask_empty_all].copy()
                     players_full_all = original_df[~mask_empty_all].copy()
-                    
-                    # Functions to assess mismatches for complete players
-                    def has_peacetime_mismatch(row):
-                        current_resources_str = get_current_resources(row, resource_cols)
-                        current_set = set([r.strip() for r in current_resources_str.split(",") if r.strip()])
-                        missing_peace = set(sorted_peacetime) - current_set
-                        extra_peace = current_set - set(sorted_peacetime)
-                        return bool(missing_peace or extra_peace)
-                    
-                    def has_wartime_mismatch(row):
-                        current_resources_str = get_current_resources(row, resource_cols)
-                        current_set = set([r.strip() for r in current_resources_str.split(",") if r.strip()])
-                        missing_war = set(sorted_wartime) - current_set
-                        extra_war = current_set - set(sorted_wartime)
-                        return bool(missing_war or extra_war)
-                    
+
                     alliances = original_df['Alliance'].unique()
                     comp_stats = []
                     for alliance in alliances:
@@ -619,25 +604,13 @@ def main():
                         empty_players = len(players_empty_all[players_empty_all['Alliance'] == alliance])
                         full_players = len(players_full_all[players_full_all['Alliance'] == alliance])
                         empty_percentage = (empty_players / total_players * 100) if total_players else 0
-                        
-                        full_alliance = players_full_all[players_full_all['Alliance'] == alliance]
-                        if full_players > 0:
-                            peacetime_mismatch_count = full_alliance.apply(has_peacetime_mismatch, axis=1).sum()
-                            wartime_mismatch_count = full_alliance.apply(has_wartime_mismatch, axis=1).sum()
-                            peacetime_mismatch_pct = (peacetime_mismatch_count / full_players * 100)
-                            wartime_mismatch_pct = (wartime_mismatch_count / full_players * 100)
-                        else:
-                            peacetime_mismatch_pct = 0
-                            wartime_mismatch_pct = 0
-                        
+
                         comp_stats.append({
                             "Alliance": alliance,
                             "Total Players (Empty + Complete)": total_players,
                             "Players with Empty Trade Slots": empty_players,
                             "Empty Trade Slot (%)": f"{empty_percentage:.2f}%",
                             "Players in Complete Trade Circle": full_players,
-                            "Peacetime Mismatch among Complete Trade Circles (%)": f"{peacetime_mismatch_pct:.2f}%",
-                            "Wartime Mismatch among Complete Trade Circles (%)": f"{wartime_mismatch_pct:.2f}%"
                         })
                     
                     comp_stats_df = pd.DataFrame(comp_stats)
