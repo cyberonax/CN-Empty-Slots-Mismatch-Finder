@@ -517,9 +517,9 @@ def main():
                 if trade_circle_entries:
                     trade_circle_df = pd.DataFrame(trade_circle_entries)
                     sheets["Trade Circles"] = add_nation_drill_url(trade_circle_df)
-
+                
                 # -----------------------
-                # SUMMARY OVERVIEW SECTION
+                # SUMMARY OVERVIEW SECTION (for display in Streamlit)
                 # -----------------------
                 with st.expander("Summary Overview"):
                     st.subheader("General Statistics")
@@ -541,33 +541,45 @@ def main():
                     st.write(f"**Wartime Mismatch among Complete Trade Circles:** {unique_wartime_mismatch} ({wartime_mismatch_percentage:.2f}%)")
 
                     st.subheader("Action Plan for Alliance Management")
-                    action_plan = """
-                    **1. Identify Affected Trade Circles:**
-                        - Review the **Peacetime Resource Mismatches** and **Wartime Resource Mismatches** reports.
-                        - For each entry, note the following:
-                          - **Player Identification:** Nation Name, Nation ID, Ruler Name.
-                          - **Resources:** The extra resources (listed under *Extra Resources*) and the missing resources (listed under *Missing Peacetime Resources* or *Missing Wartime Resources*).
-                    
-                    **2. Notify Affected Players:**
-                        - For each player with a peacetime mismatch, send a message:
-                          - *"Notify [Nation Name] (Nation ID: [ID], Ruler: [Name]) that your extra resource(s) [list Extra Resources] must be exchanged for the missing resource(s) [list Missing Peacetime Resources] to complete your peacetime trade circle."*
-                        - For each player with a wartime mismatch, send a similar message:
-                          - *"Notify [Nation Name] (Nation ID: [ID], Ruler: [Name]) that your extra resource(s) [list Extra Resources] must be exchanged for the missing resource(s) [list Missing Wartime Resources] to meet wartime requirements."*
-                    
-                    **3. Reconfigure Incomplete Trade Circles:**
-                        - Review the **Players with Empty Trade Slots** report.
-                        - For players not fully assigned, identify the recommended trade circle from the **Recommended Trade Circles** report.
-                        - For each affected player, send a message:
-                          - *"Contact [Nation Name] (Nation ID: [ID]) and inform them to join Trade Circle #[Circle Number] with partners [list partner Nation Names]. Your assigned resource pair is [Assigned Resources]. Confirm your participation immediately."*
-                        - For any leftover players, send an individual notification to arrange an immediate meeting for reconfiguration.
-                    
-                    **4. Document and Follow-Up:**
-                        - Log each notification with the following details: Nation ID, Nation Name, Ruler Name, category (Peacetime/Wartime/Trade Circle), and specific action required.
-                        - Set a follow-up review after 48-72 hours to ensure all players have confirmed the required changes.
-                        - Re-run the analysis after adjustments and update the report accordingly.
-                    """
+                    action_plan = (
+                        "**1. Identify Affected Trade Circles:**\n"
+                        "   - Review the **Peacetime Resource Mismatches** and **Wartime Resource Mismatches** reports.\n"
+                        "   - For each entry, note the following:\n"
+                        "     - **Player Identification:** Nation Name, Nation ID, Ruler Name.\n"
+                        "     - **Resources:** The extra resources (listed under *Extra Resources*) and the missing resources (listed under *Missing Peacetime Resources* or *Missing Wartime Resources*).\n\n"
+                        "**2. Notify Affected Players:**\n"
+                        "   - For each player with a peacetime mismatch, send a message:\n"
+                        "     - \"Notify [Nation Name] (Nation ID: [ID], Ruler: [Name]) that your extra resource(s) [list Extra Resources] must be exchanged for the missing resource(s) [list Missing Peacetime Resources] to complete your peacetime trade circle.\"\n"
+                        "   - For each player with a wartime mismatch, send a similar message:\n"
+                        "     - \"Notify [Nation Name] (Nation ID: [ID], Ruler: [Name]) that your extra resource(s) [list Extra Resources] must be exchanged for the missing resource(s) [list Missing Wartime Resources] to meet wartime requirements.\"\n\n"
+                        "**3. Reconfigure Incomplete Trade Circles:**\n"
+                        "   - Review the **Players with Empty Trade Slots** report.\n"
+                        "   - For players not fully assigned, identify the recommended trade circle from the **Recommended Trade Circles** report.\n"
+                        "   - For each affected player, send a message:\n"
+                        "     - \"Contact [Nation Name] (Nation ID: [ID]) and inform them to join Trade Circle #[Circle Number] with partners [list partner Nation Names]. Your assigned resource pair is [Assigned Resources]. Confirm your participation immediately.\"\n"
+                        "   - For any leftover players, send an individual notification to arrange an immediate meeting for reconfiguration.\n\n"
+                        "**4. Document and Follow-Up:**\n"
+                        "   - Log each notification with the following details: Nation ID, Nation Name, Ruler Name, category (Peacetime/Wartime/Trade Circle), and specific action required.\n"
+                        "   - Set a follow-up review after 48-72 hours to ensure all players have confirmed the required changes.\n"
+                        "   - Re-run the analysis after adjustments and update the report accordingly.\n"
+                    )
                     st.markdown(action_plan)
                 
+                # -----------------------
+                # ADD SUMMARY OVERVIEW AS A NEW WORKSHEET FOR EXCEL DOWNLOAD
+                # -----------------------
+                summary_text = (
+                    "General Statistics:\n"
+                    f"Total Players (Empty + Complete): {total_players}\n"
+                    f"Players with Empty Trade Slots: {len(players_empty)} ({empty_percentage:.2f}%)\n"
+                    f"Players in Complete Trade Circle: {total_full}\n"
+                    f"Peacetime Mismatch among Complete Trade Circles: {unique_peacetime_mismatch} ({peacetime_mismatch_percentage:.2f}%)\n"
+                    f"Wartime Mismatch among Complete Trade Circles: {unique_wartime_mismatch} ({wartime_mismatch_percentage:.2f}%)\n\n"
+                    "Action Plan for Alliance Management:\n" + action_plan
+                )
+                summary_df = pd.DataFrame({"Summary": [summary_text]})
+                sheets["Summary Overview"] = summary_df
+
                 # -----------------------
                 # WRITE EXCEL FILE FOR DOWNLOAD
                 # -----------------------
@@ -585,9 +597,9 @@ def main():
             # -----------------------
             # DOWNLOAD ALL DATA EXCEL (positioned at the bottom of the page)
             # -----------------------
-            st.markdown("### Download All Processed Data")
+            st.markdown("### Download All Processed Data Excel")
             if excel_data:
-                st.download_button("Download Summary Report", excel_data, file_name="full_summary_report.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+                st.download_button("Download Full Trade Analysis Excel", excel_data, file_name="full_trade_analysis.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
             else:
                 st.info("No data available for download.")
     else:
