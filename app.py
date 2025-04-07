@@ -313,36 +313,35 @@ def main():
                     missing_war = wartime_set - current_set
                     extra_war = current_set - wartime_set
                     
-                    peacetime_mismatch.append({
-                        'Nation ID': row['Nation ID'],
-                        'Ruler Name': row['Ruler Name'],
-                        'Nation Name': row['Nation Name'],
-                        'Current Resources': row['Current Resources'],
-                        'Current Resource 1+2': get_resource_1_2(row),
-                        'Missing Peacetime Resources': ", ".join(sorted(missing_peace)) if missing_peace else "None",
-                        'Extra Resources': ", ".join(sorted(extra_peace)) if extra_peace else "None"
-                    })
+                    # Only add to the list if there is a mismatch for peacetime resources
+                    if missing_peace or extra_peace:
+                        peacetime_mismatch.append({
+                            'Nation ID': row['Nation ID'],
+                            'Ruler Name': row['Ruler Name'],
+                            'Nation Name': row['Nation Name'],
+                            'Current Resources': row['Current Resources'],
+                            'Current Resource 1+2': get_resource_1_2(row),
+                            'Missing Peacetime Resources': ", ".join(sorted(missing_peace)) if missing_peace else "None",
+                            'Extra Resources': ", ".join(sorted(extra_peace)) if extra_peace else "None"
+                        })
                     
-                    wartime_mismatch.append({
-                        'Nation ID': row['Nation ID'],
-                        'Ruler Name': row['Ruler Name'],
-                        'Nation Name': row['Nation Name'],
-                        'Current Resources': row['Current Resources'],
-                        'Current Resource 1+2': get_resource_1_2(row),
-                        'Missing Wartime Resources': ", ".join(sorted(missing_war)) if missing_war else "None",
-                        'Extra Resources': ", ".join(sorted(extra_war)) if extra_war else "None"
-                    })
+                    # Only add to the list if there is a mismatch for wartime resources
+                    if missing_war or extra_war:
+                        wartime_mismatch.append({
+                            'Nation ID': row['Nation ID'],
+                            'Ruler Name': row['Ruler Name'],
+                            'Nation Name': row['Nation Name'],
+                            'Current Resources': row['Current Resources'],
+                            'Current Resource 1+2': get_resource_1_2(row),
+                            'Missing Wartime Resources': ", ".join(sorted(missing_war)) if missing_war else "None",
+                            'Extra Resources': ", ".join(sorted(extra_war)) if extra_war else "None"
+                        })
 
-                # Filter out rows where both mismatch columns are "None"
-                df_peace = pd.DataFrame(peacetime_mismatch)
-                df_peace = df_peace[(df_peace['Missing Peacetime Resources'] != "None") | (df_peace['Extra Resources'] != "None")]
                 st.markdown("**Peacetime Resource Mismatches:**")
-                st.dataframe(df_peace, use_container_width=True)
+                st.dataframe(pd.DataFrame(peacetime_mismatch).reset_index(drop=True), use_container_width=True)
 
-                df_war = pd.DataFrame(wartime_mismatch)
-                df_war = df_war[(df_war['Missing Wartime Resources'] != "None") | (df_war['Extra Resources'] != "None")]
                 st.markdown("**Wartime Resource Mismatches:**")
-                st.dataframe(df_war, use_container_width=True)
+                st.dataframe(pd.DataFrame(wartime_mismatch).reset_index(drop=True), use_container_width=True)
 
                 # Sort players by Nation ID (or another criterion) from the empty slots list
                 players_empty_sorted = players_empty.sort_values('Nation ID')
