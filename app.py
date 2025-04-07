@@ -279,52 +279,6 @@ def main():
                     st.success("All players have been grouped into trade circles.")
 
                 # -----------------------
-                # CHECK PLAYERS WITH FULL RESOURCE LISTS FOR CORRECTNESS
-                # -----------------------
-                # Identify players who have no empty resource slots
-                full_players_mask = ~(df_to_use[resource_cols].isnull().any(axis=1) | 
-                                      df_to_use[resource_cols].apply(lambda col: col.astype(str).str.strip() == '').any(axis=1))
-                players_full = df_to_use[full_players_mask].copy()
-                # Compute "Current Resources" for full players
-                players_full['Current Resources'] = players_full.apply(lambda row: get_current_resources(row, resource_cols), axis=1)
-                # Count number of resources in the list
-                players_full['Resource List Count'] = players_full['Current Resources'].apply(lambda x: len([res for res in x.split(",") if res.strip() != '']))
-                incorrect_players = []
-                for _, row in players_full.iterrows():
-                    if row['Resource List Count'] == 12:
-                        # Build a list of resources from the current resource string
-                        res_list = [res.strip() for res in row['Current Resources'].split(",")]
-                        sorted_res = sorted(res_list)
-                        if sorted_res != sorted_peacetime and sorted_res != sorted_wartime:
-                            # Determine differences for both valid sets and choose the one with fewer changes
-                            set_res = set(res_list)
-                            set_peace = set(peacetime_resources)
-                            set_war = set(wartime_resources)
-                            diff_peace = set_res.symmetric_difference(set_peace)
-                            diff_war = set_res.symmetric_difference(set_war)
-                            if len(diff_peace) <= len(diff_war):
-                                chosen_valid = peacetime_resources
-                            else:
-                                chosen_valid = wartime_resources
-                            # Compute what to remove and what to add
-                            to_remove = list(set_res - set(chosen_valid))
-                            to_add = list(set(chosen_valid) - set_res)
-                            change_str = f"Remove: {to_remove} | Add: {to_add}"
-                            incorrect_players.append({
-                                'Nation ID': row.get('Nation ID', ''),
-                                'Ruler Name': row.get('Ruler Name', ''),
-                                'Nation Name': row.get('Nation Name', ''),
-                                'Team': row.get('Team', ''),
-                                'Current Resources': row['Current Resources'],
-                                'Resources to Change': change_str
-                            })
-                if incorrect_players:
-                    st.markdown("**Players with Incorrect Resource List:**")
-                    st.dataframe(pd.DataFrame(incorrect_players), use_container_width=True)
-                else:
-                    st.success("No players with incorrect resource lists found.")
-
-                # -----------------------
                 # DOWNLOAD TRADE CIRCLES CSV
                 # -----------------------
                 trade_circle_entries = []
