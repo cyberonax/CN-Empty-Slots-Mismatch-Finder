@@ -393,11 +393,11 @@ def main():
 
                 st.markdown("**Peacetime Resource Mismatches:**")
                 peacetime_df = pd.DataFrame(peacetime_mismatch).reset_index(drop=True)
-                st.dataframe(peacetime_df.style.applymap(highlight_none, subset=['Duplicate Resources']), use_container_width=True)
+                st.dataframe(peacetime_df.style.applymap(highlight_none, subset=['Duplicate Resources','Extra Resources']), use_container_width=True)
 
                 st.markdown("**Wartime Resource Mismatches:**")
                 wartime_df = pd.DataFrame(wartime_mismatch).reset_index(drop=True)
-                st.dataframe(wartime_df.style.applymap(highlight_none, subset=['Duplicate Resources']), use_container_width=True)
+                st.dataframe(wartime_df.style.applymap(highlight_none, subset=['Duplicate Resources','Extra Resources']), use_container_width=True)
 
                 # Sort players by Nation ID (or another criterion) from the empty slots list
                 players_empty_sorted = players_empty.sort_values('Nation ID')
