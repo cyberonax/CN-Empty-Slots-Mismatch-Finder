@@ -137,7 +137,7 @@ def main():
         # ZIP FILE URL INPUT
         # -----------------------
         zip_url = st.text_input(
-            "Enter the .zip file URL",
+            "Enter the .zip file URL which can be found at https://www.cybernations.net/stats_downloads.asp",
             value="https://www.cybernations.net/assets/CyberNations_SE_Nation_Stats_462025510002.zip"
         )
         
