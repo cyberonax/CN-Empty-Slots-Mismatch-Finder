@@ -554,7 +554,7 @@ def main():
                     - For each player with a peacetime mismatch, send a message:
                       - *"To The Ruler: [Ruler Name], you currently have mismatched Trade Circle resource(s) [list Extra Resources] which must be exchanged for the missing resource(s) [list Missing Peacetime Resources] to meet peacetime trade requirements. If more than two resources are listed, kindly coordinate with your trade partners to make the needed adjustments. -Lord of Growth."*
                     - For each player with a wartime mismatch, send a similar message:
-                      - *"To The Ruler: [Ruler Name], your currently have mismatched Trade Circle resource(s) [list Extra Resources] which must be exchanged for the missing resource(s) [list Missing Wartime Resources] to meet wartime trade requirements. If more than two resources are listed, kindly coordinate with your trade partners to make the needed adjustments. -Lord of Growth."*
+                      - *"To The Ruler: [Ruler Name], you currently have mismatched Trade Circle resource(s) [list Extra Resources] which must be exchanged for the missing resource(s) [list Missing Wartime Resources] to meet wartime trade requirements. If more than two resources are listed, kindly coordinate with your trade partners to make the needed adjustments. -Lord of Growth."*
 
                     **3. Reconfigure Incomplete Trade Circles:**
                     - Review the **Players with Empty Trade Slots** report.
@@ -632,7 +632,7 @@ def main():
                         for r in dataframe_to_rows(messages_df, index=False, header=True):
                             messages_ws.append(r)
                         # Adjust column widths for Message Templates
-                        messages_ws.column_dimensions["A"].width = 25
+                        messages_ws.column_dimensions["A"].width = 30
                         messages_ws.column_dimensions["B"].width = 150
                     output.seek(0)
                     excel_data = output.read()
