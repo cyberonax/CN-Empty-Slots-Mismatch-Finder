@@ -22,11 +22,6 @@ wartime_resources = [
     'Lead', 'Lumber', 'Marble', 'Oil', 'Pigs',
     'Rubber', 'Uranium'
 ]
-#wartime_resources = [
-#    'Aluminum', 'Cattle', 'Coal', 'Fish', 'Iron',
-#    'Lumber', 'Marble', 'Oil', 'Pigs', 'Rubber',
-#    'Uranium', 'Wheat'
-#]
 
 sorted_peacetime = sorted(peacetime_resources)
 sorted_wartime = sorted(wartime_resources)
@@ -42,7 +37,7 @@ def download_and_extract_zip(url):
         response = requests.get(url)
         response.raise_for_status()
     except requests.RequestException as e:
-        st.error(f"Error downloading file: {e}")
+        st.error(f"Error downloading file from {url}: {e}")
         return None
 
     with zipfile.ZipFile(io.BytesIO(response.content)) as z:
@@ -134,21 +129,26 @@ def main():
     
     # Only display the download functionality if the password is verified.
     if st.session_state.password_verified:
-        # -----------------------
-        # ZIP FILE URL INPUT
-        # -----------------------
-        zip_url = st.text_input(
-            "Enter the .zip file URL which can be found at https://www.cybernations.net/stats_downloads.asp",
-            value="https://www.cybernations.net/assets/CyberNations_SE_Nation_Stats_462025510002.zip"
-        )
-        
         if st.button("Download and Display Nation Statistics"):
-            with st.spinner("Downloading and extracting data..."):
-                st.session_state.df = download_and_extract_zip(zip_url)
-            if st.session_state.df is not None:
-                st.success("Data loaded successfully!")
-            else:
-                st.error("Failed to load data.")
+            with st.spinner("Constructing download link and retrieving data..."):
+                # Construct the URL based on the current date.
+                today = datetime.now()
+                # Format: MonthDayYear (e.g., April 7, 2025 -> "472025")
+                date_str = f"{today.month}{today.day}{today.year}"
+                base_url = "https://www.cybernations.net/assets/CyberNations_SE_Nation_Stats_"
+                # Construct two potential links
+                url1 = base_url + date_str + "510001.zip"
+                url2 = base_url + date_str + "510002.zip"
+                st.write(f"Attempting to download from: {url1}")
+                df = download_and_extract_zip(url1)
+                if df is None:
+                    st.write(f"Trying alternative link: {url2}")
+                    df = download_and_extract_zip(url2)
+                if df is not None:
+                    st.success("Data loaded successfully!")
+                    st.session_state.df = df
+                else:
+                    st.error("Failed to load data from both constructed URLs.")
 
         # Proceed if data is loaded
         if "df" in st.session_state and st.session_state.df is not None:
