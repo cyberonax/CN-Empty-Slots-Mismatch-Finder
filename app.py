@@ -73,16 +73,38 @@ def count_empty_slots(row, resource_cols):
     count = sum(1 for x in row[resource_cols] if pd.isnull(x) or str(x).strip() == '')
     return count // 2
 
-def form_trade_circles(players, sorted_resources, circle_size=TRADE_CIRCLE_SIZE):
-    """Group players into full trade circles and assign resource pairs."""
+def form_trade_circles_dynamic(players, sorted_resources, circle_size=TRADE_CIRCLE_SIZE):
+    """
+    Form trade circles dynamically by using players' available trade slots.
+    Each player can contribute to multiple circles as long as they have free slots.
+    """
+    # Make a copy of the players list with each player's available slots
+    players_pool = [player for player in players if player['Empty Slots Count'] > 0]
     trade_circles = []
-    full_groups = [players[i:i+circle_size] for i in range(0, len(players), circle_size) if len(players[i:i+circle_size]) == circle_size]
-    for group in full_groups:
-        for j, player in enumerate(group):
-            # Each player gets two resources from the sorted list.
-            assigned_resources = sorted_resources[2*j:2*j+2]
+    resource_index = 0  # to assign resources from the sorted list
+    
+    # Continue until there are fewer than 'circle_size' players available.
+    while len(players_pool) >= circle_size:
+        # Sort players by available slots (you might choose ascending or descending depending on strategy)
+        players_pool.sort(key=lambda p: p['Empty Slots Count'])
+        # Select 6 players for the circle
+        selected_players = players_pool[:circle_size]
+        circle = []
+        for i, player in enumerate(selected_players):
+            # Assign resources based on the current resource index
+            assigned_resources = sorted_resources[resource_index:resource_index+2]
+            resource_index += 2  # update resource pointer for the next player in the circle
+            # If we reach the end of the resource list, wrap around or handle as needed
+            if resource_index >= len(sorted_resources):
+                resource_index = 0
             player['Assigned Resources'] = assigned_resources
-        trade_circles.append(group)
+            circle.append(player)
+            # Reduce the player's available slot count by 1 since they've filled one circle slot
+            player['Empty Slots Count'] -= 1
+        trade_circles.append(circle)
+        # Remove players that no longer have available slots
+        players_pool = [p for p in players_pool if p['Empty Slots Count'] > 0]
+    
     return trade_circles
 
 def display_trade_circle_df(circle, condition):
@@ -235,12 +257,13 @@ def main():
                 # -----------------------
                 players_list_peace = copy.deepcopy(players_list)
                 players_list_war = copy.deepcopy(players_list)
-                trade_circles_peace = form_trade_circles(players_list_peace, sorted_peacetime)
-                trade_circles_war = form_trade_circles(players_list_war, sorted_wartime)
+                # Use the dynamic formation function that accounts for multiple available slots
+                trade_circles_peace = form_trade_circles_dynamic(players_list_peace, sorted_peacetime)
+                trade_circles_war = form_trade_circles_dynamic(players_list_war, sorted_wartime)
 
-                # Determine leftover players (those not in a full group)
-                num_full_groups = len(players_list) // TRADE_CIRCLE_SIZE
-                leftover_players = players_list[num_full_groups * TRADE_CIRCLE_SIZE:]
+                # Determine leftover players (those not in any full group)
+                # Leftover players are those who still have available slots
+                leftover_players = [p for p in players_list if p.get('Empty Slots Count', 0) > 0]
 
                 # Display Peacetime Trade Circles
                 if trade_circles_peace:
