@@ -509,12 +509,14 @@ def main():
                 trade_circle_entries = []
                 for circle_type, circles in [("Peacetime", trade_circles_peace), ("Wartime", trade_circles_war)]:
                     if circles:
-                        for idx, circle in enumerate(circles, start=1):
+                        for circle in circles:
+                            # Retrieve the Trade Circle ID from the first player in the circle
+                            trade_circle_id = circle[0].get('Trade Circle ID', '')
                             for player in circle:
                                 trade_circle_entries.append({
                                     "Category": f"{circle_type} Recommended Trade Circle",
                                     "Circle Type": circle_type,
-                                    "Circle Number": idx,
+                                    "Trade Circle ID": trade_circle_id,  # Updated column instead of Circle Number
                                     "Nation ID": player.get('Nation ID', ''),
                                     "Ruler Name": player.get('Ruler Name', ''),
                                     "Nation Name": player.get('Nation Name', ''),
