@@ -84,12 +84,21 @@ def display_trade_circle_df(circle, condition):
     """Display a trade circle in a Streamlit dataframe."""
     circle_data = []
     for player in circle:
+        # Compute the "Current Resource 1+Resource2" column.
+        current_resources_str = player.get('Current Resources', '')
+        current_resources_list = [r.strip() for r in current_resources_str.split(',') if r.strip()]
+        if len(current_resources_list) >= 2:
+            current_resource_sum = f"{current_resources_list[0]}+{current_resources_list[1]}"
+        else:
+            current_resource_sum = current_resources_str
+
         circle_data.append({
             'Nation ID': player.get('Nation ID', ''),
             'Ruler Name': player.get('Ruler Name', ''),
             'Nation Name': player.get('Nation Name', ''),
             'Team': player.get('Team', ''),
             'Current Resources': player.get('Current Resources', ''),
+            'Current Resource 1+Resource2': current_resource_sum,
             'Activity': player.get('Activity', ''),
             'Days Old': player.get('Days Old', ''),
             f'Assigned {condition} Resources': ", ".join(player.get('Assigned Resources', []))
@@ -225,8 +234,25 @@ def main():
                 display_cols = ['Nation ID', 'Ruler Name', 'Nation Name', 'Team', 'Current Resources', 'Empty Slots Count', 'Activity', 'Days Old']
                 st.markdown("**Players with empty trade slots (active recently):**")
                 st.dataframe(players_empty[display_cols].reset_index(drop=True), use_container_width=True)
+                
+                # ---- New Table: Players with a complete trade circle (no empty slots) ----
+                players_full = df_to_use[~mask_empty].copy()
+                # Compute "Current Resources" for players with complete resource sets
+                players_full['Current Resources'] = players_full.apply(lambda row: get_current_resources(row, resource_cols), axis=1)
+                # Also compute "Empty Slots Count" to verify these players have complete resource sets (should be 0)
+                players_full['Empty Slots Count'] = players_full.apply(lambda row: count_empty_slots(row, resource_cols), axis=1)
+                # Process "Created" and "Days Old"
+                players_full['Created'] = pd.to_datetime(players_full['Created'], format=date_format, errors='coerce')
+                players_full['Days Old'] = (current_date - players_full['Created']).dt.days
+                # Filter out inactive players and Alliance Pending just as above
+                players_full = players_full[~players_full['Activity'].isin(["Active Three Weeks Ago", "Active More Than Three Weeks Ago"])]
+                if "Alliance Status" in players_full.columns:
+                    players_full = players_full[players_full["Alliance Status"] != "Pending"]
 
-                # Sort players by Nation ID (or another criterion)
+                st.markdown("**Players with a complete trade circle (no empty slots):**")
+                st.dataframe(players_full[display_cols].reset_index(drop=True), use_container_width=True)
+
+                # Sort players by Nation ID (or another criterion) from the empty slots list
                 players_empty_sorted = players_empty.sort_values('Nation ID')
                 players_list = players_empty_sorted.to_dict('records')
                 
