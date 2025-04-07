@@ -85,7 +85,7 @@ def form_trade_circles(players, sorted_resources, circle_size=TRADE_CIRCLE_SIZE)
         trade_circles.append(group)
     return trade_circles
 
-def display_trade_circle_df(circle, condition):
+def display_trade_circle_df(circle, condition, team_number):
     """Display a trade circle in a Streamlit dataframe."""
     circle_data = []
     for player in circle:
@@ -93,6 +93,7 @@ def display_trade_circle_df(circle, condition):
             'Nation ID': player.get('Nation ID', ''),
             'Ruler Name': player.get('Ruler Name', ''),
             'Nation Name': player.get('Nation Name', ''),
+            'Team': f"Team {team_number}",
             'Current Resources': player.get('Current Resources', ''),
             'Activity': player.get('Activity', ''),
             'Days Old': player.get('Days Old', ''),
@@ -246,7 +247,7 @@ def main():
                     st.markdown(f"**Recommended Peacetime Trade Circles:**")
                     for idx, circle in enumerate(trade_circles_peace, start=1):
                         st.markdown(f"--- **Peacetime Trade Circle #{idx}** ---")
-                        display_trade_circle_df(circle, "Peacetime")
+                        display_trade_circle_df(circle, "Peacetime", idx)
                 else:
                     st.info("No full Peacetime trade circles could be formed.")
 
@@ -255,7 +256,7 @@ def main():
                     st.markdown(f"**Recommended Wartime Trade Circles:**")
                     for idx, circle in enumerate(trade_circles_war, start=1):
                         st.markdown(f"--- **Wartime Trade Circle #{idx}** ---")
-                        display_trade_circle_df(circle, "Wartime")
+                        display_trade_circle_df(circle, "Wartime", idx)
                 else:
                     st.info("No full Wartime trade circles could be formed.")
 
@@ -291,6 +292,7 @@ def main():
                                     "Nation ID": player.get('Nation ID', ''),
                                     "Ruler Name": player.get('Ruler Name', ''),
                                     "Nation Name": player.get('Nation Name', ''),
+                                    "Team": f"Team {idx}",
                                     "Current Resources": player.get('Current Resources', ''),
                                     "Activity": player.get('Activity', ''),
                                     "Days Old": player.get('Days Old', ''),
