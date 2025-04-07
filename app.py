@@ -524,7 +524,7 @@ def main():
             # -----------------------
             st.markdown("### Download All Processed Data CSV")
             if csv_all_data:
-                st.download_button("Download Full Analysis CSV", csv_all_data, file_name="trade_circles.csv", mime="text/csv")
+                st.download_button("Download Full Trade Analysis CSV", csv_all_data, file_name="full_trade_analysis.csv", mime="text/csv")
             else:
                 st.info("No data available for download.")
     else:
