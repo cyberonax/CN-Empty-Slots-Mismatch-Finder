@@ -52,7 +52,7 @@ def get_working_zip_url(debug=False):
     The file number is composed as:
       <date_prefix><suffix>
     where:
-      date_prefix = f"{today.month}{today.day}{today.year}"
+	  date_prefix = f"{current_month}{current_day}{current_year}"
       suffix = constant extracted from the original base number (e.g., "510002")
     
     Returns:
