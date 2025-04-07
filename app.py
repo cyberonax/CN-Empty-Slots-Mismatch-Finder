@@ -540,6 +540,7 @@ def main():
                     st.write(f"**Players in Complete Trade Circle:** {total_full}")
                     st.write(f"**Peacetime Mismatch among Complete Trade Circles:** {unique_peacetime_mismatch} ({peacetime_mismatch_percentage:.2f}%)")
                     st.write(f"**Wartime Mismatch among Complete Trade Circles:** {unique_wartime_mismatch} ({wartime_mismatch_percentage:.2f}%)")
+                    st.markdown('---')
 
                     st.subheader("Action Plan for Alliance Management")
                     # Use dedent to ensure proper bullet point formatting
