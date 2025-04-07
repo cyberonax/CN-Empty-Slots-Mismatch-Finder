@@ -34,8 +34,8 @@ TRADE_CIRCLE_SIZE = 6  # 6 players per circle, each gets 2 resources
 def get_resource_1_2(row):
     """
     Return a string with Resource 1 and Resource 2 in the format "Resource 1, Resource 2".
-    This function checks if the row has non-null, non-empty 'Resource 1' and 'Resource 2' values.
-    If not, it falls back to parsing the 'Current Resources' string.
+    This function now assumes that the CSV (whether original or filtered) has proper Resource 1 and Resource 2 columns.
+    It checks for non-null and non-empty values before using them.
     """
     res1 = row.get("Resource 1")
     res2 = row.get("Resource 2")
@@ -203,8 +203,11 @@ def main():
                         filtered_df = filtered_df.copy()
                         filtered_df['Current Resource 1+2'] = filtered_df.apply(lambda row: get_resource_1_2(row), axis=1)
                     st.dataframe(filtered_df, use_container_width=True)
-                    # Save the filtered DataFrame to session state for consistent use later
+                    # Save the filtered DataFrame and CSV content to session state for later use.
                     st.session_state.filtered_df = filtered_df
+                    csv_content = filtered_df.to_csv(index=False)
+                    st.session_state.filtered_csv = csv_content
+                    st.download_button("Download Filtered CSV", csv_content, file_name="filtered_nation_stats.csv", mime="text/csv")
                 else:
                     st.info("Enter text to filter the data.")
             else:
@@ -222,8 +225,13 @@ def main():
                 """
             )
             if st.button("Form Trade Circles"):
-                # Use the filtered DataFrame if available; otherwise, use the full DataFrame.
-                df_to_use = st.session_state.filtered_df if "filtered_df" in st.session_state and not st.session_state.filtered_df.empty else df
+                # Instead of using st.session_state.filtered_df, reload the filtered CSV to extract Resource 1 and Resource 2
+                if "filtered_csv" in st.session_state:
+                    filtered_csv = st.session_state.filtered_csv
+                    # Read the CSV content into a DataFrame
+                    df_to_use = pd.read_csv(io.StringIO(filtered_csv))
+                else:
+                    df_to_use = df
 
                 # Assume that the resource columns are named "Connected Resource 1" to "Connected Resource 10"
                 resource_cols = [f"Connected Resource {i}" for i in range(1, 11)]
@@ -235,7 +243,7 @@ def main():
 
                 # Compute "Current Resources" column (for full resource list)
                 players_empty['Current Resources'] = players_empty.apply(lambda row: get_current_resources(row, resource_cols), axis=1)
-                # Use the filtered table's "Resource 1" and "Resource 2" for the Current Resource 1+2 column if available
+                # Now use the CSV's Resource 1 and Resource 2 for the Current Resource 1+2 column
                 players_empty['Current Resource 1+2'] = players_empty.apply(lambda row: get_resource_1_2(row), axis=1)
                 # Compute empty trade slots (each slot covers 2 resources)
                 players_empty['Empty Slots Count'] = players_empty.apply(lambda row: count_empty_slots(row, resource_cols), axis=1)
@@ -262,7 +270,7 @@ def main():
                 players_full = df_to_use[~mask_empty].copy()
                 # Compute "Current Resources" for players with complete resource sets
                 players_full['Current Resources'] = players_full.apply(lambda row: get_current_resources(row, resource_cols), axis=1)
-                # Use "Resource 1" and "Resource 2" to determine Current Resource 1+2 (if available)
+                # Use CSV-based "Resource 1" and "Resource 2" for Current Resource 1+2 (if available)
                 players_full['Current Resource 1+2'] = players_full.apply(lambda row: get_resource_1_2(row), axis=1)
                 # Also compute "Empty Slots Count" to verify these players have complete resource sets (should be 0)
                 players_full['Empty Slots Count'] = players_full.apply(lambda row: count_empty_slots(row, resource_cols), axis=1)
