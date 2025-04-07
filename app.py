@@ -1,3 +1,187 @@
+import streamlit as st
+import pandas as pd
+import requests
+import zipfile
+import io
+import re
+import copy
+from datetime import datetime
+from collections import Counter  # Added for duplicate resource counting
+import textwrap  # For dedenting multi-line strings
+
+# -----------------------
+# CONFIGURATION & CONSTANTS
+# -----------------------
+st.set_page_config(layout="wide")
+# Resource sets for Peacetime and Wartime (12 resources each)
+peacetime_resources = [
+    'Aluminum', 'Cattle', 'Fish', 'Iron', 'Lumber',
+    'Marble', 'Pigs', 'Spices', 'Sugar', 'Uranium',
+    'Water', 'Wheat'
+]
+wartime_resources = [
+    'Aluminum', 'Coal', 'Fish', 'Gold', 'Iron',
+    'Lead', 'Lumber', 'Marble', 'Oil', 'Pigs',
+    'Rubber', 'Uranium'
+]
+
+sorted_peacetime = sorted(peacetime_resources)
+sorted_wartime = sorted(wartime_resources)
+
+TRADE_CIRCLE_SIZE = 6  # 6 players per circle, each gets 2 resources
+
+# -----------------------
+# HELPER FUNCTIONS
+# -----------------------
+def get_resource_1_2(row):
+    """
+    Return a string with Resource 1 and Resource 2 in the format "Resource 1, Resource 2".
+    This function now assumes that the CSV (whether original or filtered) has proper Resource 1 and Resource 2 columns.
+    It checks for non-null and non-empty values before using them.
+    """
+    res1 = row.get("Resource 1")
+    res2 = row.get("Resource 2")
+    # Use the resources only if they are non-null and non-empty after stripping.
+    if pd.notnull(res1) and str(res1).strip() and pd.notnull(res2) and str(res2).strip():
+        return f"{str(res1).strip()}, {str(res2).strip()}"
+    else:
+        # Fallback: parse from the "Current Resources" string
+        current = row.get("Current Resources", "")
+        resources = [r.strip() for r in current.split(",") if r.strip()]
+        if len(resources) >= 2:
+            return f"{resources[0]}, {resources[1]}"
+        elif resources:
+            return resources[0]
+        return ""
+
+def get_current_resources(row, resource_cols):
+    """Return a comma-separated string of non-blank resources sorted alphabetically."""
+    resources = sorted([str(x).strip() for x in row[resource_cols] if pd.notnull(x) and str(x).strip() != ''])
+    return ", ".join(resources)
+
+def count_empty_slots(row, resource_cols):
+    """Count blank resource cells and determine trade slots (each slot covers 2 resources)."""
+    count = sum(1 for x in row[resource_cols] if pd.isnull(x) or str(x).strip() == '')
+    return count // 2
+
+def form_trade_circles(players, sorted_resources, circle_size=TRADE_CIRCLE_SIZE):
+    """Group players into full trade circles and assign resource pairs."""
+    trade_circles = []
+    full_groups = [players[i:i+circle_size] for i in range(0, len(players), circle_size) if len(players[i:i+circle_size]) == circle_size]
+    for group in full_groups:
+        # Compute the Trade Circle ID by concatenating Nation IDs with dots
+        trade_circle_id = ".".join(str(player.get('Nation ID', '')) for player in group)
+        for j, player in enumerate(group):
+            # Each player gets two resources from the sorted list.
+            assigned_resources = sorted_resources[2*j:2*j+2]
+            player['Assigned Resources'] = assigned_resources
+            # Add the Trade Circle ID to each player's record
+            player['Trade Circle ID'] = trade_circle_id
+        trade_circles.append(group)
+    return trade_circles
+
+def display_trade_circle_df(circle, condition):
+    """Display a trade circle in a Streamlit dataframe."""
+    circle_data = []
+    for player in circle:
+        current_resources_str = player.get('Current Resources', '')
+        circle_data.append({
+            'Trade Circle ID': player.get('Trade Circle ID', ''),  # New column added here
+            'Nation ID': player.get('Nation ID', ''),
+            'Ruler Name': player.get('Ruler Name', ''),
+            'Nation Name': player.get('Nation Name', ''),
+            'Team': player.get('Team', ''),
+            'Current Resources': current_resources_str,
+            'Current Resource 1+2': get_resource_1_2(player),
+            'Activity': player.get('Activity', ''),
+            'Days Old': player.get('Days Old', ''),
+            f'Assigned {condition} Resources': ", ".join(player.get('Assigned Resources', []))
+        })
+    circle_df = pd.DataFrame(circle_data)
+    st.dataframe(circle_df, use_container_width=True)
+
+def highlight_none(val):
+    """Return a gray font color if the value is 'None', otherwise no styling."""
+    if val == "None":
+        return 'color: gray'
+    return ''
+
+# -----------------------
+# DOWNLOAD & DATA LOADING FUNCTIONS
+# -----------------------
+def download_and_extract_zip(url):
+    """Download a zip file from the given URL and extract its first file as a DataFrame."""
+    try:
+        response = requests.get(url)
+        response.raise_for_status()
+    except requests.RequestException as e:
+        st.error(f"Error downloading file from {url}: {e}")
+        return None
+
+    with zipfile.ZipFile(io.BytesIO(response.content)) as z:
+        file_list = z.namelist()
+        if not file_list:
+            st.error("The zip file is empty.")
+            return None
+        file_name = file_list[0]
+        with z.open(file_name) as file:
+            try:
+                # Adjust delimiter and encoding as needed
+                df = pd.read_csv(file, delimiter="|", encoding="ISO-8859-1")
+                return df
+            except Exception as e:
+                st.error(f"Error reading the CSV file: {e}")
+                return None
+
+# -----------------------
+# TRADE CIRCLE PROCESSING FUNCTIONS
+# -----------------------
+def get_current_resources(row, resource_cols):
+    """Return a comma-separated string of non-blank resources sorted alphabetically."""
+    resources = sorted([str(x).strip() for x in row[resource_cols] if pd.notnull(x) and str(x).strip() != ''])
+    return ", ".join(resources)
+
+def count_empty_slots(row, resource_cols):
+    """Count blank resource cells and determine trade slots (each slot covers 2 resources)."""
+    count = sum(1 for x in row[resource_cols] if pd.isnull(x) or str(x).strip() == '')
+    return count // 2
+
+def form_trade_circles(players, sorted_resources, circle_size=TRADE_CIRCLE_SIZE):
+    """Group players into full trade circles and assign resource pairs."""
+    trade_circles = []
+    full_groups = [players[i:i+circle_size] for i in range(0, len(players), circle_size) if len(players[i:i+circle_size]) == circle_size]
+    for group in full_groups:
+        # Compute the Trade Circle ID by concatenating Nation IDs with dots
+        trade_circle_id = ".".join(str(player.get('Nation ID', '')) for player in group)
+        for j, player in enumerate(group):
+            # Each player gets two resources from the sorted list.
+            assigned_resources = sorted_resources[2*j:2*j+2]
+            player['Assigned Resources'] = assigned_resources
+            # Add the Trade Circle ID to each player's record
+            player['Trade Circle ID'] = trade_circle_id
+        trade_circles.append(group)
+    return trade_circles
+
+def display_trade_circle_df(circle, condition):
+    """Display a trade circle in a Streamlit dataframe."""
+    circle_data = []
+    for player in circle:
+        current_resources_str = player.get('Current Resources', '')
+        circle_data.append({
+            'Trade Circle ID': player.get('Trade Circle ID', ''),  # New column added here
+            'Nation ID': player.get('Nation ID', ''),
+            'Ruler Name': player.get('Ruler Name', ''),
+            'Nation Name': player.get('Nation Name', ''),
+            'Team': player.get('Team', ''),
+            'Current Resources': current_resources_str,
+            'Current Resource 1+2': get_resource_1_2(player),
+            'Activity': player.get('Activity', ''),
+            'Days Old': player.get('Days Old', ''),
+            f'Assigned {condition} Resources': ", ".join(player.get('Assigned Resources', []))
+        })
+    circle_df = pd.DataFrame(circle_data)
+    st.dataframe(circle_df, use_container_width=True)
+
 # ... [the beginning of your script remains unchanged] ...
 
 # -----------------------
