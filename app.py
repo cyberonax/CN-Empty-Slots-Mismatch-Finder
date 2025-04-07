@@ -11,13 +11,6 @@ from datetime import datetime
 # CONFIGURATION & CONSTANTS
 # -----------------------
 st.set_page_config(layout="wide")
-# The original base number is "452025510002" where "452025" represents Month/Day/Year (4/5/2025)
-# We'll replace that prefix with a dynamic one based on the current date.
-ORIGINAL_BASE_NUMBER = "452025510002"
-# Extract the suffix (last 6 digits) from the original number.
-SUFFIX = ORIGINAL_BASE_NUMBER[6:]
-BASE_URL = "https://www.cybernations.net/assets/"
-
 # Resource sets for Peacetime and Wartime (12 resources each)
 peacetime_resources = [
     'Aluminum', 'Cattle', 'Fish', 'Iron', 'Lumber',
@@ -39,68 +32,6 @@ sorted_peacetime = sorted(peacetime_resources)
 sorted_wartime = sorted(wartime_resources)
 
 TRADE_CIRCLE_SIZE = 6  # 6 players per circle, each gets 2 resources
-
-# -----------------------
-# AUTO-DETECT WORKING ZIP URL FUNCTION
-# -----------------------
-def get_working_zip_url(debug=False):
-    """
-    Build the zip file URL dynamically by adjusting the date prefix according
-    to the current month, day, and year. Then, probe the links with numerical differences
-    of +/- 2 from the computed base number to find a working Nation Statistics zip file.
-    
-    The file number is composed as:
-      <date_prefix><suffix>
-    where:
-      date_prefix = f"{today.month}{today.day}{today.year}"
-      suffix = constant extracted from the original base number (e.g., "510002")
-    
-    Returns:
-        str: A working zip file URL if found, or None.
-    """
-    # Get current date values
-    today = datetime.now()
-    # Build the dynamic prefix: e.g., for April 6, 2025, it becomes "462025"
-    current_prefix = f"{today.month}{today.day}{today.year}"
-    # Create the new base number by combining the dynamic prefix with the constant suffix.
-    new_base_str = f"{current_prefix}{SUFFIX}"
-    try:
-        new_base = int(new_base_str)
-    except ValueError:
-        st.error("Error constructing the dynamic base number.")
-        return None
-
-    headers = {
-        "User-Agent": (
-            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-            "AppleWebKit/537.36 (KHTML, like Gecko) "
-            "Chrome/90.0.4430.93 Safari/537.36"
-        )
-    }
-    if debug:
-        st.write(f"Dynamic base number: {new_base_str}")
-
-    # Probe candidate numbers +/-20 from new_base
-    for offset in range(-20, 21):  # Check new_base-20, to new_base+20
-        candidate_number = new_base + offset
-        candidate_filename = f"CyberNations_SE_Nation_Stats_{candidate_number}.zip"
-        candidate_url = BASE_URL + candidate_filename
-        if debug:
-            st.write(f"Trying URL: {candidate_url}")
-        try:
-            response = requests.get(candidate_url, headers=headers)
-            if response.status_code == 200:
-                if debug:
-                    st.write(f"Working URL found: {candidate_url}")
-                return candidate_url
-            else:
-                if debug:
-                    st.write(f"Status {response.status_code} for URL: {candidate_url}")
-        except Exception as e:
-            if debug:
-                st.write(f"Error fetching {candidate_url}: {e}")
-    st.error("No working zip file URL found within the given range.")
-    return None
 
 # -----------------------
 # DOWNLOAD & DATA LOADING FUNCTIONS
@@ -200,27 +131,26 @@ def main():
             else:
                 st.error("Incorrect password. Please try again.")
     
-    # Only display the download button if the password is verified.
+    # Only display the download functionality if the password is verified.
     if st.session_state.password_verified:
-        if "df" not in st.session_state:
-            st.session_state.df = None
-
+        # -----------------------
+        # ZIP FILE URL INPUT
+        # -----------------------
+        zip_url = st.text_input(
+            "Enter the .zip file URL",
+            value="https://www.cybernations.net/assets/CyberNations_SE_Nation_Stats_462025510002.zip"
+        )
+        
         if st.button("Download and Display Nation Statistics"):
-            with st.spinner("Checking for a working zip file link..."):
-                # Set debug=True to see detailed output; set to False once confirmed.
-                working_zip_url = get_working_zip_url(debug=False)
-                if working_zip_url is None:
-                    st.error("Could not detect a working zip file URL.")
-                else:
-                    #st.write(f"Using zip file: {working_zip_url}")
-                    st.session_state.df = download_and_extract_zip(working_zip_url)
+            with st.spinner("Downloading and extracting data..."):
+                st.session_state.df = download_and_extract_zip(zip_url)
             if st.session_state.df is not None:
                 st.success("Data loaded successfully!")
             else:
                 st.error("Failed to load data.")
 
         # Proceed if data is loaded
-        if st.session_state.df is not None:
+        if "df" in st.session_state and st.session_state.df is not None:
             df = st.session_state.df.copy()
             st.subheader("Original Data")
             st.dataframe(df, use_container_width=True)
