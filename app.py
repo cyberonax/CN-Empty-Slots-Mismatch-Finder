@@ -461,35 +461,72 @@ def main():
                     else:
                         st.success("All players have been grouped into trade circles.")
 
-                    # -----------------------
-                    # DOWNLOAD TRADE CIRCLES CSV
-                    # -----------------------
-                    trade_circle_entries = []
-                    # Combine both Peacetime and Wartime trade circles for CSV download
-                    for circle_type, circles in [("Peacetime", trade_circles_peace), ("Wartime", trade_circles_war)]:
-                        if circles:
-                            for idx, circle in enumerate(circles, start=1):
-                                for player in circle:
-                                    trade_circle_entries.append({
-                                        "Circle Type": circle_type,
-                                        "Circle Number": idx,
-                                        "Nation ID": player.get('Nation ID', ''),
-                                        "Ruler Name": player.get('Ruler Name', ''),
-                                        "Nation Name": player.get('Nation Name', ''),
-                                        "Team": player.get('Team', ''),
-                                        "Current Resources": player.get('Current Resources', ''),
-                                        "Current Resource 1+2": get_resource_1_2(player),
-                                        "Activity": player.get('Activity', ''),
-                                        "Days Old": player.get('Days Old', ''),
-                                        "Assigned Resources": ", ".join(player.get('Assigned Resources', [])),
-                                        "Nation Drill URL": "https://www.cybernations.net/nation_drill_display.asp?Nation_ID=" + str(player.get('Nation ID', ''))
-                                    })
-                    if trade_circle_entries:
-                        trade_circles_df = pd.DataFrame(trade_circle_entries)
-                        csv_trade_circles = trade_circles_df.to_csv(index=False)
-                        st.download_button("Download Trade Circles CSV", csv_trade_circles, file_name="trade_circles.csv", mime="text/csv")
-                    else:
-                        st.info("No trade circles data available for download.")
+                # -----------------------
+                # PREPARE DATA FOR CSV DOWNLOAD
+                # -----------------------
+                all_entries = []
+
+                # Empty slots data
+                empty_slots_cols = ['Nation ID', 'Ruler Name', 'Nation Name', 'Team', 'Current Resources', 'Current Resource 1+2', 'Empty Slots Count', 'Activity', 'Days Old']
+                empty_slots_df = players_empty[empty_slots_cols].copy()
+                empty_slots_df['Category'] = 'Empty Slots'
+                all_entries.append(empty_slots_df)
+
+                # Complete trade circles data
+                complete_slots_df = players_full[empty_slots_cols].copy()
+                complete_slots_df['Category'] = 'Complete Trade Circle'
+                all_entries.append(complete_slots_df)
+
+                # Mismatched resources data - peacetime
+                if not peacetime_df.empty:
+                    peacetime_df_copy = peacetime_df.copy()
+                    peacetime_df_copy['Category'] = 'Peacetime Resource Mismatch'
+                    all_entries.append(peacetime_df_copy)
+                # Mismatched resources data - wartime
+                if not wartime_df.empty:
+                    wartime_df_copy = wartime_df.copy()
+                    wartime_df_copy['Category'] = 'Wartime Resource Mismatch'
+                    all_entries.append(wartime_df_copy)
+
+                # Recommended trade circles data
+                trade_circle_entries = []
+                for circle_type, circles in [("Peacetime", trade_circles_peace), ("Wartime", trade_circles_war)]:
+                    if circles:
+                        for idx, circle in enumerate(circles, start=1):
+                            for player in circle:
+                                trade_circle_entries.append({
+                                    "Category": f"{circle_type} Recommended Trade Circle",
+                                    "Circle Type": circle_type,
+                                    "Circle Number": idx,
+                                    "Nation ID": player.get('Nation ID', ''),
+                                    "Ruler Name": player.get('Ruler Name', ''),
+                                    "Nation Name": player.get('Nation Name', ''),
+                                    "Team": player.get('Team', ''),
+                                    "Current Resources": player.get('Current Resources', ''),
+                                    "Current Resource 1+2": get_resource_1_2(player),
+                                    "Activity": player.get('Activity', ''),
+                                    "Days Old": player.get('Days Old', ''),
+                                    "Assigned Resources": ", ".join(player.get('Assigned Resources', [])),
+                                    "Nation Drill URL": "https://www.cybernations.net/nation_drill_display.asp?Nation_ID=" + str(player.get('Nation ID', ''))
+                                })
+                if trade_circle_entries:
+                    trade_circle_df = pd.DataFrame(trade_circle_entries)
+                    all_entries.append(trade_circle_df)
+
+                if all_entries:
+                    combined_df = pd.concat(all_entries, ignore_index=True)
+                    csv_all_data = combined_df.to_csv(index=False)
+                else:
+                    csv_all_data = ""
+
+            # -----------------------
+            # DOWNLOAD ALL DATA CSV (positioned at the bottom of the page)
+            # -----------------------
+            st.markdown("### Download All Processed Data CSV")
+            if csv_all_data:
+                st.download_button("Download Trade Circles CSV", csv_all_data, file_name="trade_circles.csv", mime="text/csv")
+            else:
+                st.info("No data available for download.")
     else:
         st.info("Please enter the correct password to access the functionality.")
 
