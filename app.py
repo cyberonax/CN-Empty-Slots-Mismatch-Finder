@@ -52,7 +52,7 @@ def get_working_zip_url(debug=False):
     The file number is composed as:
       <date_prefix><suffix>
     where:
-	  date_prefix = f"{current_month}{current_day}{current_year}"
+      date_prefix = f"{today.month}{today.day}{today.year}"
       suffix = constant extracted from the original base number (e.g., "510002")
     
     Returns:
@@ -158,10 +158,8 @@ def display_trade_circle_df(circle, condition):
     """Display a trade circle in a Streamlit dataframe."""
     circle_data = []
     for player in circle:
-        nation_id = player.get('Nation ID', '')
         circle_data.append({
-            'Nation ID': nation_id,
-            'Nation URL': f"https://www.cybernations.net/nation_drill_display.asp?Nation_ID={nation_id}",
+            'Nation ID': player.get('Nation ID', ''),
             'Ruler Name': player.get('Ruler Name', ''),
             'Nation Name': player.get('Nation Name', ''),
             'Current Resources': player.get('Current Resources', ''),
@@ -336,12 +334,12 @@ def main():
                     leftover_data = []
                     for player in leftover_players:
                         leftover_data.append({
+                            'Nation ID': player.get('Nation ID', ''),
                             'Ruler Name': player.get('Ruler Name', ''),
                             'Nation Name': player.get('Nation Name', ''),
                             'Current Resources': player.get('Current Resources', ''),
                             'Activity': player.get('Activity', ''),
-                            'Days Old': player.get('Days Old', ''),
-                            'Nation URL': f"https://www.cybernations.net/nation_drill_display.asp?Nation_ID={player.get('Nation ID', '')}"
+                            'Days Old': player.get('Days Old', '')
                         })
                     st.markdown("**Players remaining without a full trade circle:**")
                     st.dataframe(pd.DataFrame(leftover_data), use_container_width=True)
@@ -360,13 +358,14 @@ def main():
                                 trade_circle_entries.append({
                                     "Circle Type": circle_type,
                                     "Circle Number": idx,
+                                    "Nation ID": player.get('Nation ID', ''),
                                     "Ruler Name": player.get('Ruler Name', ''),
                                     "Nation Name": player.get('Nation Name', ''),
                                     "Current Resources": player.get('Current Resources', ''),
                                     "Activity": player.get('Activity', ''),
                                     "Days Old": player.get('Days Old', ''),
                                     "Assigned Resources": ", ".join(player.get('Assigned Resources', [])),
-                                    "Nation URL": f"https://www.cybernations.net/nation_drill_display.asp?Nation_ID={player.get('Nation ID', '')}"
+                                    "Nation Drill URL": "https://www.cybernations.net/nation_drill_display.asp?Nation_ID=" + str(player.get('Nation ID', ''))
                                 })
                 if trade_circle_entries:
                     trade_circles_df = pd.DataFrame(trade_circle_entries)
