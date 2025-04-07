@@ -34,18 +34,14 @@ TRADE_CIRCLE_SIZE = 6  # 6 players per circle, each gets 2 resources
 def get_resource_1_2(row):
     """
     Return a string with Resource 1 and Resource 2 in the format "Resource 1, Resource 2".
-    This function checks if the row has 'Resource 1' and 'Resource 2' columns (as in the filtered table);
-    if not, it falls back to parsing the 'Current Resources' string.
+    This function checks if the row has non-null, non-empty 'Resource 1' and 'Resource 2' values.
+    If not, it falls back to parsing the 'Current Resources' string.
     """
-    if "Resource 1" in row and "Resource 2" in row:
-        res1 = str(row["Resource 1"]).strip()
-        res2 = str(row["Resource 2"]).strip()
-        if res1 and res2:
-            return f"{res1}, {res2}"
-        elif res1:
-            return res1
-        else:
-            return ""
+    res1 = row.get("Resource 1")
+    res2 = row.get("Resource 2")
+    # Use the resources only if they are non-null and non-empty after stripping.
+    if pd.notnull(res1) and str(res1).strip() and pd.notnull(res2) and str(res2).strip():
+        return f"{str(res1).strip()}, {str(res2).strip()}"
     else:
         # Fallback: parse from the "Current Resources" string
         current = row.get("Current Resources", "")
@@ -207,8 +203,8 @@ def main():
                         filtered_df = filtered_df.copy()
                         filtered_df['Current Resource 1+2'] = filtered_df.apply(lambda row: get_resource_1_2(row), axis=1)
                     st.dataframe(filtered_df, use_container_width=True)
-                    csv = filtered_df.to_csv(index=False)
-                    st.download_button("Download Filtered CSV", csv, file_name="filtered_nation_stats.csv", mime="text/csv")
+                    # Save the filtered DataFrame to session state for consistent use later
+                    st.session_state.filtered_df = filtered_df
                 else:
                     st.info("Enter text to filter the data.")
             else:
@@ -226,8 +222,8 @@ def main():
                 """
             )
             if st.button("Form Trade Circles"):
-                # For this example, we use the filtered data if available; otherwise, use the full DataFrame.
-                df_to_use = filtered_df if "filtered_df" in locals() and not filtered_df.empty else df
+                # Use the filtered DataFrame if available; otherwise, use the full DataFrame.
+                df_to_use = st.session_state.filtered_df if "filtered_df" in st.session_state and not st.session_state.filtered_df.empty else df
 
                 # Assume that the resource columns are named "Connected Resource 1" to "Connected Resource 10"
                 resource_cols = [f"Connected Resource {i}" for i in range(1, 11)]
