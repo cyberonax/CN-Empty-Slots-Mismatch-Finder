@@ -7,6 +7,7 @@ import re
 import copy
 from datetime import datetime
 from collections import Counter  # Added for duplicate resource counting
+import textwrap  # For dedenting multi-line strings
 
 # -----------------------
 # CONFIGURATION & CONSTANTS
@@ -426,7 +427,7 @@ def main():
 
                     # Display Peacetime Trade Circles
                     if trade_circles_peace:
-                        st.markdown(f"**Recommended Peacetime Trade Circles:**")
+                        st.markdown("**Recommended Peacetime Trade Circles:**")
                         for idx, circle in enumerate(trade_circles_peace, start=1):
                             st.markdown(f"--- **Peacetime Trade Circle #{idx}** ---")
                             display_trade_circle_df(circle, "Peacetime")
@@ -435,7 +436,7 @@ def main():
 
                     # Display Wartime Trade Circles
                     if trade_circles_war:
-                        st.markdown(f"**Recommended Wartime Trade Circles:**")
+                        st.markdown("**Recommended Wartime Trade Circles:**")
                         for idx, circle in enumerate(trade_circles_war, start=1):
                             st.markdown(f"--- **Wartime Trade Circle #{idx}** ---")
                             display_trade_circle_df(circle, "Wartime")
@@ -517,9 +518,9 @@ def main():
                 if trade_circle_entries:
                     trade_circle_df = pd.DataFrame(trade_circle_entries)
                     sheets["Trade Circles"] = add_nation_drill_url(trade_circle_df)
-                
+
                 # -----------------------
-                # SUMMARY OVERVIEW SECTION (for display in Streamlit)
+                # SUMMARY OVERVIEW SECTION (UI)
                 # -----------------------
                 with st.expander("Summary Overview"):
                     st.subheader("General Statistics")
@@ -541,54 +542,98 @@ def main():
                     st.write(f"**Wartime Mismatch among Complete Trade Circles:** {unique_wartime_mismatch} ({wartime_mismatch_percentage:.2f}%)")
 
                     st.subheader("Action Plan for Alliance Management")
-                    action_plan = (
-                        "**1. Identify Affected Trade Circles:**\n"
-                        "   - Review the **Peacetime Resource Mismatches** and **Wartime Resource Mismatches** reports.\n"
-                        "   - For each entry, note the following:\n"
-                        "     - **Player Identification:** Nation Name, Nation ID, Ruler Name.\n"
-                        "     - **Resources:** The extra resources (listed under *Extra Resources*) and the missing resources (listed under *Missing Peacetime Resources* or *Missing Wartime Resources*).\n\n"
-                        "**2. Notify Affected Players:**\n"
-                        "   - For each player with a peacetime mismatch, send a message:\n"
-                        "     - \"Notify [Nation Name] (Nation ID: [ID], Ruler: [Name]) that your extra resource(s) [list Extra Resources] must be exchanged for the missing resource(s) [list Missing Peacetime Resources] to complete your peacetime trade circle.\"\n"
-                        "   - For each player with a wartime mismatch, send a similar message:\n"
-                        "     - \"Notify [Nation Name] (Nation ID: [ID], Ruler: [Name]) that your extra resource(s) [list Extra Resources] must be exchanged for the missing resource(s) [list Missing Wartime Resources] to meet wartime requirements.\"\n\n"
-                        "**3. Reconfigure Incomplete Trade Circles:**\n"
-                        "   - Review the **Players with Empty Trade Slots** report.\n"
-                        "   - For players not fully assigned, identify the recommended trade circle from the **Recommended Trade Circles** report.\n"
-                        "   - For each affected player, send a message:\n"
-                        "     - \"Contact [Nation Name] (Nation ID: [ID]) and inform them to join Trade Circle #[Circle Number] with partners [list partner Nation Names]. Your assigned resource pair is [Assigned Resources]. Confirm your participation immediately.\"\n"
-                        "   - For any leftover players, send an individual notification to arrange an immediate meeting for reconfiguration.\n\n"
-                        "**4. Document and Follow-Up:**\n"
-                        "   - Log each notification with the following details: Nation ID, Nation Name, Ruler Name, category (Peacetime/Wartime/Trade Circle), and specific action required.\n"
-                        "   - Set a follow-up review after 48-72 hours to ensure all players have confirmed the required changes.\n"
-                        "   - Re-run the analysis after adjustments and update the report accordingly.\n"
-                    )
+                    # Use dedent to ensure proper bullet point formatting
+                    action_plan = textwrap.dedent("""
+                    **1. Identify Affected Trade Circles:**
+                    - Review the **Peacetime Resource Mismatches** and **Wartime Resource Mismatches** reports.
+                    - For each entry, note the following:
+                      - **Player Identification:** Nation Name, Nation ID, Ruler Name.
+                      - **Resources:** The extra resources (listed under *Extra Resources*) and the missing resources (listed under *Missing Peacetime Resources* or *Missing Wartime Resources*).
+
+                    **2. Notify Affected Players:**
+                    - For each player with a peacetime mismatch, send a message:
+                      - *"Notify [Nation Name] (Nation ID: [ID], Ruler: [Name]) that your extra resource(s) [list Extra Resources] must be exchanged for the missing resource(s) [list Missing Peacetime Resources] to complete your peacetime trade circle."*
+                    - For each player with a wartime mismatch, send a similar message:
+                      - *"Notify [Nation Name] (Nation ID: [ID], Ruler: [Name]) that your extra resource(s) [list Extra Resources] must be exchanged for the missing resource(s) [list Missing Wartime Resources] to meet wartime requirements."*
+
+                    **3. Reconfigure Incomplete Trade Circles:**
+                    - Review the **Players with Empty Trade Slots** report.
+                    - For players not fully assigned, identify the recommended trade circle from the **Recommended Trade Circles** report.
+                    - For each affected player, send a message:
+                      - *"Contact [Nation Name] (Nation ID: [ID]) and inform them to join Trade Circle #[Circle Number] with partners [list partner Nation Names]. Your assigned resource pair is [Assigned Resources]. Confirm your participation immediately."*
+                    - For any leftover players, send an individual notification to arrange an immediate meeting for reconfiguration.
+
+                    **4. Document and Follow-Up:**
+                    - Log each notification with the following details: Nation ID, Nation Name, Ruler Name, category (Peacetime/Wartime/Trade Circle), and specific action required.
+                    - Set a follow-up review after 48-72 hours to ensure all players have confirmed the required changes.
+                    - Re-run the analysis after adjustments and update the report accordingly.
+                    """)
                     st.markdown(action_plan)
                 
                 # -----------------------
-                # ADD SUMMARY OVERVIEW AS A NEW WORKSHEET FOR EXCEL DOWNLOAD
-                # -----------------------
-                summary_text = (
-                    "General Statistics:\n"
-                    f"Total Players (Empty + Complete): {total_players}\n"
-                    f"Players with Empty Trade Slots: {len(players_empty)} ({empty_percentage:.2f}%)\n"
-                    f"Players in Complete Trade Circle: {total_full}\n"
-                    f"Peacetime Mismatch among Complete Trade Circles: {unique_peacetime_mismatch} ({peacetime_mismatch_percentage:.2f}%)\n"
-                    f"Wartime Mismatch among Complete Trade Circles: {unique_wartime_mismatch} ({wartime_mismatch_percentage:.2f}%)\n\n"
-                    "Action Plan for Alliance Management:\n" + action_plan
-                )
-                summary_df = pd.DataFrame({"Summary": [summary_text]})
-                sheets["Summary Overview"] = summary_df
-
-                # -----------------------
-                # WRITE EXCEL FILE FOR DOWNLOAD
+                # WRITE EXCEL FILE FOR DOWNLOAD WITH ADDITIONAL WORKSHEETS
                 # -----------------------
                 if sheets:
                     output = io.BytesIO()
                     # Using openpyxl engine instead of xlsxwriter
                     with pd.ExcelWriter(output, engine='openpyxl') as writer:
+                        # Write existing sheets
                         for sheet_name, df_sheet in sheets.items():
                             df_sheet.to_excel(writer, sheet_name=sheet_name, index=False)
+                        
+                        # Get access to the workbook
+                        workbook = writer.book
+                        
+                        # Add Summary Overview worksheet
+                        summary_ws = workbook.create_sheet("Summary Overview")
+                        summary_text = (
+                            f"Total Players (Empty + Complete): {total_players}\n"
+                            f"Players with Empty Trade Slots: {len(players_empty)} ({empty_percentage:.2f}%)\n"
+                            f"Players in Complete Trade Circle: {total_full}\n"
+                            f"Peacetime Mismatch among Complete Trade Circles: {unique_peacetime_mismatch} ({peacetime_mismatch_percentage:.2f}%)\n"
+                            f"Wartime Mismatch among Complete Trade Circles: {unique_wartime_mismatch} ({wartime_mismatch_percentage:.2f}%)"
+                        )
+                        summary_ws["A1"] = summary_text
+                        from openpyxl.styles import Alignment
+                        summary_ws.column_dimensions["A"].width = 100
+                        summary_ws["A1"].alignment = Alignment(wrapText=True)
+                        
+                        # Add Message Templates worksheet
+                        messages_ws = workbook.create_sheet("Message Templates")
+                        messages = []
+                        # Peacetime mismatch messages:
+                        if not peacetime_df.empty:
+                            for idx, row in peacetime_df.iterrows():
+                                msg = f'Notify {row["Nation Name"]} (Nation ID: {row["Nation ID"]}, Ruler: {row["Ruler Name"]}) that your extra resource(s) {row["Extra Resources"]} must be exchanged for the missing resource(s) {row["Missing Peacetime Resources"]} to complete your peacetime trade circle.'
+                                messages.append({"Message Type": "Peacetime Mismatch", "Message": msg})
+                        # Wartime mismatch messages:
+                        if not wartime_df.empty:
+                            for idx, row in wartime_df.iterrows():
+                                msg = f'Notify {row["Nation Name"]} (Nation ID: {row["Nation ID"]}, Ruler: {row["Ruler Name"]}) that your extra resource(s) {row["Extra Resources"]} must be exchanged for the missing resource(s) {row["Missing Wartime Resources"]} to meet wartime requirements.'
+                                messages.append({"Message Type": "Wartime Mismatch", "Message": msg})
+                        
+                        # Trade circle messages: include partner information
+                        def generate_trade_circle_messages(circles, circle_type):
+                            for circle in circles:
+                                nation_names = [player.get('Nation Name','') for player in circle]
+                                for player in circle:
+                                    partners = [name for name in nation_names if name != player.get('Nation Name','')]
+                                    msg = f'Contact {player.get("Nation Name","")} (Nation ID: {player.get("Nation ID","")}) and inform them to join Trade Circle #{circle_type} with partners {", ".join(partners)}. Your assigned resource pair is {", ".join(player.get("Assigned Resources", []))}. Confirm your participation immediately.'
+                                    messages.append({"Message Type": f"{circle_type} Trade Circle", "Message": msg})
+                        
+                        if trade_circles_peace:
+                            generate_trade_circle_messages(trade_circles_peace, "Peacetime")
+                        if trade_circles_war:
+                            generate_trade_circle_messages(trade_circles_war, "Wartime")
+                        
+                        messages_df = pd.DataFrame(messages)
+                        # Write the messages DataFrame starting at A1 in Message Templates worksheet
+                        from openpyxl.utils.dataframe import dataframe_to_rows
+                        for r in dataframe_to_rows(messages_df, index=False, header=True):
+                            messages_ws.append(r)
+                        # Adjust column widths for Message Templates
+                        messages_ws.column_dimensions["A"].width = 20
+                        messages_ws.column_dimensions["B"].width = 150
                     output.seek(0)
                     excel_data = output.read()
                 else:
@@ -597,9 +642,9 @@ def main():
             # -----------------------
             # DOWNLOAD ALL DATA EXCEL (positioned at the bottom of the page)
             # -----------------------
-            st.markdown("### Download All Processed Data Excel")
+            st.markdown("### Download All Processed Data")
             if excel_data:
-                st.download_button("Download Full Trade Analysis Excel", excel_data, file_name="full_trade_analysis.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+                st.download_button("Download Summary Report", excel_data, file_name="full_summary_report.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
             else:
                 st.info("No data available for download.")
     else:
