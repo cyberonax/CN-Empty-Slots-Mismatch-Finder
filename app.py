@@ -6,6 +6,7 @@ import io
 import re
 import copy
 from datetime import datetime
+from collections import Counter  # Added for duplicate resource counting
 
 # -----------------------
 # CONFIGURATION & CONSTANTS
@@ -345,6 +346,10 @@ def main():
                         if res2 and res2 not in current_resources:
                             current_resources.append(res2)
                     
+                    # Calculate duplicate resources
+                    duplicates = [res for res, count in Counter(current_resources).items() if count > 1]
+                    dup_str = ", ".join(sorted(duplicates)) if duplicates else "None"
+                    
                     current_set = set(current_resources)
                     peacetime_set = set(peacetime_resources)
                     wartime_set = set(wartime_resources)
@@ -362,6 +367,7 @@ def main():
                             'Nation Name': row['Nation Name'],
                             'Current Resources': row['Current Resources'],
                             'Current Resource 1+2': get_resource_1_2(row),
+                            'Duplicate Resources': dup_str,  # New column for duplicate resources
                             'Missing Peacetime Resources': ", ".join(sorted(missing_peace)) if missing_peace else "None",
                             'Extra Resources': ", ".join(sorted(extra_peace)) if extra_peace else "None"
                         })
@@ -374,6 +380,7 @@ def main():
                             'Nation Name': row['Nation Name'],
                             'Current Resources': row['Current Resources'],
                             'Current Resource 1+2': get_resource_1_2(row),
+                            'Duplicate Resources': dup_str,  # New column for duplicate resources
                             'Missing Wartime Resources': ", ".join(sorted(missing_war)) if missing_war else "None",
                             'Extra Resources': ", ".join(sorted(extra_war)) if extra_war else "None"
                         })
