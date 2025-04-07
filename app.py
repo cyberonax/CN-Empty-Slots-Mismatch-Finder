@@ -552,15 +552,15 @@ def main():
 
                     **2. Notify Affected Players:**
                     - For each player with a peacetime mismatch, send a message:
-                      - *"Notify [Nation Name] (Nation ID: [ID], Ruler: [Name]) that your extra resource(s) [list Extra Resources] must be exchanged for the missing resource(s) [list Missing Peacetime Resources] to complete your peacetime trade circle."*
+                      - *"To The Ruler: {row["Ruler Name"]}, your extra resource(s) [list Extra Resources] must be exchanged for the missing resource(s) [list Missing Peacetime Resources] to complete your peacetime trade circle. -Lord of Growth."*
                     - For each player with a wartime mismatch, send a similar message:
-                      - *"Notify [Nation Name] (Nation ID: [ID], Ruler: [Name]) that your extra resource(s) [list Extra Resources] must be exchanged for the missing resource(s) [list Missing Wartime Resources] to meet wartime requirements."*
+                      - *"To The Ruler: {row["Ruler Name"]}, your extra resource(s) [list Extra Resources] must be exchanged for the missing resource(s) [list Missing Wartime Resources] to meet wartime requirements. -Lord of Growth."*
 
                     **3. Reconfigure Incomplete Trade Circles:**
                     - Review the **Players with Empty Trade Slots** report.
                     - For players not fully assigned, identify the recommended trade circle from the **Recommended Trade Circles** report.
                     - For each affected player, send a message:
-                      - *"Contact [Nation Name] (Nation ID: [ID]) and inform them to join Trade Circle #[Circle Number] with partners [list partner Nation Names]. Your assigned resource pair is [Assigned Resources]. Confirm your participation immediately."*
+                      - *"To The Ruler: {row["Ruler Name"]}, please join a Trade Circle with partners [list partner Nation Names]. Your assigned resource pair is [Assigned Resources]. Confirm your participation immediately. -Lord of Growth."*
                     - For any leftover players, send an individual notification to arrange an immediate meeting for reconfiguration.
 
                     **4. Document and Follow-Up:**
@@ -605,12 +605,12 @@ def main():
                         if not peacetime_df.empty:
                             for idx, row in peacetime_df.iterrows():
                                 msg = f'To The Ruler: {row["Ruler Name"]}, your extra resource(s) {row["Extra Resources"]} must be exchanged for the missing resource(s) {row["Missing Peacetime Resources"]} to complete your peacetime trade circle. -Lord of Growth.'
-                                messages.append({"Message Type": "Peacetime Mismatch", "Message": msg})
+                                messages.append({"Message Type": "Peacetime Resource Mismatch", "Message": msg})
                         # Wartime mismatch messages:
                         if not wartime_df.empty:
                             for idx, row in wartime_df.iterrows():
                                 msg = f'To The Ruler: {row["Ruler Name"]}, your extra resource(s) {row["Extra Resources"]} must be exchanged for the missing resource(s) {row["Missing Wartime Resources"]} to meet wartime requirements. -Lord of Growth.'
-                                messages.append({"Message Type": "Wartime Mismatch", "Message": msg})
+                                messages.append({"Message Type": "Wartime Resource Mismatch", "Message": msg})
                         
                         # Trade circle messages: include partner information
                         def generate_trade_circle_messages(circles, circle_type):
@@ -618,7 +618,7 @@ def main():
                                 nation_names = [player.get('Nation Name','') for player in circle]
                                 for player in circle:
                                     partners = [name for name in nation_names if name != player.get('Nation Name','')]
-                                    msg = f'To The Ruler: {row["Ruler Name"]}, please join Trade Circle #{circle_type} with partners {", ".join(partners)}. Your assigned resource pair is {", ".join(player.get("Assigned Resources", []))}. Confirm your participation immediately. -Lord of Growth.'
+                                    msg = f'To The Ruler: {row["Ruler Name"]}, please join a Trade Circle with partners {", ".join(partners)}. Your assigned resource pair is {", ".join(player.get("Assigned Resources", []))}. Confirm your participation immediately. -Lord of Growth.'
                                     messages.append({"Message Type": f"{circle_type} Trade Circle", "Message": msg})
                         
                         if trade_circles_peace:
@@ -632,7 +632,7 @@ def main():
                         for r in dataframe_to_rows(messages_df, index=False, header=True):
                             messages_ws.append(r)
                         # Adjust column widths for Message Templates
-                        messages_ws.column_dimensions["A"].width = 20
+                        messages_ws.column_dimensions["A"].width = 35
                         messages_ws.column_dimensions["B"].width = 150
                     output.seek(0)
                     excel_data = output.read()
