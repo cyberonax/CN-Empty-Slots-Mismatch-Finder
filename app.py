@@ -518,7 +518,59 @@ def main():
                     trade_circle_df = pd.DataFrame(trade_circle_entries)
                     sheets["Trade Circles"] = add_nation_drill_url(trade_circle_df)
 
-                # Write each DataFrame to a separate worksheet in an Excel file
+                # -----------------------
+                # SUMMARY OVERVIEW SECTION
+                # -----------------------
+                with st.expander("Summary Overview"):
+                    st.subheader("General Statistics")
+                    # Total players in either group (empty slots + complete)
+                    total_players = len(players_empty) + len(players_full)
+                    empty_percentage = (len(players_empty) / total_players * 100) if total_players else 0
+
+                    # For players in complete trade circles, count unique mismatches
+                    total_full = len(players_full)
+                    unique_peacetime_mismatch = peacetime_df['Nation ID'].nunique() if not peacetime_df.empty else 0
+                    unique_wartime_mismatch = wartime_df['Nation ID'].nunique() if not wartime_df.empty else 0
+                    peacetime_mismatch_percentage = (unique_peacetime_mismatch / total_full * 100) if total_full else 0
+                    wartime_mismatch_percentage = (unique_wartime_mismatch / total_full * 100) if total_full else 0
+
+                    st.write(f"**Total Players (Empty + Complete):** {total_players}")
+                    st.write(f"**Players with Empty Trade Slots:** {len(players_empty)} ({empty_percentage:.2f}%)")
+                    st.write(f"**Players in Complete Trade Circle:** {total_full}")
+                    st.write(f"**Peacetime Mismatch among Complete Trade Circles:** {unique_peacetime_mismatch} ({peacetime_mismatch_percentage:.2f}%)")
+                    st.write(f"**Wartime Mismatch among Complete Trade Circles:** {unique_wartime_mismatch} ({wartime_mismatch_percentage:.2f}%)")
+
+                    st.subheader("Action Plan for Alliance Management")
+                    action_plan = """
+                    **1. Identify Affected Trade Circles:**
+                        - Review the **Peacetime Resource Mismatches** and **Wartime Resource Mismatches** reports.
+                        - For each entry, note the following:
+                          - **Player Identification:** Nation Name, Nation ID, Ruler Name.
+                          - **Resources:** The extra resources (listed under *Extra Resources*) and the missing resources (listed under *Missing Peacetime Resources* or *Missing Wartime Resources*).
+                    
+                    **2. Notify Affected Players:**
+                        - For each player with a peacetime mismatch, send a message:
+                          - *"Notify [Nation Name] (Nation ID: [ID], Ruler: [Name]) that your extra resource(s) [list Extra Resources] must be exchanged for the missing resource(s) [list Missing Peacetime Resources] to complete your peacetime trade circle."*
+                        - For each player with a wartime mismatch, send a similar message:
+                          - *"Notify [Nation Name] (Nation ID: [ID], Ruler: [Name]) that your extra resource(s) [list Extra Resources] must be exchanged for the missing resource(s) [list Missing Wartime Resources] to meet wartime requirements."*
+                    
+                    **3. Reconfigure Incomplete Trade Circles:**
+                        - Review the **Players with Empty Trade Slots** report.
+                        - For players not fully assigned, identify the recommended trade circle from the **Recommended Trade Circles** report.
+                        - For each affected player, send a message:
+                          - *"Contact [Nation Name] (Nation ID: [ID]) and inform them to join Trade Circle #[Circle Number] with partners [list partner Nation Names]. Your assigned resource pair is [Assigned Resources]. Confirm your participation immediately."*
+                        - For any leftover players, send an individual notification to arrange an immediate meeting for reconfiguration.
+                    
+                    **4. Document and Follow-Up:**
+                        - Log each notification with the following details: Nation ID, Nation Name, Ruler Name, category (Peacetime/Wartime/Trade Circle), and specific action required.
+                        - Set a follow-up review after 48-72 hours to ensure all players have confirmed the required changes.
+                        - Re-run the analysis after adjustments and update the report accordingly.
+                    """
+                    st.markdown(action_plan)
+                
+                # -----------------------
+                # WRITE EXCEL FILE FOR DOWNLOAD
+                # -----------------------
                 if sheets:
                     output = io.BytesIO()
                     # Using openpyxl engine instead of xlsxwriter
