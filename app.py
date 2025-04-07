@@ -327,13 +327,15 @@ def main():
                 players_filled['Resources Valid'] = players_filled['Current Resources'].apply(validate_resources)
                 players_filled['Validation Status'] = players_filled['Resources Valid'].apply(lambda x: "Valid" if x else "Invalid")
 
-                # Define columns to display for filled players
-                display_cols_filled = ['Nation ID', 'Ruler Name', 'Nation Name', 'Team', 'Current Resources', 'Activity', 'Days Old', 'Validation Status']
+                # Dynamically build the display columns list by checking for each column's existence.
+                potential_cols = ['Nation ID', 'Ruler Name', 'Nation Name', 'Team', 'Current Resources', 'Activity', 'Days Old', 'Validation Status']
+                display_cols_filled = [col for col in potential_cols if col in players_filled.columns]
+
                 st.markdown("**Players with full resource lists (no empty slots):**")
                 if not players_filled.empty:
                     # Use pandas styling to highlight rows with Invalid resource lists
                     def highlight_invalid(row):
-                        return ['background-color: lightcoral' if row['Validation Status'] == "Invalid" else '' for _ in row]
+                        return ['background-color: lightcoral' if row.get('Validation Status') == "Invalid" else '' for _ in row]
                     styled_df = players_filled[display_cols_filled].style.apply(highlight_invalid, axis=1)
                     st.dataframe(styled_df, use_container_width=True)
                 else:
