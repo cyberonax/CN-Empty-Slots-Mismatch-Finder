@@ -88,7 +88,7 @@ def display_trade_circle_df(circle, condition):
         current_resources_str = player.get('Current Resources', '')
         current_resources_list = [r.strip() for r in current_resources_str.split(',') if r.strip()]
         if len(current_resources_list) >= 2:
-            current_resource_sum = f"{current_resources_list[0]}+{current_resources_list[1]}"
+            current_resource_sum = f"{current_resources_list[0]}, {current_resources_list[1]}"
         else:
             current_resource_sum = current_resources_str
 
@@ -98,7 +98,7 @@ def display_trade_circle_df(circle, condition):
             'Nation Name': player.get('Nation Name', ''),
             'Team': player.get('Team', ''),
             'Current Resources': player.get('Current Resources', ''),
-            'Current Resource 1+Resource2': current_resource_sum,
+            'Current Resource 1+2': current_resource_sum,
             'Activity': player.get('Activity', ''),
             'Days Old': player.get('Days Old', ''),
             f'Assigned {condition} Resources': ", ".join(player.get('Assigned Resources', []))
