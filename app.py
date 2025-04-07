@@ -29,6 +29,34 @@ sorted_wartime = sorted(wartime_resources)
 TRADE_CIRCLE_SIZE = 6  # 6 players per circle, each gets 2 resources
 
 # -----------------------
+# HELPER FUNCTIONS
+# -----------------------
+def get_resource_1_2(row):
+    """
+    Return a string with Resource 1 and Resource 2 in the format "Resource 1, Resource 2".
+    This function checks if the row has 'Resource 1' and 'Resource 2' columns (as in the filtered table);
+    if not, it falls back to parsing the 'Current Resources' string.
+    """
+    if "Resource 1" in row and "Resource 2" in row:
+        res1 = str(row["Resource 1"]).strip()
+        res2 = str(row["Resource 2"]).strip()
+        if res1 and res2:
+            return f"{res1}, {res2}"
+        elif res1:
+            return res1
+        else:
+            return ""
+    else:
+        # Fallback: parse from the "Current Resources" string
+        current = row.get("Current Resources", "")
+        resources = [r.strip() for r in current.split(",") if r.strip()]
+        if len(resources) >= 2:
+            return f"{resources[0]}, {resources[1]}"
+        elif resources:
+            return resources[0]
+        return ""
+
+# -----------------------
 # DOWNLOAD & DATA LOADING FUNCTIONS
 # -----------------------
 def download_and_extract_zip(url):
@@ -84,21 +112,14 @@ def display_trade_circle_df(circle, condition):
     """Display a trade circle in a Streamlit dataframe."""
     circle_data = []
     for player in circle:
-        # Compute the "Current Resource 1+Resource2" column.
         current_resources_str = player.get('Current Resources', '')
-        current_resources_list = [r.strip() for r in current_resources_str.split(',') if r.strip()]
-        if len(current_resources_list) >= 2:
-            current_resource_sum = f"{current_resources_list[0]}, {current_resources_list[1]}"
-        else:
-            current_resource_sum = current_resources_str
-
         circle_data.append({
             'Nation ID': player.get('Nation ID', ''),
             'Ruler Name': player.get('Ruler Name', ''),
             'Nation Name': player.get('Nation Name', ''),
             'Team': player.get('Team', ''),
-            'Current Resources': player.get('Current Resources', ''),
-            'Current Resource 1+2': current_resource_sum,
+            'Current Resources': current_resources_str,
+            'Current Resource 1+2': get_resource_1_2(player),
             'Activity': player.get('Activity', ''),
             'Days Old': player.get('Days Old', ''),
             f'Assigned {condition} Resources': ", ".join(player.get('Assigned Resources', []))
@@ -181,6 +202,10 @@ def main():
                     pattern = "|".join(filters)
                     filtered_df = df[df[selected_column].astype(str).str.contains(pattern, case=False, na=False)]
                     st.write(f"Showing results where **{selected_column}** contains any of {filters}:")
+                    # Use the filtered table's own "Resource 1" and "Resource 2" columns for current resource display
+                    if "Resource 1" in filtered_df.columns and "Resource 2" in filtered_df.columns:
+                        filtered_df = filtered_df.copy()
+                        filtered_df['Current Resource 1+2'] = filtered_df.apply(lambda row: get_resource_1_2(row), axis=1)
                     st.dataframe(filtered_df, use_container_width=True)
                     csv = filtered_df.to_csv(index=False)
                     st.download_button("Download Filtered CSV", csv, file_name="filtered_nation_stats.csv", mime="text/csv")
@@ -212,8 +237,10 @@ def main():
                 )
                 players_empty = df_to_use[mask_empty].copy()
 
-                # Compute "Current Resources" column
+                # Compute "Current Resources" column (for full resource list)
                 players_empty['Current Resources'] = players_empty.apply(lambda row: get_current_resources(row, resource_cols), axis=1)
+                # Use the filtered table's "Resource 1" and "Resource 2" for the Current Resource 1+2 column if available
+                players_empty['Current Resource 1+2'] = players_empty.apply(lambda row: get_resource_1_2(row), axis=1)
                 # Compute empty trade slots (each slot covers 2 resources)
                 players_empty['Empty Slots Count'] = players_empty.apply(lambda row: count_empty_slots(row, resource_cols), axis=1)
                 # Convert "Created" to datetime and compute age in days (optional, still displayed)
@@ -231,7 +258,7 @@ def main():
                     players_empty = players_empty[players_empty["Alliance Status"] != "Pending"]
 
                 # Display summary of players with empty trade slots and active recently
-                display_cols = ['Nation ID', 'Ruler Name', 'Nation Name', 'Team', 'Current Resources', 'Empty Slots Count', 'Activity', 'Days Old']
+                display_cols = ['Nation ID', 'Ruler Name', 'Nation Name', 'Team', 'Current Resources', 'Current Resource 1+2', 'Empty Slots Count', 'Activity', 'Days Old']
                 st.markdown("**Players with empty trade slots (active recently):**")
                 st.dataframe(players_empty[display_cols].reset_index(drop=True), use_container_width=True)
                 
@@ -239,6 +266,8 @@ def main():
                 players_full = df_to_use[~mask_empty].copy()
                 # Compute "Current Resources" for players with complete resource sets
                 players_full['Current Resources'] = players_full.apply(lambda row: get_current_resources(row, resource_cols), axis=1)
+                # Use "Resource 1" and "Resource 2" to determine Current Resource 1+2 (if available)
+                players_full['Current Resource 1+2'] = players_full.apply(lambda row: get_resource_1_2(row), axis=1)
                 # Also compute "Empty Slots Count" to verify these players have complete resource sets (should be 0)
                 players_full['Empty Slots Count'] = players_full.apply(lambda row: count_empty_slots(row, resource_cols), axis=1)
                 # Process "Created" and "Days Old"
@@ -259,8 +288,18 @@ def main():
                 wartime_mismatch = []
 
                 for idx, row in players_full.iterrows():
-                    # Parse current resources into a list
+                    # Parse current resources from the "Current Resources" column
                     current_resources = [res.strip() for res in row['Current Resources'].split(',') if res.strip()]
+                    # If the row contains "Resource 1" and "Resource 2", add them as well
+                    if "Resource 1" in row and pd.notnull(row["Resource 1"]):
+                        res1 = str(row["Resource 1"]).strip()
+                        if res1 and res1 not in current_resources:
+                            current_resources.append(res1)
+                    if "Resource 2" in row and pd.notnull(row["Resource 2"]):
+                        res2 = str(row["Resource 2"]).strip()
+                        if res2 and res2 not in current_resources:
+                            current_resources.append(res2)
+                    
                     current_set = set(current_resources)
                     peacetime_set = set(peacetime_resources)
                     wartime_set = set(wartime_resources)
@@ -275,6 +314,7 @@ def main():
                         'Ruler Name': row['Ruler Name'],
                         'Nation Name': row['Nation Name'],
                         'Current Resources': row['Current Resources'],
+                        'Current Resource 1+2': get_resource_1_2(row),
                         'Missing Peacetime Resources': ", ".join(sorted(missing_peace)) if missing_peace else "None",
                         'Extra Resources': ", ".join(sorted(extra_peace)) if extra_peace else "None"
                     })
@@ -284,6 +324,7 @@ def main():
                         'Ruler Name': row['Ruler Name'],
                         'Nation Name': row['Nation Name'],
                         'Current Resources': row['Current Resources'],
+                        'Current Resource 1+2': get_resource_1_2(row),
                         'Missing Wartime Resources': ", ".join(sorted(missing_war)) if missing_war else "None",
                         'Extra Resources': ", ".join(sorted(extra_war)) if extra_war else "None"
                     })
@@ -338,6 +379,7 @@ def main():
                             'Nation Name': player.get('Nation Name', ''),
                             'Team': player.get('Team', ''),
                             'Current Resources': player.get('Current Resources', ''),
+                            'Current Resource 1+2': get_resource_1_2(player),
                             'Activity': player.get('Activity', ''),
                             'Days Old': player.get('Days Old', '')
                         })
@@ -363,6 +405,7 @@ def main():
                                     "Nation Name": player.get('Nation Name', ''),
                                     "Team": player.get('Team', ''),
                                     "Current Resources": player.get('Current Resources', ''),
+                                    "Current Resource 1+2": get_resource_1_2(player),
                                     "Activity": player.get('Activity', ''),
                                     "Days Old": player.get('Days Old', ''),
                                     "Assigned Resources": ", ".join(player.get('Assigned Resources', [])),
