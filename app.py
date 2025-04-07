@@ -94,6 +94,12 @@ def display_trade_circle_df(circle, condition):
     circle_df = pd.DataFrame(circle_data)
     st.dataframe(circle_df, use_container_width=True)
 
+def highlight_none(val):
+    """Return a gray font color if the value is 'None', otherwise no styling."""
+    if val == "None":
+        return 'color: gray'
+    return ''
+
 # -----------------------
 # DOWNLOAD & DATA LOADING FUNCTIONS
 # -----------------------
@@ -386,10 +392,12 @@ def main():
                         })
 
                 st.markdown("**Peacetime Resource Mismatches:**")
-                st.dataframe(pd.DataFrame(peacetime_mismatch).reset_index(drop=True), use_container_width=True)
+                peacetime_df = pd.DataFrame(peacetime_mismatch).reset_index(drop=True)
+                st.dataframe(peacetime_df.style.applymap(highlight_none, subset=['Duplicate Resources']), use_container_width=True)
 
                 st.markdown("**Wartime Resource Mismatches:**")
-                st.dataframe(pd.DataFrame(wartime_mismatch).reset_index(drop=True), use_container_width=True)
+                wartime_df = pd.DataFrame(wartime_mismatch).reset_index(drop=True)
+                st.dataframe(wartime_df.style.applymap(highlight_none, subset=['Duplicate Resources']), use_container_width=True)
 
                 # Sort players by Nation ID (or another criterion) from the empty slots list
                 players_empty_sorted = players_empty.sort_values('Nation ID')
