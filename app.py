@@ -640,7 +640,16 @@ def main():
                                     f'If more than two resources are listed, kindly coordinate with your trade partners to make the needed adjustments. -Lord of Growth.'
                                 )
                                 messages.append({"Message Type": "Wartime Resource Mismatch", "Message": msg})
-                        
+
+                        # Trade circle messages: include partner information
+                        def generate_trade_circle_messages(circles, circle_type):
+                            for circle in circles:
+                                nation_names = [player.get('Nation Name','') for player in circle]
+                                for player in circle:
+                                    partners = [name for name in nation_names if name != player.get('Nation Name','')]
+                                    msg = f'To The Ruler: {row["Ruler Name"]}, please join a Trade Circle with partners: {", ".join(partners)}. Your assigned resource pair is {", ".join(player.get("Assigned Resources", []))}. Confirm your participation immediately. -Lord of Growth.'
+                                    messages.append({"Message Type": f"{circle_type} Trade Circle", "Message": msg})
+
                         if trade_circles_peace:
                             generate_trade_circle_messages(trade_circles_peace, "Peacetime")
                         if trade_circles_war:
