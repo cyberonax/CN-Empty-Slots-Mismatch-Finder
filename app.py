@@ -52,6 +52,47 @@ def get_resource_1_2(row):
             return resources[0]
         return ""
 
+def get_current_resources(row, resource_cols):
+    """Return a comma-separated string of non-blank resources sorted alphabetically."""
+    resources = sorted([str(x).strip() for x in row[resource_cols] if pd.notnull(x) and str(x).strip() != ''])
+    return ", ".join(resources)
+
+def count_empty_slots(row, resource_cols):
+    """Count blank resource cells and determine trade slots (each slot covers 2 resources)."""
+    count = sum(1 for x in row[resource_cols] if pd.isnull(x) or str(x).strip() == '')
+    return count // 2
+
+def form_trade_circles(players, sorted_resources, circle_size=TRADE_CIRCLE_SIZE):
+    """Group players into full trade circles and assign resource pairs."""
+    trade_circles = []
+    full_groups = [players[i:i+circle_size] for i in range(0, len(players), circle_size) if len(players[i:i+circle_size]) == circle_size]
+    for group in full_groups:
+        for j, player in enumerate(group):
+            # Each player gets two resources from the sorted list.
+            assigned_resources = sorted_resources[2*j:2*j+2]
+            player['Assigned Resources'] = assigned_resources
+        trade_circles.append(group)
+    return trade_circles
+
+def display_trade_circle_df(circle, condition):
+    """Display a trade circle in a Streamlit dataframe."""
+    circle_data = []
+    for player in circle:
+        current_resources_str = player.get('Current Resources', '')
+        circle_data.append({
+            'Nation ID': player.get('Nation ID', ''),
+            'Ruler Name': player.get('Ruler Name', ''),
+            'Nation Name': player.get('Nation Name', ''),
+            'Team': player.get('Team', ''),
+            'Current Resources': current_resources_str,
+            'Current Resource 1+2': get_resource_1_2(player),
+            'Activity': player.get('Activity', ''),
+            'Days Old': player.get('Days Old', ''),
+            f'Assigned {condition} Resources': ", ".join(player.get('Assigned Resources', []))
+        })
+    circle_df = pd.DataFrame(circle_data)
+    st.dataframe(circle_df, use_container_width=True)
+
 # -----------------------
 # DOWNLOAD & DATA LOADING FUNCTIONS
 # -----------------------
@@ -83,8 +124,8 @@ def download_and_extract_zip(url):
 # TRADE CIRCLE PROCESSING FUNCTIONS
 # -----------------------
 def get_current_resources(row, resource_cols):
-    """Return a comma-separated string of non-blank resources."""
-    resources = [str(x).strip() for x in row[resource_cols] if pd.notnull(x) and str(x).strip() != '']
+    """Return a comma-separated string of non-blank resources sorted alphabetically."""
+    resources = sorted([str(x).strip() for x in row[resource_cols] if pd.notnull(x) and str(x).strip() != ''])
     return ", ".join(resources)
 
 def count_empty_slots(row, resource_cols):
