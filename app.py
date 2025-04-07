@@ -279,6 +279,52 @@ def main():
                     st.success("All players have been grouped into trade circles.")
 
                 # -----------------------
+                # CHECK PLAYERS WITH FULL RESOURCE LISTS FOR CORRECTNESS
+                # -----------------------
+                # Identify players who have no empty resource slots
+                full_players_mask = ~(df_to_use[resource_cols].isnull().any(axis=1) | 
+                                      df_to_use[resource_cols].apply(lambda col: col.astype(str).str.strip() == '').any(axis=1))
+                players_full = df_to_use[full_players_mask].copy()
+                # Compute "Current Resources" for full players
+                players_full['Current Resources'] = players_full.apply(lambda row: get_current_resources(row, resource_cols), axis=1)
+                # Count number of resources in the list
+                players_full['Resource List Count'] = players_full['Current Resources'].apply(lambda x: len([res for res in x.split(",") if res.strip() != '']))
+                incorrect_players = []
+                for _, row in players_full.iterrows():
+                    if row['Resource List Count'] == 12:
+                        # Build a list of resources from the current resource string
+                        res_list = [res.strip() for res in row['Current Resources'].split(",")]
+                        sorted_res = sorted(res_list)
+                        if sorted_res != sorted_peacetime and sorted_res != sorted_wartime:
+                            # Determine differences for both valid sets and choose the one with fewer changes
+                            set_res = set(res_list)
+                            set_peace = set(peacetime_resources)
+                            set_war = set(wartime_resources)
+                            diff_peace = set_res.symmetric_difference(set_peace)
+                            diff_war = set_res.symmetric_difference(set_war)
+                            if len(diff_peace) <= len(diff_war):
+                                chosen_valid = peacetime_resources
+                            else:
+                                chosen_valid = wartime_resources
+                            # Compute what to remove and what to add
+                            to_remove = list(set_res - set(chosen_valid))
+                            to_add = list(set(chosen_valid) - set_res)
+                            change_str = f"Remove: {to_remove} | Add: {to_add}"
+                            incorrect_players.append({
+                                'Nation ID': row.get('Nation ID', ''),
+                                'Ruler Name': row.get('Ruler Name', ''),
+                                'Nation Name': row.get('Nation Name', ''),
+                                'Team': row.get('Team', ''),
+                                'Current Resources': row['Current Resources'],
+                                'Resources to Change': change_str
+                            })
+                if incorrect_players:
+                    st.markdown("**Players with Incorrect Resource List:**")
+                    st.dataframe(pd.DataFrame(incorrect_players), use_container_width=True)
+                else:
+                    st.success("No players with incorrect resource lists found.")
+
+                # -----------------------
                 # DOWNLOAD TRADE CIRCLES CSV
                 # -----------------------
                 trade_circle_entries = []
@@ -306,40 +352,6 @@ def main():
                     st.download_button("Download Trade Circles CSV", csv_trade_circles, file_name="trade_circles.csv", mime="text/csv")
                 else:
                     st.info("No trade circles data available for download.")
-
-                # -----------------------
-                # RESOURCE LIST VALIDATION SECTION
-                # -----------------------
-                st.subheader("Resource List Validation for Fully Allocated Players")
-                # Identify players with no empty resource slots (fully allocated)
-                players_filled = df_to_use[~mask_empty].copy()
-                players_filled['Current Resources'] = players_filled.apply(lambda row: get_current_resources(row, resource_cols), axis=1)
-
-                def validate_resources(resource_str):
-                    # Get list of resources from the comma-separated string and sort them
-                    resources_list = sorted([r.strip() for r in resource_str.split(",") if r.strip()])
-                    # Check if the list exactly matches either the peacetime or wartime sorted list
-                    if resources_list == sorted_peacetime or resources_list == sorted_wartime:
-                        return True
-                    else:
-                        return False
-
-                players_filled['Resources Valid'] = players_filled['Current Resources'].apply(validate_resources)
-                players_filled['Validation Status'] = players_filled['Resources Valid'].apply(lambda x: "Valid" if x else "Invalid")
-
-                # Dynamically build the display columns list by checking for each column's existence.
-                potential_cols = ['Nation ID', 'Ruler Name', 'Nation Name', 'Team', 'Current Resources', 'Activity', 'Days Old', 'Validation Status']
-                display_cols_filled = [col for col in potential_cols if col in players_filled.columns]
-
-                st.markdown("**Players with full resource lists (no empty slots):**")
-                if not players_filled.empty:
-                    # Use pandas styling to highlight rows with Invalid resource lists
-                    def highlight_invalid(row):
-                        return ['background-color: lightcoral' if row.get('Validation Status') == "Invalid" else '' for _ in row]
-                    styled_df = players_filled[display_cols_filled].style.apply(highlight_invalid, axis=1)
-                    st.dataframe(styled_df, use_container_width=True)
-                else:
-                    st.info("No players with full resource lists found.")
     else:
         st.info("Please enter the correct password to access the functionality.")
 
