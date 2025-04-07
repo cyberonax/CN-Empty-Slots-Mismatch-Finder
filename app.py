@@ -338,9 +338,9 @@ def main():
                     players_full['Created'] = pd.to_datetime(players_full['Created'], format=date_format, errors='coerce')
                     players_full['Days Old'] = (current_date - players_full['Created']).dt.days
                     # Filter out inactive players and Alliance Pending just as above
-                    players_full = players_full[~players_full['Activity'].isin(["Active Three Weeks Ago", "Active More Than Three Weeks Ago"])]
-                    if "Alliance Status" in players_full.columns:
-                        players_full = players_full[players_full["Alliance Status"] != "Pending"]
+                    #players_full = players_full[~players_full['Activity'].isin(["Active Three Weeks Ago", "Active More Than Three Weeks Ago"])]
+                    #if "Alliance Status" in players_full.columns:
+                    #    players_full = players_full[players_full["Alliance Status"] != "Pending"]
 
                     st.dataframe(players_full[display_cols].reset_index(drop=True), use_container_width=True)
                 
