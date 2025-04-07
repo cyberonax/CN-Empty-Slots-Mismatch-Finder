@@ -553,9 +553,9 @@ def main():
 
                     **2. Notify Affected Players:**
                     - For each player with a peacetime mismatch, send a message:
-                      - *"To The Ruler: [Ruler Name], you currently have mismatched Trade Circle resource(s) [list Extra Resources] which must be exchanged for the missing resource(s) [list Missing Peacetime Resources] to meet peacetime trade requirements. If more than two resources are listed, kindly coordinate with your trade partners to make the needed adjustments. -Lord of Growth."*
+                      - *"To The Ruler: [Ruler Name], your Trade Circle currently has mismatched/duplicate resource(s) [list Extra Resources] which must be exchanged for the missing resource(s) [list Missing Peacetime Resources] to meet peacetime trade requirements. Please can you either change your resources or get in contact with your trade partners to coordinate adjustments to your agreements. Peacetime resources must be: Aluminum, Cattle, Fish, Iron, Lumber, Marble, Pigs, Spices, Sugar, Uranium, Water, Wheat. -Lord of Growth."*
                     - For each player with a wartime mismatch, send a similar message:
-                      - *"To The Ruler: [Ruler Name], you currently have mismatched Trade Circle resource(s) [list Extra Resources] which must be exchanged for the missing resource(s) [list Missing Wartime Resources] to meet wartime trade requirements. If more than two resources are listed, kindly coordinate with your trade partners to make the needed adjustments. -Lord of Growth."*
+                      - *"To The Ruler: [Ruler Name], your Trade Circle currently has mismatched/duplicate resource(s) [list Extra Resources] which must be exchanged for the missing resource(s) [list Missing Wartime Resources] to meet wartime trade requirements. Please can you either change your resources or get in contact with your trade partners to coordinate adjustments to your agreements. Wartime resources must be: Aluminum, Coal, Fish, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, and Uranium. -Lord of Growth."*
 
                     **3. Reconfigure Incomplete Trade Circles:**
                     - Review the **Players with Empty Trade Slots** report.
@@ -615,10 +615,13 @@ def main():
                                 else:
                                     resources_to_change = extra
                                 msg = (
-                                    f'To The Ruler: {row["Ruler Name"]}, you currently have mismatched Trade Circle resource(s) '
+                                    f'To The Ruler: {row["Ruler Name"]}, your Trade Circle currently has mismatched/duplicate resource(s) '
                                     f'{resources_to_change} which must be exchanged for any of the missing resource(s) '
                                     f'{row["Missing Peacetime Resources"]} to meet peacetime trade requirements. '
-                                    f'If more than two resources are listed, kindly coordinate with your trade partners to make the needed adjustments. -Lord of Growth.'
+                                    f'Please can you either change your resources or get in contact with '
+                                    f'your trade partners to coordinate adjustments to your agreements. '
+                                    f'Peacetime resources must be: Aluminum, Cattle, Fish, Iron, Lumber, Marble, Pigs, '
+                                    f'Spices, Sugar, Uranium, Water, Wheat. -Lord of Growth.'
                                 )
                                 messages.append({"Message Type": "Peacetime Resource Mismatch", "Message": msg})
                         # Wartime mismatch messages:
@@ -634,10 +637,13 @@ def main():
                                 else:
                                     resources_to_change = extra
                                 msg = (
-                                    f'To The Ruler: {row["Ruler Name"]}, you currently have mismatched Trade Circle resource(s) '
+                                    f'To The Ruler: {row["Ruler Name"]}, your Trade Circle currently has mismatched/duplicate resource(s) '
                                     f'{resources_to_change} which must be exchanged for any of the missing resource(s) '
                                     f'{row["Missing Wartime Resources"]} to meet wartime trade requirements. '
-                                    f'If more than two resources are listed, kindly coordinate with your trade partners to make the needed adjustments. -Lord of Growth.'
+                                    f'Please can you either change your resources or get in contact with '
+                                    f'your trade partners to coordinate adjustments to your agreements. '
+                                    f'Wartime resources must be: Aluminum, Coal, Fish, Gold, Iron, Lead, Lumber, '
+                                    f'Marble, Oil, Pigs, Rubber, and Uranium. -Lord of Growth.'
                                 )
                                 messages.append({"Message Type": "Wartime Resource Mismatch", "Message": msg})
 
