@@ -462,31 +462,37 @@ def main():
                         st.success("All players have been grouped into trade circles.")
 
                 # -----------------------
-                # PREPARE DATA FOR CSV DOWNLOAD
+                # PREPARE DATA FOR EXCEL DOWNLOAD WITH SEPARATE WORKSHEETS
                 # -----------------------
-                all_entries = []
+                # Function to add Nation Drill URL column
+                def add_nation_drill_url(df):
+                    df = df.copy()
+                    if 'Nation ID' in df.columns:
+                        df['Nation Drill URL'] = "https://www.cybernations.net/nation_drill_display.asp?Nation_ID=" + df['Nation ID'].astype(str)
+                    return df
 
+                sheets = {}
                 # Empty slots data
                 empty_slots_cols = ['Nation ID', 'Ruler Name', 'Nation Name', 'Team', 'Current Resources', 'Current Resource 1+2', 'Empty Slots Count', 'Activity', 'Days Old']
                 empty_slots_df = players_empty[empty_slots_cols].copy()
                 empty_slots_df['Category'] = 'Empty Slots'
-                all_entries.append(empty_slots_df)
+                sheets["Empty Slots"] = add_nation_drill_url(empty_slots_df)
 
                 # Complete trade circles data
                 complete_slots_df = players_full[empty_slots_cols].copy()
                 complete_slots_df['Category'] = 'Complete Trade Circle'
-                all_entries.append(complete_slots_df)
+                sheets["Complete Trade Circle"] = add_nation_drill_url(complete_slots_df)
 
                 # Mismatched resources data - peacetime
                 if not peacetime_df.empty:
                     peacetime_df_copy = peacetime_df.copy()
                     peacetime_df_copy['Category'] = 'Peacetime Resource Mismatch'
-                    all_entries.append(peacetime_df_copy)
+                    sheets["Peacetime Mismatch"] = add_nation_drill_url(peacetime_df_copy)
                 # Mismatched resources data - wartime
                 if not wartime_df.empty:
                     wartime_df_copy = wartime_df.copy()
                     wartime_df_copy['Category'] = 'Wartime Resource Mismatch'
-                    all_entries.append(wartime_df_copy)
+                    sheets["Wartime Mismatch"] = add_nation_drill_url(wartime_df_copy)
 
                 # Recommended trade circles data
                 trade_circle_entries = []
@@ -506,25 +512,29 @@ def main():
                                     "Current Resource 1+2": get_resource_1_2(player),
                                     "Activity": player.get('Activity', ''),
                                     "Days Old": player.get('Days Old', ''),
-                                    "Assigned Resources": ", ".join(player.get('Assigned Resources', [])),
-                                    "Nation Drill URL": "https://www.cybernations.net/nation_drill_display.asp?Nation_ID=" + str(player.get('Nation ID', ''))
+                                    "Assigned Resources": ", ".join(player.get('Assigned Resources', []))
                                 })
                 if trade_circle_entries:
                     trade_circle_df = pd.DataFrame(trade_circle_entries)
-                    all_entries.append(trade_circle_df)
+                    sheets["Trade Circles"] = add_nation_drill_url(trade_circle_df)
 
-                if all_entries:
-                    combined_df = pd.concat(all_entries, ignore_index=True)
-                    csv_all_data = combined_df.to_csv(index=False)
+                # Write each DataFrame to a separate worksheet in an Excel file
+                if sheets:
+                    output = io.BytesIO()
+                    with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
+                        for sheet_name, df_sheet in sheets.items():
+                            df_sheet.to_excel(writer, sheet_name=sheet_name, index=False)
+                    output.seek(0)
+                    excel_data = output.read()
                 else:
-                    csv_all_data = ""
+                    excel_data = None
 
             # -----------------------
-            # DOWNLOAD ALL DATA CSV (positioned at the bottom of the page)
+            # DOWNLOAD ALL DATA EXCEL (positioned at the bottom of the page)
             # -----------------------
-            st.markdown("### Download All Processed Data CSV")
-            if csv_all_data:
-                st.download_button("Download Full Trade Analysis CSV", csv_all_data, file_name="full_trade_analysis.csv", mime="text/csv")
+            st.markdown("### Download All Processed Data Excel")
+            if excel_data:
+                st.download_button("Download Full Trade Analysis Excel", excel_data, file_name="full_trade_analysis.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
             else:
                 st.info("No data available for download.")
     else:
