@@ -333,11 +333,16 @@ def main():
                         'Extra Resources': ", ".join(sorted(extra_war)) if extra_war else "None"
                     })
 
+                # Filter out rows where both mismatch columns are "None"
+                df_peace = pd.DataFrame(peacetime_mismatch)
+                df_peace = df_peace[(df_peace['Missing Peacetime Resources'] != "None") | (df_peace['Extra Resources'] != "None")]
                 st.markdown("**Peacetime Resource Mismatches:**")
-                st.dataframe(pd.DataFrame(peacetime_mismatch), use_container_width=True)
+                st.dataframe(df_peace, use_container_width=True)
 
+                df_war = pd.DataFrame(wartime_mismatch)
+                df_war = df_war[(df_war['Missing Wartime Resources'] != "None") | (df_war['Extra Resources'] != "None")]
                 st.markdown("**Wartime Resource Mismatches:**")
-                st.dataframe(pd.DataFrame(wartime_mismatch), use_container_width=True)
+                st.dataframe(df_war, use_container_width=True)
 
                 # Sort players by Nation ID (or another criterion) from the empty slots list
                 players_empty_sorted = players_empty.sort_values('Nation ID')
