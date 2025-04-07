@@ -85,7 +85,7 @@ def form_trade_circles(players, sorted_resources, circle_size=TRADE_CIRCLE_SIZE)
         trade_circles.append(group)
     return trade_circles
 
-def display_trade_circle_df(circle, condition, team_number):
+def display_trade_circle_df(circle, condition):
     """Display a trade circle in a Streamlit dataframe."""
     circle_data = []
     for player in circle:
@@ -93,7 +93,7 @@ def display_trade_circle_df(circle, condition, team_number):
             'Nation ID': player.get('Nation ID', ''),
             'Ruler Name': player.get('Ruler Name', ''),
             'Nation Name': player.get('Nation Name', ''),
-            'Team': f"Team {team_number}",
+            'Team': player.get('Team', ''),
             'Current Resources': player.get('Current Resources', ''),
             'Activity': player.get('Activity', ''),
             'Days Old': player.get('Days Old', ''),
@@ -222,7 +222,7 @@ def main():
                     players_empty = players_empty[players_empty["Alliance Status"] != "Pending"]
 
                 # Display summary of players with empty trade slots and active recently
-                display_cols = ['Nation ID', 'Ruler Name', 'Nation Name', 'Current Resources', 'Empty Slots Count', 'Activity', 'Days Old']
+                display_cols = ['Nation ID', 'Ruler Name', 'Nation Name', 'Team', 'Current Resources', 'Empty Slots Count', 'Activity', 'Days Old']
                 st.markdown("**Players with empty trade slots (active recently):**")
                 st.dataframe(players_empty[display_cols].reset_index(drop=True), use_container_width=True)
 
@@ -247,7 +247,7 @@ def main():
                     st.markdown(f"**Recommended Peacetime Trade Circles:**")
                     for idx, circle in enumerate(trade_circles_peace, start=1):
                         st.markdown(f"--- **Peacetime Trade Circle #{idx}** ---")
-                        display_trade_circle_df(circle, "Peacetime", idx)
+                        display_trade_circle_df(circle, "Peacetime")
                 else:
                     st.info("No full Peacetime trade circles could be formed.")
 
@@ -256,7 +256,7 @@ def main():
                     st.markdown(f"**Recommended Wartime Trade Circles:**")
                     for idx, circle in enumerate(trade_circles_war, start=1):
                         st.markdown(f"--- **Wartime Trade Circle #{idx}** ---")
-                        display_trade_circle_df(circle, "Wartime", idx)
+                        display_trade_circle_df(circle, "Wartime")
                 else:
                     st.info("No full Wartime trade circles could be formed.")
 
@@ -268,6 +268,7 @@ def main():
                             'Nation ID': player.get('Nation ID', ''),
                             'Ruler Name': player.get('Ruler Name', ''),
                             'Nation Name': player.get('Nation Name', ''),
+                            'Team': player.get('Team', ''),
                             'Current Resources': player.get('Current Resources', ''),
                             'Activity': player.get('Activity', ''),
                             'Days Old': player.get('Days Old', '')
@@ -292,7 +293,7 @@ def main():
                                     "Nation ID": player.get('Nation ID', ''),
                                     "Ruler Name": player.get('Ruler Name', ''),
                                     "Nation Name": player.get('Nation Name', ''),
-                                    "Team": f"Team {idx}",
+                                    "Team": player.get('Team', ''),
                                     "Current Resources": player.get('Current Resources', ''),
                                     "Activity": player.get('Activity', ''),
                                     "Days Old": player.get('Days Old', ''),
