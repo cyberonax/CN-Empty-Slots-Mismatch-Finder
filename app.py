@@ -521,7 +521,8 @@ def main():
                 # Write each DataFrame to a separate worksheet in an Excel file
                 if sheets:
                     output = io.BytesIO()
-                    with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
+                    # Using openpyxl engine instead of xlsxwriter
+                    with pd.ExcelWriter(output, engine='openpyxl') as writer:
                         for sheet_name, df_sheet in sheets.items():
                             df_sheet.to_excel(writer, sheet_name=sheet_name, index=False)
                     output.seek(0)
