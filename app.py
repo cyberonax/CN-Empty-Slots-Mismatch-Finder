@@ -589,7 +589,7 @@ def main():
                     # Use the improved formation logic:
                     trade_circles_peace, leftover_peace = form_trade_circles(players_list_peace, sorted_peacetime)
                     trade_circles_war, leftover_war = form_trade_circles(players_list_war, sorted_wartime)
-
+                
                     # Display Peacetime Trade Circles
                     if trade_circles_peace:
                         st.markdown("**Recommended Peacetime Trade Circles:**")
@@ -598,7 +598,7 @@ def main():
                             display_trade_circle_df(circle, "Peacetime")
                     else:
                         st.info("No full Peacetime trade circles could be formed.")
-
+                
                     # Display Wartime Trade Circles
                     if trade_circles_war:
                         st.markdown("**Recommended Wartime Trade Circles:**")
@@ -607,12 +607,15 @@ def main():
                             display_trade_circle_df(circle, "Wartime")
                     else:
                         st.info("No full Wartime trade circles could be formed.")
-
+                
                     # Display leftover players (if any) from both approaches
-                    leftover_players = leftover_peace + leftover_war
-                    if leftover_players:
+                    # Combine leftovers from both formations and remove duplicates based on Nation ID.
+                    combined_leftovers = leftover_peace + leftover_war
+                    unique_leftovers = {player.get('Nation ID'): player for player in combined_leftovers}.values()
+                    
+                    if unique_leftovers:
                         leftover_data = []
-                        for player in leftover_players:
+                        for player in unique_leftovers:
                             leftover_data.append({
                                 'Nation ID': player.get('Nation ID', ''),
                                 'Ruler Name': player.get('Ruler Name', ''),
