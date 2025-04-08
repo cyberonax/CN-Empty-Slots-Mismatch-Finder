@@ -5,7 +5,7 @@ import zipfile
 import io
 import re
 import copy
-from datetime import datetime
+from datetime import datetime, timedelta
 from collections import Counter  # Added for duplicate resource counting
 import textwrap  # For dedenting multi-line strings
 
@@ -215,25 +215,36 @@ def main():
     # Only display the download functionality if the password is verified.
     if st.session_state.password_verified:
         if st.button("Download and Display Nation Statistics"):
-            with st.spinner("Constructing download link and retrieving data..."):
-                # Construct the URL based on the current date.
+            with st.spinner("Constructing download links and retrieving data..."):
                 today = datetime.now()
-                # Format: MonthDayYear (e.g., April 7, 2025 -> "472025")
-                date_str = f"{today.month}{today.day}{today.year}"
                 base_url = "https://www.cybernations.net/assets/CyberNations_SE_Nation_Stats_"
-                # Construct two potential links
-                url1 = base_url + date_str + "510001.zip"
-                url2 = base_url + date_str + "510002.zip"
-                st.write(f"Attempting to download from: {url1}")
-                df = download_and_extract_zip(url1)
-                if df is None:
-                    st.write(f"Trying alternative link: {url2}")
-                    df = download_and_extract_zip(url2)
+                
+                # Create a list of dates to try: current day, previous day, and next day.
+                dates_to_try = [today, today - timedelta(days=1), today + timedelta(days=1)]
+                df = None  # to hold the DataFrame if a download succeeds
+                
+                # Iterate through the dates and try both URL variants
+                for dt in dates_to_try:
+                    date_str = f"{dt.month}{dt.day}{dt.year}"
+                    url1 = base_url + date_str + "510001.zip"
+                    url2 = base_url + date_str + "510002.zip"
+                    
+                    st.write(f"Attempting to download from: {url1}")
+                    df = download_and_extract_zip(url1)
+                    if df is None:
+                        st.write(f"Trying alternative link: {url2}")
+                        df = download_and_extract_zip(url2)
+                    
+                    # If a valid DataFrame is found, break out of the loop.
+                    if df is not None:
+                        st.success(f"Data loaded successfully from a file dated with {date_str}!")
+                        break
+        
                 if df is not None:
-                    st.success("Data loaded successfully!")
                     st.session_state.df = df
                 else:
-                    st.error("Failed to load data from both constructed URLs.")
+                    st.error("Failed to load data from any of the constructed URLs.")
+
 
         # Proceed if data is loaded
         if "df" in st.session_state and st.session_state.df is not None:
