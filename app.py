@@ -67,19 +67,18 @@ def count_empty_slots(row, resource_cols):
 # -----------------------
 # IMPROVED TRADE CIRCLE FORMATION LOGIC
 # -----------------------
-def form_trade_circles(players, sorted_resources, circle_size=TRADE_CIRCLE_SIZE):
+def form_trade_circles(players, recommended_resources, circle_size=TRADE_CIRCLE_SIZE):
     """
     Incremental Trade Circle Formation (improved):
 
     - Preserves previously established trade circles if a 'Trade Circle ID' is present.
     - Merges partial circles with unassigned players to fill empty slots.
-    - Uses a greedy matching to form new circles from remaining players.
-    - **New Matching Logic:** First attempt to group players who already have a valid "Current Resource 1+2"
-      pair so that the combined six pairs exactly complete the recommended resources list.
-      In this case, the players’ 'Assigned Resources' remains None.
-    - If no feasible combinations are possible, then default to forming the rest of the new 
-      Trade Circle list in order of Days Old (oldest first).
-    - Dynamically assigns resource pairs (with error checking) if fallback grouping is used.
+    - First attempts to form circles based solely on players' existing "Current Resource 1+2" values.
+      For a valid circle, the 6 players’ resource pairs (each exactly 2 resources) must be disjoint and,
+      when combined, exactly equal the recommended resource list.
+      In such a case, Assigned Resources remains None.
+    - If no feasible combination exists from the players with valid resource pairs,
+      then the remaining players are grouped in descending order of Days Old and assigned resources from the recommended list.
     
     Returns a tuple: (complete_trade_circles, leftover_players)
     """
@@ -108,98 +107,103 @@ def form_trade_circles(players, sorted_resources, circle_size=TRADE_CIRCLE_SIZE)
             sorted_ids = sorted([str(player.get('Nation ID','')) for player in members])
             new_tid = ".".join(sorted_ids)
             for j, player in enumerate(members):
-                # Dynamically assign resources, but only if sufficient resources are available.
-                player['Assigned Resources'] = sorted_resources[2*j:2*j+2] if len(sorted_resources) >= 2*(j+1) else []
+                # For preserved circles, do not reassign resources.
+                # They keep their existing Assigned Resources.
                 player['Trade Circle ID'] = new_tid
             # Update dictionary with new circle id (if changed)
             if new_tid != tid:
                 circles[new_tid] = circles.pop(tid)
     
     # --- Step 3: Form new circles from remaining unassigned players ---
-    # First, try to form circles using matching based solely on the players' existing "Current Resource 1+2".
-    # The idea is that the 6 players’ combined two-resource pairs must exactly complete the recommended resource list.
-    from collections import Counter
-    target_counter = Counter(sorted_resources)  # each resource should appear exactly once
-    # Prepare candidate list: only players with a valid "Current Resource 1+2" field are considered.
-    candidate_players = []
-    for player in unassigned:
-        pair_str = player.get('Current Resource 1+2', '')
-        if pair_str:
-            parts = [p.strip() for p in pair_str.split(",") if p.strip()]
-            if len(parts) == 2:
-                candidate_players.append((player, Counter(parts)))
-    
-    # Backtracking function to try to build a valid circle.
-    def backtrack(start, current_group, current_counter, indices_used):
-        if len(current_group) == circle_size:
-            if current_counter == target_counter:
-                return current_group
-            return None
-        for i in range(start, len(candidate_players)):
-            if i in indices_used:
-                continue
-            player, player_counter = candidate_players[i]
-            # Check whether adding this player's pair would exceed one occurrence per resource.
-            can_add = True
-            new_counter = current_counter.copy()
-            for res, cnt in player_counter.items():
-                if new_counter[res] + cnt > target_counter[res]:
-                    can_add = False
-                    break
-                new_counter[res] += cnt
-            if not can_add:
-                continue
-            indices_used.add(i)
-            current_group.append(i)
-            res_group = backtrack(i + 1, current_group, new_counter, indices_used)
-            if res_group is not None:
-                return current_group
-            # Backtrack
-            current_group.pop()
-            indices_used.remove(i)
-        return None
-
-    # Try to extract as many valid groups as possible from the candidate list.
-    valid_groups = []
-    while len(candidate_players) >= circle_size:
-        res = backtrack(0, [], Counter(), set())
-        if res is not None:
-            # Build the group of players from the indices returned.
-            group = [candidate_players[i][0] for i in res]
-            valid_groups.append(group)
-            # Remove these players from candidate_players and also from unassigned.
-            indices_to_remove = sorted(res, reverse=True)
-            for i in indices_to_remove:
-                candidate_players.pop(i)
-            for player in group:
-                if player in unassigned:
-                    unassigned.remove(player)
-        else:
-            break
-
-    # For each valid group, assign a new Trade Circle and leave 'Assigned Resources' as None.
-    for group in valid_groups:
-        sorted_ids = sorted([str(player.get('Nation ID','')) for player in group])
-        new_tid = ".".join(sorted_ids)
-        for player in group:
-            player['Assigned Resources'] = None  # Keep existing resources; no new assignment needed.
-            player['Trade Circle ID'] = new_tid
-        circles[new_tid] = group
-
-    # Fallback: For any remaining unassigned players, form circles in order of Days Old (oldest first).
     new_circles = []
     if unassigned:
-        # For fallback grouping, sort unassigned by Days Old (oldest first)
-        unassigned = sorted(unassigned, key=lambda p: p.get('Days Old', 0), reverse=True)
-        current_circle = []
+        # First, try to form circles using players' existing "Current Resource 1+2" values.
+        # We require that each player's "Current Resource 1+2" parses to exactly 2 resources,
+        # and that these resources (when combined with others in the circle) exactly match the recommended list.
+        recommended_set = set(recommended_resources)
+        
+        # Build a pool of players with valid current resource pairs (both non-empty and exactly 2 resources)
+        valid_pool = []
+        invalid_pool = []
         for player in unassigned:
+            rpair_str = player.get('Current Resource 1+2', '')
+            parts = [res.strip() for res in rpair_str.split(",") if res.strip()]
+            if len(parts) == 2:
+                # Only include if the pair is a subset of the recommended set.
+                if set(parts).issubset(recommended_set):
+                    # Also add the parsed resource pair to the player dict for easier checking later.
+                    player['_parsed_resource_pair'] = set(parts)
+                    valid_pool.append(player)
+                else:
+                    invalid_pool.append(player)
+            else:
+                invalid_pool.append(player)
+        
+        # Use backtracking to try to form circles from valid_pool.
+        def find_exact_circle(pool, current_list, start, current_union):
+            if len(current_list) == circle_size:
+                if current_union == recommended_set:
+                    return list(current_list)
+                return None
+            for i in range(start, len(pool)):
+                player = pool[i]
+                pair = player['_parsed_resource_pair']
+                # They must be disjoint with the current union.
+                if current_union & pair:
+                    continue
+                new_union = current_union | pair
+                # If new_union already goes outside recommended_set, skip.
+                if not new_union.issubset(recommended_set):
+                    continue
+                current_list.append(player)
+                result = find_exact_circle(pool, current_list, i + 1, new_union)
+                if result:
+                    return result
+                current_list.pop()
+            return None
+
+        matching_circles = []
+        remaining_valid_pool = valid_pool.copy()
+        while True:
+            circle = find_exact_circle(remaining_valid_pool, [], 0, set())
+            if circle:
+                # For circles formed using the existing pairs, do not assign new resources.
+                sorted_ids = sorted([str(player.get('Nation ID', '')) for player in circle])
+                new_tid = ".".join(sorted_ids)
+                for player in circle:
+                    player['Trade Circle ID'] = new_tid
+                    player['Assigned Resources'] = None
+                matching_circles.append(circle)
+                # Remove the players in this circle from the valid pool.
+                for player in circle:
+                    remaining_valid_pool.remove(player)
+            else:
+                break
+        
+        # Remove the players used in matching circles from unassigned.
+        used_in_matching = set()
+        for circle in matching_circles:
+            for player in circle:
+                used_in_matching.add(player.get('Nation ID'))
+        remaining_unassigned = []
+        for player in unassigned:
+            # Remove temporary helper if present.
+            if '_parsed_resource_pair' in player:
+                del player['_parsed_resource_pair']
+            if player.get('Nation ID') not in used_in_matching:
+                remaining_unassigned.append(player)
+        
+        # Now form default circles from remaining players (including those that were not eligible for matching)
+        # Sorted by Days Old (oldest first).
+        remaining_unassigned = sorted(remaining_unassigned, key=lambda p: p.get('Days Old', 0), reverse=True)
+        default_circles = []
+        current_circle = []
+        for player in remaining_unassigned:
             current_circle.append(player)
             if len(current_circle) == circle_size:
-                new_circles.append(current_circle)
+                default_circles.append(current_circle)
                 current_circle = []
-        # If there is a partially complete group remaining,
-        # try to merge it into an existing incomplete circle; if none exists, keep them as leftovers.
-        leftovers = []
+        # If there is a partially complete group remaining, try to merge it into an existing incomplete circle.
         if current_circle:
             merged = False
             for tid, members in circles.items():
@@ -208,19 +212,30 @@ def form_trade_circles(players, sorted_resources, circle_size=TRADE_CIRCLE_SIZE)
                     merged = True
                     break
             if not merged:
+                # Keep as leftovers if no merge is possible.
                 leftovers = current_circle
+            else:
+                leftovers = []
         else:
             leftovers = []
-        # Process the fallback new circles
-        for circle in new_circles:
+        
+        # For each default circle, assign new resources based on the recommended list.
+        for circle in default_circles:
             sorted_ids = sorted([str(player.get('Nation ID','')) for player in circle])
             new_tid = ".".join(sorted_ids)
             for j, player in enumerate(circle):
-                # Fallback: assign new resource pairs dynamically.
-                player['Assigned Resources'] = sorted_resources[2*j:2*j+2] if len(sorted_resources) >= 2*(j+1) else []
+                player['Assigned Resources'] = recommended_resources[2*j:2*j+2] if len(recommended_resources) >= 2*(j+1) else []
                 player['Trade Circle ID'] = new_tid
             circles[new_tid] = circle
-    
+        
+        # Also add the matching circles to the circles dictionary.
+        for circle in matching_circles:
+            tid = circle[0].get('Trade Circle ID')
+            circles[tid] = circle
+        
+        # Combine leftovers from default formation with those already in circles.
+        leftover = leftovers
+
     # --- Step 4: Compile complete circles and leftovers ---
     complete_circles = []
     incomplete_players = []
@@ -241,7 +256,6 @@ def form_trade_circles(players, sorted_resources, circle_size=TRADE_CIRCLE_SIZE)
 
     return complete_circles, remainder
 
-
 def display_trade_circle_df(circle, condition):
     """Display a trade circle in a Streamlit dataframe."""
     circle_data = []
@@ -257,7 +271,7 @@ def display_trade_circle_df(circle, condition):
             'Current Resource 1+2': get_resource_1_2(player),
             'Activity': player.get('Activity', ''),
             'Days Old': player.get('Days Old', ''),
-            f'Assigned {condition} Resources': ", ".join(player.get('Assigned Resources', []))
+            f'Assigned {condition} Resources': ", ".join(player.get('Assigned Resources', [])) if player.get('Assigned Resources') else "None"
         })
     circle_df = pd.DataFrame(circle_data)
     st.dataframe(circle_df, use_container_width=True)
@@ -646,7 +660,7 @@ def main():
                                     "Current Resource 1+2": get_resource_1_2(player),
                                     "Activity": player.get('Activity', ''),
                                     "Days Old": player.get('Days Old', ''),
-                                    "Assigned Resources": ", ".join(player.get('Assigned Resources', []))
+                                    "Assigned Resources": ", ".join(player.get('Assigned Resources', [])) if player.get('Assigned Resources') else "None"
                                 })
                 if trade_circle_entries:
                     trade_circle_df = pd.DataFrame(trade_circle_entries)
@@ -824,7 +838,7 @@ def main():
                                 nation_names = [player.get('Ruler Name','') for player in circle]
                                 for player in circle:
                                     partners = [name for name in nation_names if name != player.get('Ruler Name','')]
-                                    msg = f'To The Ruler: {player.get("Ruler Name","")}, please can you join a Trade Circle with partners: {", ".join(partners)}. Your assigned resource pair is {", ".join(player.get("Assigned Resources", []))}. Confirm your participation immediately. -Lord of Growth.'
+                                    msg = f'To The Ruler: {player.get("Ruler Name","")}, please can you join a Trade Circle with partners: {", ".join(partners)}. Your assigned resource pair is {", ".join(player.get("Assigned Resources", [])) if player.get("Assigned Resources") else "None"}. Confirm your participation immediately. -Lord of Growth.'
                                     messages.append({"Message Type": f"{circle_type} Trade Circle", "Message": msg})
 
                         if trade_circles_peace:
