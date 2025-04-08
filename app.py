@@ -239,7 +239,8 @@ def main():
         st.session_state.password_verified = False
 
     if not st.session_state.password_verified:
-        password = st.text_input("Enter Password", type="password")
+        # Added key to preserve the value in session state
+        password = st.text_input("Enter Password", type="password", key="password_input")
         if password:
             if password == "secret":
                 st.session_state.password_verified = True
@@ -248,37 +249,38 @@ def main():
                 st.error("Incorrect password. Please try again.")
     
     # Only display the download functionality if the password is verified.
-    if st.button("Download and Display Nation Statistics"):
-        with st.spinner("Constructing download links and retrieving data..."):
-            today = datetime.now()
-            base_url = "https://www.cybernations.net/assets/CyberNations_SE_Nation_Stats_"
-            
-            # Create a list of dates to try: current day, previous day, and next day.
-            dates_to_try = [today, today - timedelta(days=1), today + timedelta(days=1)]
-            df = None  # to hold the DataFrame if a download succeeds
-            
-            # Iterate through the dates and try both URL variants
-            for dt in dates_to_try:
-                date_str = f"{dt.month}{dt.day}{dt.year}"
-                url1 = base_url + date_str + "510001.zip"
-                url2 = base_url + date_str + "510002.zip"
+    if st.session_state.password_verified:
+        # Added a key to the download button so that its state is preserved.
+        if st.button("Download and Display Nation Statistics", key="download_button"):
+            with st.spinner("Constructing download links and retrieving data..."):
+                today = datetime.now()
+                base_url = "https://www.cybernations.net/assets/CyberNations_SE_Nation_Stats_"
                 
-                st.write(f"Attempting to download from: {url1}")
-                df = download_and_extract_zip(url1)
-                if df is None:
-                    st.write(f"Trying alternative link: {url2}")
-                    df = download_and_extract_zip(url2)
+                # Create a list of dates to try: current day, previous day, and next day.
+                dates_to_try = [today, today - timedelta(days=1), today + timedelta(days=1)]
+                df = None  # to hold the DataFrame if a download succeeds
                 
-                # If a valid DataFrame is found, break out of the loop.
-                if df is not None:
-                    st.success(f"Data loaded successfully from a file dated with {date_str}!")
-                    break
-    
-            if df is not None:
-                st.session_state.df = df
-            else:
-                st.error("Failed to load data from any of the constructed URLs.")
+                # Iterate through the dates and try both URL variants
+                for dt in dates_to_try:
+                    date_str = f"{dt.month}{dt.day}{dt.year}"
+                    url1 = base_url + date_str + "510001.zip"
+                    url2 = base_url + date_str + "510002.zip"
+                    
+                    st.write(f"Attempting to download from: {url1}")
+                    df = download_and_extract_zip(url1)
+                    if df is None:
+                        st.write(f"Trying alternative link: {url2}")
+                        df = download_and_extract_zip(url2)
+                    
+                    # If a valid DataFrame is found, break out of the loop.
+                    if df is not None:
+                        st.success(f"Data loaded successfully from a file dated with {date_str}!")
+                        break
 
+                if df is not None:
+                    st.session_state.df = df
+                else:
+                    st.error("Failed to load data from any of the constructed URLs.")
 
         # Proceed if data is loaded
         if "df" in st.session_state and st.session_state.df is not None:
@@ -294,14 +296,11 @@ def main():
             # FILTERING UI SECTION
             # -----------------------
             with st.expander("Filter Data"):
-                if "df" in st.session_state and not st.session_state.df.empty:
-                    df = st.session_state.df
+                if not df.empty:
                     column_options = list(df.columns)
-                    # Set default index based on the presence of "Alliance" in the columns
                     default_index = column_options.index("Alliance") if "Alliance" in column_options else 0
-                    # Use a unique key to persist the selected column
-                    selected_column = st.selectbox("Select column to filter", column_options, index=default_index, key="selected_filter_column")
-                    # Use a unique key for the filter text input so that the value persists
+                    # Add keys to preserve filter selections.
+                    selected_column = st.selectbox("Select column to filter", column_options, index=default_index, key="filter_select")
                     search_text = st.text_input("Filter by text (separate words by comma)", value="Freehold of the Wolves", key="filter_text")
                             
                     if search_text:
@@ -319,11 +318,11 @@ def main():
                         st.session_state.filtered_df = filtered_df
                         csv_content = filtered_df.to_csv(index=False)
                         st.session_state.filtered_csv = csv_content
+                        st.download_button("Download Filtered CSV", csv_content, file_name="filtered_nation_stats.csv", mime="text/csv", key="download_csv")
                     else:
                         st.info("Enter text to filter the data.")
                 else:
                     st.warning("DataFrame is empty, nothing to filter.")
-
 
             # -----------------------
             # TRADE CIRCLE & RESOURCE PROCESSING (automatically triggered)
@@ -773,7 +772,7 @@ def main():
             # -----------------------
             st.markdown("### Download All Processed Data")
             if excel_data:
-                st.download_button("Download Summary Report", excel_data, file_name="full_summary_report.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+                st.download_button("Download Summary Report", excel_data, file_name="full_summary_report.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", key="download_report")
             else:
                 st.info("No data available for download.")
     else:
