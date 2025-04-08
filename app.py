@@ -614,24 +614,21 @@ def main():
 
                     # Display leftover players (if any) from both approaches
                     leftover_players = leftover_peace + leftover_war
-                    if leftover_players:
-                        leftover_data = []
-                        for player in leftover_players:
-                            leftover_data.append({
-                                'Nation ID': player.get('Nation ID', ''),
-                                'Ruler Name': player.get('Ruler Name', ''),
-                                'Nation Name': player.get('Nation Name', ''),
-                                'Team': player.get('Team', ''),
-                                'Current Resources': player.get('Current Resources', ''),
-                                'Current Resource 1+2': get_resource_1_2(player),
-                                'Activity': player.get('Activity', ''),
-                                'Days Old': player.get('Days Old', '')
-                            })
-                        st.markdown("**Players remaining without a full trade circle:**")
-                        st.dataframe(pd.DataFrame(leftover_data), use_container_width=True)
-                    else:
-                        st.success("All players have been grouped into trade circles.")
-
+                    leftover_data = []
+                    for player in leftover_players:
+                        leftover_data.append({
+                            'Nation ID': player.get('Nation ID', ''),
+                            'Ruler Name': player.get('Ruler Name', ''),
+                            'Nation Name': player.get('Nation Name', ''),
+                            'Team': player.get('Team', ''),
+                            'Current Resources': player.get('Current Resources', ''),
+                            'Current Resource 1+2': get_resource_1_2(player),
+                            'Activity': player.get('Activity', ''),
+                            'Days Old': player.get('Days Old', '')
+                        })
+                    st.markdown("**Players remaining without a full trade circle:**")
+                    st.dataframe(pd.DataFrame(leftover_data), use_container_width=True)
+                
                 # -----------------------
                 # PREPARE DATA FOR EXCEL DOWNLOAD WITH SEPARATE WORKSHEETS
                 # -----------------------
