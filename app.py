@@ -33,9 +33,6 @@ TRADE_CIRCLE_SIZE = 6  # 6 players per circle, each gets 2 resources
 # -----------------------
 # HELPER FUNCTIONS
 # -----------------------
-# -----------------------
-# HELPER FUNCTIONS
-# -----------------------
 def get_resource_1_2(row):
     """
     Return a string with Resource 1 and Resource 2 in the format "Resource 1, Resource 2".
