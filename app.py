@@ -64,21 +64,105 @@ def count_empty_slots(row, resource_cols):
     count = sum(1 for x in row[resource_cols] if pd.isnull(x) or str(x).strip() == '')
     return count // 2
 
+# -----------------------
+# IMPROVED TRADE CIRCLE FORMATION LOGIC
+# -----------------------
 def form_trade_circles(players, sorted_resources, circle_size=TRADE_CIRCLE_SIZE):
-    """Group players into full trade circles and assign resource pairs."""
-    trade_circles = []
-    full_groups = [players[i:i+circle_size] for i in range(0, len(players), circle_size) if len(players[i:i+circle_size]) == circle_size]
-    for group in full_groups:
-        # Compute the Trade Circle ID by concatenating Nation IDs with dots
-        trade_circle_id = ".".join(str(player.get('Nation ID', '')) for player in group)
-        for j, player in enumerate(group):
-            # Each player gets two resources from the sorted list.
-            assigned_resources = sorted_resources[2*j:2*j+2]
-            player['Assigned Resources'] = assigned_resources
-            # Add the Trade Circle ID to each player's record
-            player['Trade Circle ID'] = trade_circle_id
-        trade_circles.append(group)
-    return trade_circles
+    """
+    Incremental Trade Circle Formation (improved):
+    
+    - Preserves previously established trade circles if a 'Trade Circle ID' is present.
+    - Merges partial circles with unassigned players to fill empty slots.
+    - Uses a greedy matching to form new circles from remaining players.
+    - Dynamically assigns resource pairs (with error checking).
+    
+    Returns a tuple: (complete_trade_circles, leftover_players)
+    """
+    # Dictionaries to hold circles keyed by Trade Circle ID and a list for unassigned players.
+    circles = {}
+    unassigned = []
+    
+    # --- Step 1: Preserve existing circles (if any) ---
+    for player in players:
+        if player.get('Trade Circle ID'):
+            tid = player.get('Trade Circle ID')
+            circles.setdefault(tid, []).append(player)
+        else:
+            unassigned.append(player)
+    
+    # --- Step 2: Fill missing slots for partially complete circles ---
+    for tid, members in list(circles.items()):
+        if len(members) < circle_size:
+            needed = circle_size - len(members)
+            # Take as many as available from unassigned players.
+            to_add = unassigned[:needed]
+            if to_add:
+                members.extend(to_add)
+                unassigned = unassigned[needed:]
+            # Recalculate Trade Circle ID based on sorted Nation IDs so that the ID is consistent.
+            sorted_ids = sorted([str(player.get('Nation ID','')) for player in members])
+            new_tid = ".".join(sorted_ids)
+            for j, player in enumerate(members):
+                # Dynamically assign resources, but only if sufficient resources are available.
+                player['Assigned Resources'] = sorted_resources[2*j:2*j+2] if len(sorted_resources) >= 2*(j+1) else []
+                player['Trade Circle ID'] = new_tid
+            # Update dictionary with new circle id (if changed)
+            if new_tid != tid:
+                circles[new_tid] = circles.pop(tid)
+    
+    # --- Step 3: Form new circles from remaining unassigned players ---
+    new_circles = []
+    if unassigned:
+        # For better matching, sort unassigned by Empty Slots Count (players closer to complete circle first)
+        unassigned = sorted(unassigned, key=lambda p: p.get('Empty Slots Count', 0))
+        current_circle = []
+        for player in unassigned:
+            current_circle.append(player)
+            if len(current_circle) == circle_size:
+                new_circles.append(current_circle)
+                current_circle = []
+        # If there is a partially complete group remaining,
+        # try to merge it into an existing incomplete circle; if none exists, keep them as leftovers.
+        leftovers = []
+        if current_circle:
+            merged = False
+            for tid, members in circles.items():
+                if len(members) < circle_size:
+                    members.extend(current_circle)
+                    merged = True
+                    break
+            if not merged:
+                leftovers = current_circle
+        else:
+            leftovers = []
+        # Process the new circles
+        for circle in new_circles:
+            sorted_ids = sorted([str(player.get('Nation ID','')) for player in circle])
+            new_tid = ".".join(sorted_ids)
+            for j, player in enumerate(circle):
+                player['Assigned Resources'] = sorted_resources[2*j:2*j+2] if len(sorted_resources) >= 2*(j+1) else []
+                player['Trade Circle ID'] = new_tid
+            circles[new_tid] = circle
+    
+    # --- Step 4: Compile complete circles and leftovers ---
+    complete_circles = []
+    incomplete_players = []
+    for circle in circles.values():
+        if len(circle) == circle_size:
+            complete_circles.append(circle)
+        else:
+            incomplete_players.extend(circle)
+            
+    # If there are still enough leftover players among themselves to form a full circle, group them.
+    if incomplete_players and len(incomplete_players) >= circle_size:
+        extra_groups = [incomplete_players[i:i+circle_size] for i in range(0, len(incomplete_players), circle_size)
+                        if len(incomplete_players[i:i+circle_size]) == circle_size]
+        complete_circles.extend(extra_groups)
+        remainder = incomplete_players[len(extra_groups)*circle_size:]
+    else:
+        remainder = incomplete_players
+
+    return complete_circles, remainder
 
 def display_trade_circle_df(circle, condition):
     """Display a trade circle in a Streamlit dataframe."""
@@ -132,55 +216,6 @@ def download_and_extract_zip(url):
             except Exception as e:
                 st.error(f"Error reading the CSV file: {e}")
                 return None
-
-# -----------------------
-# TRADE CIRCLE PROCESSING FUNCTIONS
-# -----------------------
-def get_current_resources(row, resource_cols):
-    """Return a comma-separated string of non-blank resources sorted alphabetically."""
-    resources = sorted([str(x).strip() for x in row[resource_cols] if pd.notnull(x) and str(x).strip() != ''])
-    return ", ".join(resources)
-
-def count_empty_slots(row, resource_cols):
-    """Count blank resource cells and determine trade slots (each slot covers 2 resources)."""
-    count = sum(1 for x in row[resource_cols] if pd.isnull(x) or str(x).strip() == '')
-    return count // 2
-
-def form_trade_circles(players, sorted_resources, circle_size=TRADE_CIRCLE_SIZE):
-    """Group players into full trade circles and assign resource pairs."""
-    trade_circles = []
-    full_groups = [players[i:i+circle_size] for i in range(0, len(players), circle_size) if len(players[i:i+circle_size]) == circle_size]
-    for group in full_groups:
-        # Compute the Trade Circle ID by concatenating Nation IDs with dots
-        trade_circle_id = ".".join(str(player.get('Nation ID', '')) for player in group)
-        for j, player in enumerate(group):
-            # Each player gets two resources from the sorted list.
-            assigned_resources = sorted_resources[2*j:2*j+2]
-            player['Assigned Resources'] = assigned_resources
-            # Add the Trade Circle ID to each player's record
-            player['Trade Circle ID'] = trade_circle_id
-        trade_circles.append(group)
-    return trade_circles
-
-def display_trade_circle_df(circle, condition):
-    """Display a trade circle in a Streamlit dataframe."""
-    circle_data = []
-    for player in circle:
-        current_resources_str = player.get('Current Resources', '')
-        circle_data.append({
-            'Trade Circle ID': player.get('Trade Circle ID', ''),  # New column added here
-            'Nation ID': player.get('Nation ID', ''),
-            'Ruler Name': player.get('Ruler Name', ''),
-            'Nation Name': player.get('Nation Name', ''),
-            'Team': player.get('Team', ''),
-            'Current Resources': current_resources_str,
-            'Current Resource 1+2': get_resource_1_2(player),
-            'Activity': player.get('Activity', ''),
-            'Days Old': player.get('Days Old', ''),
-            f'Assigned {condition} Resources': ", ".join(player.get('Assigned Resources', []))
-        })
-    circle_df = pd.DataFrame(circle_data)
-    st.dataframe(circle_df, use_container_width=True)
 
 # -----------------------
 # MAIN APP
@@ -424,12 +459,10 @@ def main():
                     # -----------------------
                     players_list_peace = copy.deepcopy(players_list)
                     players_list_war = copy.deepcopy(players_list)
-                    trade_circles_peace = form_trade_circles(players_list_peace, sorted_peacetime)
-                    trade_circles_war = form_trade_circles(players_list_war, sorted_wartime)
-
-                    # Determine leftover players (those not in a full group)
-                    num_full_groups = len(players_list) // TRADE_CIRCLE_SIZE
-                    leftover_players = players_list[num_full_groups * TRADE_CIRCLE_SIZE:]
+                    
+                    # Use the improved formation logic:
+                    trade_circles_peace, leftover_peace = form_trade_circles(players_list_peace, sorted_peacetime)
+                    trade_circles_war, leftover_war = form_trade_circles(players_list_war, sorted_wartime)
 
                     # Display Peacetime Trade Circles
                     if trade_circles_peace:
@@ -449,7 +482,8 @@ def main():
                     else:
                         st.info("No full Wartime trade circles could be formed.")
 
-                    # Display leftover players (if any)
+                    # Display leftover players (if any) from both approaches
+                    leftover_players = leftover_peace + leftover_war
                     if leftover_players:
                         leftover_data = []
                         for player in leftover_players:
