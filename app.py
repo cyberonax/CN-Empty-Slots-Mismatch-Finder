@@ -33,34 +33,43 @@ TRADE_CIRCLE_SIZE = 6  # 6 players per circle, each gets 2 resources
 # -----------------------
 # HELPER FUNCTIONS
 # -----------------------
+# -----------------------
+# HELPER FUNCTIONS
+# -----------------------
 def get_resource_1_2(row):
     """
     Return a string with Resource 1 and Resource 2 in the format "Resource 1, Resource 2".
+    In the event of unrecognized characters, these are safely encoded to ASCII, dropping any problematic bytes.
     """
-    res1 = row.get("Resource 1")
-    res2 = row.get("Resource 2")
-    
-    # If both are non-null and non-empty, return them as a comma-separated string
-    if pd.notnull(res1) and str(res1).strip() and pd.notnull(res2) and str(res2).strip():
-        result = f"{str(res1).strip()}, {str(res2).strip()}"
+    def safe_str(val):
+        if pd.isnull(val):
+            return ""
+        # Convert value to string and force encoding to ASCII (ignoring unrecognized characters)
+        return str(val).strip().encode("ascii", errors="ignore").decode("ascii")
+
+    s1 = safe_str(row.get("Resource 1"))
+    s2 = safe_str(row.get("Resource 2"))
+    if s1 and s2:
+        return f"{s1}, {s2}"
     else:
-        # Fallback: parse from the "Current Resources" string
-        current = row.get("Current Resources", "")
-        # Ensure that 'current' is a string before splitting
-        if not isinstance(current, str):
-            current = str(current)
+        # Fallback: parse from the "Current Resources" column
+        current = safe_str(row.get("Current Resources", ""))
         resources = [r.strip() for r in current.split(",") if r.strip()]
         if len(resources) >= 2:
-            result = f"{resources[0]}, {resources[1]}"
+            return f"{resources[0]}, {resources[1]}"
         elif resources:
-            result = resources[0]
-        else:
-            result = ""
-    
-    # Safety check: if result is somehow list-like, convert it to a comma-separated string.
-    if isinstance(result, (list, tuple)):
-        return ", ".join(str(x) for x in result)
-    return result
+            return resources[0]
+        return ""
+
+def get_current_resources(row, resource_cols):
+    """Return a comma-separated string of non-blank resources sorted alphabetically."""
+    resources = sorted([str(x).strip() for x in row[resource_cols] if pd.notnull(x) and str(x).strip() != ''])
+    return ", ".join(resources)
+
+def count_empty_slots(row, resource_cols):
+    """Count blank resource cells and determine trade slots (each slot covers 2 resources)."""
+    count = sum(1 for x in row[resource_cols] if pd.isnull(x) or str(x).strip() == '')
+    return count // 2
 
 # -----------------------
 # IMPROVED TRADE CIRCLE FORMATION LOGIC
