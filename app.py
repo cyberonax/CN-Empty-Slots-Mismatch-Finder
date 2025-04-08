@@ -36,17 +36,21 @@ TRADE_CIRCLE_SIZE = 6  # 6 players per circle, each gets 2 resources
 def get_resource_1_2(row):
     """
     Return a string with Resource 1 and Resource 2 in the format "Resource 1, Resource 2".
-    This function now assumes that the CSV (whether original or filtered) has proper Resource 1 and Resource 2 columns.
-    It checks for non-null and non-empty values before using them.
+    In the event of unrecognized characters, these are safely encoded to ASCII, dropping any problematic bytes.
     """
-    res1 = row.get("Resource 1")
-    res2 = row.get("Resource 2")
-    # Use the resources only if they are non-null and non-empty after stripping.
-    if pd.notnull(res1) and str(res1).strip() and pd.notnull(res2) and str(res2).strip():
-        return f"{str(res1).strip()}, {str(res2).strip()}"
+    def safe_str(val):
+        if pd.isnull(val):
+            return ""
+        # Convert value to string and force encoding to ASCII (ignoring unrecognized characters)
+        return str(val).strip().encode("ascii", errors="ignore").decode("ascii")
+
+    s1 = safe_str(row.get("Resource 1"))
+    s2 = safe_str(row.get("Resource 2"))
+    if s1 and s2:
+        return f"{s1}, {s2}"
     else:
-        # Fallback: parse from the "Current Resources" string
-        current = row.get("Current Resources", "")
+        # Fallback: parse from the "Current Resources" column
+        current = safe_str(row.get("Current Resources", ""))
         resources = [r.strip() for r in current.split(",") if r.strip()]
         if len(resources) >= 2:
             return f"{resources[0]}, {resources[1]}"
@@ -64,21 +68,197 @@ def count_empty_slots(row, resource_cols):
     count = sum(1 for x in row[resource_cols] if pd.isnull(x) or str(x).strip() == '')
     return count // 2
 
-def form_trade_circles(players, sorted_resources, circle_size=TRADE_CIRCLE_SIZE):
-    """Group players into full trade circles and assign resource pairs."""
-    trade_circles = []
-    full_groups = [players[i:i+circle_size] for i in range(0, len(players), circle_size) if len(players[i:i+circle_size]) == circle_size]
-    for group in full_groups:
-        # Compute the Trade Circle ID by concatenating Nation IDs with dots
-        trade_circle_id = ".".join(str(player.get('Nation ID', '')) for player in group)
-        for j, player in enumerate(group):
-            # Each player gets two resources from the sorted list.
-            assigned_resources = sorted_resources[2*j:2*j+2]
-            player['Assigned Resources'] = assigned_resources
-            # Add the Trade Circle ID to each player's record
-            player['Trade Circle ID'] = trade_circle_id
-        trade_circles.append(group)
-    return trade_circles
+# -----------------------
+# IMPROVED TRADE CIRCLE FORMATION LOGIC
+# -----------------------
+def form_trade_circles(players, recommended_resources, circle_size=TRADE_CIRCLE_SIZE):
+    """
+    Incremental Trade Circle Formation (improved):
+
+    - Preserves previously established trade circles if a 'Trade Circle ID' is present.
+    - Merges partial circles with unassigned players to fill empty slots.
+    - First attempts to form circles based solely on players' existing "Current Resource 1+2" values.
+      For a valid circle, the 6 players’ resource pairs (each exactly 2 resources) must be disjoint and,
+      when combined, exactly equal the recommended resource list.
+      In such a case, Assigned Resources remains None.
+    - If no feasible combination exists from the players with valid resource pairs,
+      then the remaining players are grouped in descending order of Days Old and assigned resources from the recommended list.
+    
+    Returns a tuple: (complete_trade_circles, leftover_players)
+    """
+    # Dictionaries to hold circles keyed by Trade Circle ID and a list for unassigned players.
+    circles = {}
+    unassigned = []
+    
+    # --- Step 1: Preserve existing circles (if any) ---
+    for player in players:
+        if player.get('Trade Circle ID'):
+            tid = player.get('Trade Circle ID')
+            circles.setdefault(tid, []).append(player)
+        else:
+            unassigned.append(player)
+    
+    # --- Step 2: Fill missing slots for partially complete circles ---
+    for tid, members in list(circles.items()):
+        if len(members) < circle_size:
+            needed = circle_size - len(members)
+            # Take as many as available from unassigned players.
+            to_add = unassigned[:needed]
+            if to_add:
+                members.extend(to_add)
+                unassigned = unassigned[needed:]
+            # Recalculate Trade Circle ID based on sorted Nation IDs so that the ID is consistent.
+            sorted_ids = sorted([str(player.get('Nation ID','')) for player in members])
+            new_tid = ".".join(sorted_ids)
+            for j, player in enumerate(members):
+                # For preserved circles, do not reassign resources.
+                # They keep their existing Assigned Resources.
+                player['Trade Circle ID'] = new_tid
+            # Update dictionary with new circle id (if changed)
+            if new_tid != tid:
+                circles[new_tid] = circles.pop(tid)
+    
+    # --- Step 3: Form new circles from remaining unassigned players ---
+    new_circles = []
+    if unassigned:
+        # First, try to form circles using players' existing "Current Resource 1+2" values.
+        # We require that each player's "Current Resource 1+2" parses to exactly 2 resources,
+        # and that these resources (when combined with others in the circle) exactly match the recommended list.
+        recommended_set = set(recommended_resources)
+        
+        # Build a pool of players with valid current resource pairs (both non-empty and exactly 2 resources)
+        valid_pool = []
+        invalid_pool = []
+        for player in unassigned:
+            rpair_str = player.get('Current Resource 1+2', '')
+            parts = [res.strip() for res in rpair_str.split(",") if res.strip()]
+            if len(parts) == 2:
+                # Only include if the pair is a subset of the recommended set.
+                if set(parts).issubset(recommended_set):
+                    # Also add the parsed resource pair to the player dict for easier checking later.
+                    player['_parsed_resource_pair'] = set(parts)
+                    valid_pool.append(player)
+                else:
+                    invalid_pool.append(player)
+            else:
+                invalid_pool.append(player)
+        
+        # Use backtracking to try to form circles from valid_pool.
+        def find_exact_circle(pool, current_list, start, current_union):
+            if len(current_list) == circle_size:
+                if current_union == recommended_set:
+                    return list(current_list)
+                return None
+            for i in range(start, len(pool)):
+                player = pool[i]
+                pair = player['_parsed_resource_pair']
+                # They must be disjoint with the current union.
+                if current_union & pair:
+                    continue
+                new_union = current_union | pair
+                # If new_union already goes outside recommended_set, skip.
+                if not new_union.issubset(recommended_set):
+                    continue
+                current_list.append(player)
+                result = find_exact_circle(pool, current_list, i + 1, new_union)
+                if result:
+                    return result
+                current_list.pop()
+            return None
+
+        matching_circles = []
+        remaining_valid_pool = valid_pool.copy()
+        while True:
+            circle = find_exact_circle(remaining_valid_pool, [], 0, set())
+            if circle:
+                # For circles formed using the existing pairs, do not assign new resources.
+                sorted_ids = sorted([str(player.get('Nation ID', '')) for player in circle])
+                new_tid = ".".join(sorted_ids)
+                for player in circle:
+                    player['Trade Circle ID'] = new_tid
+                    player['Assigned Resources'] = None
+                matching_circles.append(circle)
+                # Remove the players in this circle from the valid pool.
+                for player in circle:
+                    remaining_valid_pool.remove(player)
+            else:
+                break
+        
+        # Remove the players used in matching circles from unassigned.
+        used_in_matching = set()
+        for circle in matching_circles:
+            for player in circle:
+                used_in_matching.add(player.get('Nation ID'))
+        remaining_unassigned = []
+        for player in unassigned:
+            # Remove temporary helper if present.
+            if '_parsed_resource_pair' in player:
+                del player['_parsed_resource_pair']
+            if player.get('Nation ID') not in used_in_matching:
+                remaining_unassigned.append(player)
+        
+        # Now form default circles from remaining players (including those that were not eligible for matching)
+        # Sorted by Days Old (oldest first).
+        remaining_unassigned = sorted(remaining_unassigned, key=lambda p: p.get('Days Old', 0), reverse=True)
+        default_circles = []
+        current_circle = []
+        for player in remaining_unassigned:
+            current_circle.append(player)
+            if len(current_circle) == circle_size:
+                default_circles.append(current_circle)
+                current_circle = []
+        # If there is a partially complete group remaining, try to merge it into an existing incomplete circle.
+        if current_circle:
+            merged = False
+            for tid, members in circles.items():
+                if len(members) < circle_size:
+                    members.extend(current_circle)
+                    merged = True
+                    break
+            if not merged:
+                # Keep as leftovers if no merge is possible.
+                leftovers = current_circle
+            else:
+                leftovers = []
+        else:
+            leftovers = []
+        
+        # For each default circle, assign new resources based on the recommended list.
+        for circle in default_circles:
+            sorted_ids = sorted([str(player.get('Nation ID','')) for player in circle])
+            new_tid = ".".join(sorted_ids)
+            for j, player in enumerate(circle):
+                player['Assigned Resources'] = recommended_resources[2*j:2*j+2] if len(recommended_resources) >= 2*(j+1) else []
+                player['Trade Circle ID'] = new_tid
+            circles[new_tid] = circle
+        
+        # Also add the matching circles to the circles dictionary.
+        for circle in matching_circles:
+            tid = circle[0].get('Trade Circle ID')
+            circles[tid] = circle
+        
+        # Combine leftovers from default formation with those already in circles.
+        leftover = leftovers
+
+    # --- Step 4: Compile complete circles and leftovers ---
+    complete_circles = []
+    incomplete_players = []
+    for circle in circles.values():
+        if len(circle) == circle_size:
+            complete_circles.append(circle)
+        else:
+            incomplete_players.extend(circle)
+            
+    # If there are still enough leftover players among themselves to form a full circle, group them.
+    if incomplete_players and len(incomplete_players) >= circle_size:
+        extra_groups = [incomplete_players[i:i+circle_size] for i in range(0, len(incomplete_players), circle_size)
+                        if len(incomplete_players[i:i+circle_size]) == circle_size]
+        complete_circles.extend(extra_groups)
+        remainder = incomplete_players[len(extra_groups)*circle_size:]
+    else:
+        remainder = incomplete_players
+
+    return complete_circles, remainder
 
 def display_trade_circle_df(circle, condition):
     """Display a trade circle in a Streamlit dataframe."""
@@ -95,7 +275,7 @@ def display_trade_circle_df(circle, condition):
             'Current Resource 1+2': get_resource_1_2(player),
             'Activity': player.get('Activity', ''),
             'Days Old': player.get('Days Old', ''),
-            f'Assigned {condition} Resources': ", ".join(player.get('Assigned Resources', []))
+            f'Assigned {condition} Resources': ", ".join(player.get('Assigned Resources', [])) if player.get('Assigned Resources') else "None"
         })
     circle_df = pd.DataFrame(circle_data)
     st.dataframe(circle_df, use_container_width=True)
@@ -134,55 +314,6 @@ def download_and_extract_zip(url):
                 return None
 
 # -----------------------
-# TRADE CIRCLE PROCESSING FUNCTIONS
-# -----------------------
-def get_current_resources(row, resource_cols):
-    """Return a comma-separated string of non-blank resources sorted alphabetically."""
-    resources = sorted([str(x).strip() for x in row[resource_cols] if pd.notnull(x) and str(x).strip() != ''])
-    return ", ".join(resources)
-
-def count_empty_slots(row, resource_cols):
-    """Count blank resource cells and determine trade slots (each slot covers 2 resources)."""
-    count = sum(1 for x in row[resource_cols] if pd.isnull(x) or str(x).strip() == '')
-    return count // 2
-
-def form_trade_circles(players, sorted_resources, circle_size=TRADE_CIRCLE_SIZE):
-    """Group players into full trade circles and assign resource pairs."""
-    trade_circles = []
-    full_groups = [players[i:i+circle_size] for i in range(0, len(players), circle_size) if len(players[i:i+circle_size]) == circle_size]
-    for group in full_groups:
-        # Compute the Trade Circle ID by concatenating Nation IDs with dots
-        trade_circle_id = ".".join(str(player.get('Nation ID', '')) for player in group)
-        for j, player in enumerate(group):
-            # Each player gets two resources from the sorted list.
-            assigned_resources = sorted_resources[2*j:2*j+2]
-            player['Assigned Resources'] = assigned_resources
-            # Add the Trade Circle ID to each player's record
-            player['Trade Circle ID'] = trade_circle_id
-        trade_circles.append(group)
-    return trade_circles
-
-def display_trade_circle_df(circle, condition):
-    """Display a trade circle in a Streamlit dataframe."""
-    circle_data = []
-    for player in circle:
-        current_resources_str = player.get('Current Resources', '')
-        circle_data.append({
-            'Trade Circle ID': player.get('Trade Circle ID', ''),  # New column added here
-            'Nation ID': player.get('Nation ID', ''),
-            'Ruler Name': player.get('Ruler Name', ''),
-            'Nation Name': player.get('Nation Name', ''),
-            'Team': player.get('Team', ''),
-            'Current Resources': current_resources_str,
-            'Current Resource 1+2': get_resource_1_2(player),
-            'Activity': player.get('Activity', ''),
-            'Days Old': player.get('Days Old', ''),
-            f'Assigned {condition} Resources': ", ".join(player.get('Assigned Resources', []))
-        })
-    circle_df = pd.DataFrame(circle_data)
-    st.dataframe(circle_df, use_container_width=True)
-
-# -----------------------
 # MAIN APP
 # -----------------------
 def main():
@@ -204,7 +335,8 @@ def main():
         st.session_state.password_verified = False
 
     if not st.session_state.password_verified:
-        password = st.text_input("Enter Password", type="password")
+        # Added key to preserve the value in session state
+        password = st.text_input("Enter Password", type="password", key="password_input")
         if password:
             if password == "secret":
                 st.session_state.password_verified = True
@@ -214,7 +346,8 @@ def main():
     
     # Only display the download functionality if the password is verified.
     if st.session_state.password_verified:
-        if st.button("Download and Display Nation Statistics"):
+        # Added a key to the download button so that its state is preserved.
+        if st.button("Download and Display Nation Statistics", key="download_button"):
             with st.spinner("Constructing download links and retrieving data..."):
                 today = datetime.now()
                 base_url = "https://www.cybernations.net/assets/CyberNations_SE_Nation_Stats_"
@@ -239,12 +372,11 @@ def main():
                     if df is not None:
                         st.success(f"Data loaded successfully from a file dated with {date_str}!")
                         break
-        
+
                 if df is not None:
                     st.session_state.df = df
                 else:
                     st.error("Failed to load data from any of the constructed URLs.")
-
 
         # Proceed if data is loaded
         if "df" in st.session_state and st.session_state.df is not None:
@@ -263,8 +395,9 @@ def main():
                 if not df.empty:
                     column_options = list(df.columns)
                     default_index = column_options.index("Alliance") if "Alliance" in column_options else 0
-                    selected_column = st.selectbox("Select column to filter", column_options, index=default_index)
-                    search_text = st.text_input("Filter by text (separate words by comma)", value="Freehold of the Wolves")
+                    # Add keys to preserve filter selections.
+                    selected_column = st.selectbox("Select column to filter", column_options, index=default_index, key="filter_select")
+                    search_text = st.text_input("Filter by text (separate words by comma)", value="Freehold of the Wolves", key="filter_text")
                             
                     if search_text:
                         # Support multiple filters separated by comma
@@ -281,7 +414,7 @@ def main():
                         st.session_state.filtered_df = filtered_df
                         csv_content = filtered_df.to_csv(index=False)
                         st.session_state.filtered_csv = csv_content
-                        st.download_button("Download Filtered CSV", csv_content, file_name="filtered_nation_stats.csv", mime="text/csv")
+                        st.download_button("Download Filtered CSV", csv_content, file_name="filtered_nation_stats.csv", mime="text/csv", key="download_csv")
                     else:
                         st.info("Enter text to filter the data.")
                 else:
@@ -348,10 +481,6 @@ def main():
                     # Process "Created" and "Days Old"
                     players_full['Created'] = pd.to_datetime(players_full['Created'], format=date_format, errors='coerce')
                     players_full['Days Old'] = (current_date - players_full['Created']).dt.days
-                    # Filter out inactive players and Alliance Pending just as above
-                    players_full = players_full[~players_full['Activity'].isin(["Active Three Weeks Ago", "Active More Than Three Weeks Ago"])]
-                    if "Alliance Status" in players_full.columns:
-                        players_full = players_full[players_full["Alliance Status"] != "Pending"]
 
                     st.dataframe(players_full[display_cols].reset_index(drop=True), use_container_width=True)
                 
@@ -361,7 +490,7 @@ def main():
                 with st.expander("Resource Mismatches"):
                     peacetime_mismatch = []
                     wartime_mismatch = []
-
+                
                     for idx, row in players_full.iterrows():
                         # Parse current resources from the "Current Resources" column
                         current_resources = [res.strip() for res in row['Current Resources'].split(',') if res.strip()]
@@ -374,20 +503,20 @@ def main():
                             res2 = str(row["Resource 2"]).strip()
                             if res2 and res2 not in current_resources:
                                 current_resources.append(res2)
-                        
+                                        
                         # Calculate duplicate resources
                         duplicates = [res for res, count in Counter(current_resources).items() if count > 1]
                         dup_str = ", ".join(sorted(duplicates)) if duplicates else "None"
-                        
+                                        
                         current_set = set(current_resources)
                         peacetime_set = set(peacetime_resources)
                         wartime_set = set(wartime_resources)
-                        
+                                        
                         missing_peace = peacetime_set - current_set
                         extra_peace = current_set - peacetime_set
                         missing_war = wartime_set - current_set
                         extra_war = current_set - wartime_set
-                        
+                                        
                         # Only add to the list if there is a mismatch for peacetime resources
                         if missing_peace or extra_peace:
                             peacetime_mismatch.append({
@@ -396,13 +525,13 @@ def main():
                                 'Nation Name': row['Nation Name'],
                                 'Current Resources': row['Current Resources'],
                                 'Current Resource 1+2': get_resource_1_2(row),
-                                'Duplicate Resources': dup_str,  # New column for duplicate resources
+                                'Duplicate Resources': dup_str,
                                 'Missing Peacetime Resources': ", ".join(sorted(missing_peace)) if missing_peace else "None",
                                 'Extra Resources': ", ".join(sorted(extra_peace)) if extra_peace else "None",
                                 'Activity': row['Activity'],
                                 'Days Old': row['Days Old']
                             })
-                        
+                                        
                         # Only add to the list if there is a mismatch for wartime resources
                         if missing_war or extra_war:
                             wartime_mismatch.append({
@@ -411,20 +540,41 @@ def main():
                                 'Nation Name': row['Nation Name'],
                                 'Current Resources': row['Current Resources'],
                                 'Current Resource 1+2': get_resource_1_2(row),
-                                'Duplicate Resources': dup_str,  # New column for duplicate resources
+                                'Duplicate Resources': dup_str,
                                 'Missing Wartime Resources': ", ".join(sorted(missing_war)) if missing_war else "None",
                                 'Extra Resources': ", ".join(sorted(extra_war)) if extra_war else "None",
                                 'Activity': row['Activity'],
                                 'Days Old': row['Days Old']
                             })
-
+                                        
                     st.markdown("**Peacetime Resource Mismatches:**")
                     peacetime_df = pd.DataFrame(peacetime_mismatch).reset_index(drop=True)
-                    st.dataframe(peacetime_df.style.applymap(highlight_none, subset=['Duplicate Resources','Extra Resources']), use_container_width=True)
-
+                    
+                    # Only style and display if there's data
+                    if not peacetime_df.empty:
+                        subset_cols = ['Duplicate Resources', 'Extra Resources']
+                        # Get only the subset columns that are present
+                        existing_subset = [col for col in subset_cols if col in peacetime_df.columns]
+                        if existing_subset:
+                            styled_peace = peacetime_df.style.applymap(highlight_none, subset=existing_subset)
+                            st.dataframe(styled_peace, use_container_width=True)
+                        else:
+                            st.dataframe(peacetime_df, use_container_width=True)
+                    else:
+                        st.info("No peacetime resource mismatches found.")
+                    
                     st.markdown("**Wartime Resource Mismatches:**")
                     wartime_df = pd.DataFrame(wartime_mismatch).reset_index(drop=True)
-                    st.dataframe(wartime_df.style.applymap(highlight_none, subset=['Duplicate Resources','Extra Resources']), use_container_width=True)
+                    
+                    if not wartime_df.empty:
+                        existing_subset_war = [col for col in subset_cols if col in wartime_df.columns]
+                        if existing_subset_war:
+                            styled_war = wartime_df.style.applymap(highlight_none, subset=existing_subset_war)
+                            st.dataframe(styled_war, use_container_width=True)
+                        else:
+                            st.dataframe(wartime_df, use_container_width=True)
+                    else:
+                        st.info("No wartime resource mismatches found.")
 
                 # -----------------------
                 # RECOMMENDED TRADE CIRCLES
@@ -439,12 +589,10 @@ def main():
                     # -----------------------
                     players_list_peace = copy.deepcopy(players_list)
                     players_list_war = copy.deepcopy(players_list)
-                    trade_circles_peace = form_trade_circles(players_list_peace, sorted_peacetime)
-                    trade_circles_war = form_trade_circles(players_list_war, sorted_wartime)
-
-                    # Determine leftover players (those not in a full group)
-                    num_full_groups = len(players_list) // TRADE_CIRCLE_SIZE
-                    leftover_players = players_list[num_full_groups * TRADE_CIRCLE_SIZE:]
+                    
+                    # Use the improved formation logic:
+                    trade_circles_peace, leftover_peace = form_trade_circles(players_list_peace, sorted_peacetime)
+                    trade_circles_war, leftover_war = form_trade_circles(players_list_war, sorted_wartime)
 
                     # Display Peacetime Trade Circles
                     if trade_circles_peace:
@@ -464,7 +612,8 @@ def main():
                     else:
                         st.info("No full Wartime trade circles could be formed.")
 
-                    # Display leftover players (if any)
+                    # Display leftover players (if any) from both approaches
+                    leftover_players = leftover_peace + leftover_war
                     if leftover_players:
                         leftover_data = []
                         for player in leftover_players:
@@ -520,12 +669,14 @@ def main():
                 trade_circle_entries = []
                 for circle_type, circles in [("Peacetime", trade_circles_peace), ("Wartime", trade_circles_war)]:
                     if circles:
-                        for idx, circle in enumerate(circles, start=1):
+                        for circle in circles:
+                            # Retrieve the Trade Circle ID from the first player in the circle
+                            trade_circle_id = circle[0].get('Trade Circle ID', '')
                             for player in circle:
                                 trade_circle_entries.append({
                                     "Category": f"{circle_type} Recommended Trade Circle",
                                     "Circle Type": circle_type,
-                                    "Circle Number": idx,
+                                    "Trade Circle ID": trade_circle_id,  # Updated column instead of Circle Number
                                     "Nation ID": player.get('Nation ID', ''),
                                     "Ruler Name": player.get('Ruler Name', ''),
                                     "Nation Name": player.get('Nation Name', ''),
@@ -534,11 +685,49 @@ def main():
                                     "Current Resource 1+2": get_resource_1_2(player),
                                     "Activity": player.get('Activity', ''),
                                     "Days Old": player.get('Days Old', ''),
-                                    "Assigned Resources": ", ".join(player.get('Assigned Resources', []))
+                                    "Assigned Resources": ", ".join(player.get('Assigned Resources', [])) if player.get('Assigned Resources') else "None"
                                 })
                 if trade_circle_entries:
                     trade_circle_df = pd.DataFrame(trade_circle_entries)
                     sheets["Trade Circles"] = add_nation_drill_url(trade_circle_df)
+
+                # -----------------------
+                # COMPARATIVE STATISTICS (NEW SECTION)
+                # -----------------------
+                # We compute per-alliance stats using the original data (st.session_state.df)
+                if "Alliance" in df.columns:
+                    original_df = st.session_state.df.copy()
+                    resource_cols = [f"Connected Resource {i}" for i in range(1, 11)]
+                    # Determine players with empty trade slots in the original data
+                    mask_empty_all = original_df[resource_cols].isnull().any(axis=1) | (
+                        original_df[resource_cols].apply(lambda col: col.astype(str).str.strip() == '').any(axis=1)
+                    )
+                    players_empty_all = original_df[mask_empty_all].copy()
+                    players_full_all = original_df[~mask_empty_all].copy()
+
+                    alliances = original_df['Alliance'].unique()
+                    comp_stats = []
+                    for alliance in alliances:
+                        total_players = len(original_df[original_df['Alliance'] == alliance])
+                        empty_players = len(players_empty_all[players_empty_all['Alliance'] == alliance])
+                        full_players = len(players_full_all[players_full_all['Alliance'] == alliance])
+                        empty_percentage = (empty_players / total_players * 100) if total_players else 0
+
+                        comp_stats.append({
+                            "Alliance": alliance,
+                            "Total Alliance Members": total_players,
+                            "Players with Empty Trade Slots": empty_players,
+                            "Empty Trade Slot (%)": f"{empty_percentage:.2f}%",
+                            "Players in Complete Trade Circle": full_players,
+                        })
+                    
+                    comp_stats_df = pd.DataFrame(comp_stats)
+                    
+                    with st.expander("Comparative Alliance Stats"):
+                        st.dataframe(comp_stats_df, use_container_width=True)
+                    
+                    # Add Comparative Alliance Stats to the Excel sheets
+                    sheets["Comparative Alliance Stats"] = comp_stats_df.copy()
 
                 # -----------------------
                 # SUMMARY OVERVIEW SECTION (UI)
@@ -591,7 +780,7 @@ def main():
                     - Re-run the analysis after adjustments and update the report accordingly.
                     """)
                     st.markdown(action_plan)
-                
+
                 # -----------------------
                 # WRITE EXCEL FILE FOR DOWNLOAD WITH ADDITIONAL WORKSHEETS
                 # -----------------------
@@ -674,7 +863,7 @@ def main():
                                 nation_names = [player.get('Ruler Name','') for player in circle]
                                 for player in circle:
                                     partners = [name for name in nation_names if name != player.get('Ruler Name','')]
-                                    msg = f'To The Ruler: {player.get("Ruler Name","")}, please can you join a Trade Circle with partners: {", ".join(partners)}. Your assigned resource pair is {", ".join(player.get("Assigned Resources", []))}. Confirm your participation immediately. -Lord of Growth.'
+                                    msg = f'To The Ruler: {player.get("Ruler Name","")}, please can you join a Trade Circle with partners: {", ".join(partners)}. Your assigned resource pair is {", ".join(player.get("Assigned Resources", [])) if player.get("Assigned Resources") else "None"}. Confirm your participation immediately. -Lord of Growth.'
                                     messages.append({"Message Type": f"{circle_type} Trade Circle", "Message": msg})
 
                         if trade_circles_peace:
@@ -700,7 +889,7 @@ def main():
             # -----------------------
             st.markdown("### Download All Processed Data")
             if excel_data:
-                st.download_button("Download Summary Report", excel_data, file_name="full_summary_report.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+                st.download_button("Download Summary Report", excel_data, file_name="full_summary_report.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", key="download_report")
             else:
                 st.info("No data available for download.")
     else:
