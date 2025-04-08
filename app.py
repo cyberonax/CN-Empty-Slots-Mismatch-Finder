@@ -69,10 +69,14 @@ def form_trade_circles(players, sorted_resources, circle_size=TRADE_CIRCLE_SIZE)
     trade_circles = []
     full_groups = [players[i:i+circle_size] for i in range(0, len(players), circle_size) if len(players[i:i+circle_size]) == circle_size]
     for group in full_groups:
+        # Compute the Trade Circle ID by concatenating Nation IDs with dots
+        trade_circle_id = ".".join(str(player.get('Nation ID', '')) for player in group)
         for j, player in enumerate(group):
             # Each player gets two resources from the sorted list.
             assigned_resources = sorted_resources[2*j:2*j+2]
             player['Assigned Resources'] = assigned_resources
+            # Add the Trade Circle ID to each player's record
+            player['Trade Circle ID'] = trade_circle_id
         trade_circles.append(group)
     return trade_circles
 
@@ -82,6 +86,7 @@ def display_trade_circle_df(circle, condition):
     for player in circle:
         current_resources_str = player.get('Current Resources', '')
         circle_data.append({
+            'Trade Circle ID': player.get('Trade Circle ID', ''),  # New column added here
             'Nation ID': player.get('Nation ID', ''),
             'Ruler Name': player.get('Ruler Name', ''),
             'Nation Name': player.get('Nation Name', ''),
@@ -146,10 +151,14 @@ def form_trade_circles(players, sorted_resources, circle_size=TRADE_CIRCLE_SIZE)
     trade_circles = []
     full_groups = [players[i:i+circle_size] for i in range(0, len(players), circle_size) if len(players[i:i+circle_size]) == circle_size]
     for group in full_groups:
+        # Compute the Trade Circle ID by concatenating Nation IDs with dots
+        trade_circle_id = ".".join(str(player.get('Nation ID', '')) for player in group)
         for j, player in enumerate(group):
             # Each player gets two resources from the sorted list.
             assigned_resources = sorted_resources[2*j:2*j+2]
             player['Assigned Resources'] = assigned_resources
+            # Add the Trade Circle ID to each player's record
+            player['Trade Circle ID'] = trade_circle_id
         trade_circles.append(group)
     return trade_circles
 
@@ -159,6 +168,7 @@ def display_trade_circle_df(circle, condition):
     for player in circle:
         current_resources_str = player.get('Current Resources', '')
         circle_data.append({
+            'Trade Circle ID': player.get('Trade Circle ID', ''),  # New column added here
             'Nation ID': player.get('Nation ID', ''),
             'Ruler Name': player.get('Ruler Name', ''),
             'Nation Name': player.get('Nation Name', ''),
@@ -553,9 +563,9 @@ def main():
 
                     **2. Notify Affected Players:**
                     - For each player with a peacetime mismatch, send a message:
-                      - *"To The Ruler: [Ruler Name], you currently have mismatched Trade Circle resource(s) [list Extra Resources] which must be exchanged for the missing resource(s) [list Missing Peacetime Resources] to meet peacetime trade requirements. If more than two resources are listed, kindly coordinate with your trade partners to make the needed adjustments. -Lord of Growth."*
+                      - *"To The Ruler: [Ruler Name], your Trade Circle currently has mismatched/duplicate resource(s) [list Extra Resources] which must be exchanged for the missing resource(s) [list Missing Peacetime Resources] to meet peacetime trade requirements. Please can you either change your resources or get in contact with your trade partners to coordinate adjustments to your agreements. Peacetime resources must be: Aluminum, Cattle, Fish, Iron, Lumber, Marble, Pigs, Spices, Sugar, Uranium, Water, Wheat. -Lord of Growth."*
                     - For each player with a wartime mismatch, send a similar message:
-                      - *"To The Ruler: [Ruler Name], you currently have mismatched Trade Circle resource(s) [list Extra Resources] which must be exchanged for the missing resource(s) [list Missing Wartime Resources] to meet wartime trade requirements. If more than two resources are listed, kindly coordinate with your trade partners to make the needed adjustments. -Lord of Growth."*
+                      - *"To The Ruler: [Ruler Name], your Trade Circle currently has mismatched/duplicate resource(s) [list Extra Resources] which must be exchanged for the missing resource(s) [list Missing Wartime Resources] to meet wartime trade requirements. Please can you either change your resources or get in contact with your trade partners to coordinate adjustments to your agreements. Wartime resources must be: Aluminum, Coal, Fish, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, and Uranium. -Lord of Growth."*
 
                     **3. Reconfigure Incomplete Trade Circles:**
                     - Review the **Players with Empty Trade Slots** report.
@@ -605,23 +615,57 @@ def main():
                         # Peacetime mismatch messages:
                         if not peacetime_df.empty:
                             for idx, row in peacetime_df.iterrows():
-                                msg = f'To The Ruler: {row["Ruler Name"]}, you currently have mismatched Trade Circle resource(s) {row["Extra Resources"]} which must be exchanged for the missing resource(s) {row["Missing Peacetime Resources"]} to meet peacetime trade requirements. If more than two resources are listed, kindly coordinate with your trade partners to make the needed adjustments. -Lord of Growth.'
+                                extra = row["Extra Resources"]
+                                dup = row["Duplicate Resources"]
+                                # Determine which resource(s) to change:
+                                if extra == "None" and dup != "None":
+                                    resources_to_change = dup
+                                elif extra != "None" and dup != "None":
+                                    resources_to_change = f"{extra} and {dup}"
+                                else:
+                                    resources_to_change = extra
+                                msg = (
+                                    f'To The Ruler: {row["Ruler Name"]}, your Trade Circle currently has mismatched/duplicate resource(s) '
+                                    f'{resources_to_change} which must be exchanged for any of the missing resource(s) '
+                                    f'{row["Missing Peacetime Resources"]} to meet peacetime trade requirements. '
+                                    f'Please can you either change your resources or get in contact with '
+                                    f'your trade partners to coordinate adjustments to your agreements. '
+                                    f'Peacetime resources must be: Aluminum, Cattle, Fish, Iron, Lumber, Marble, Pigs, '
+                                    f'Spices, Sugar, Uranium, Water, Wheat. -Lord of Growth.'
+                                )
                                 messages.append({"Message Type": "Peacetime Resource Mismatch", "Message": msg})
                         # Wartime mismatch messages:
                         if not wartime_df.empty:
                             for idx, row in wartime_df.iterrows():
-                                msg = f'To The Ruler: {row["Ruler Name"]}, you currently have mismatched Trade Circle resource(s) {row["Extra Resources"]} which must be exchanged for the missing resource(s) {row["Missing Wartime Resources"]} to meet wartime trade requirements. If more than two resources are listed, kindly coordinate with your trade partners to make the needed adjustments. -Lord of Growth.'
+                                extra = row["Extra Resources"]
+                                dup = row["Duplicate Resources"]
+                                # Determine which resource(s) to change:
+                                if extra == "None" and dup != "None":
+                                    resources_to_change = dup
+                                elif extra != "None" and dup != "None":
+                                    resources_to_change = f"{extra} and {dup}"
+                                else:
+                                    resources_to_change = extra
+                                msg = (
+                                    f'To The Ruler: {row["Ruler Name"]}, your Trade Circle currently has mismatched/duplicate resource(s) '
+                                    f'{resources_to_change} which must be exchanged for any of the missing resource(s) '
+                                    f'{row["Missing Wartime Resources"]} to meet wartime trade requirements. '
+                                    f'Please can you either change your resources or get in contact with '
+                                    f'your trade partners to coordinate adjustments to your agreements. '
+                                    f'Wartime resources must be: Aluminum, Coal, Fish, Gold, Iron, Lead, Lumber, '
+                                    f'Marble, Oil, Pigs, Rubber, and Uranium. -Lord of Growth.'
+                                )
                                 messages.append({"Message Type": "Wartime Resource Mismatch", "Message": msg})
-                        
+
                         # Trade circle messages: include partner information
                         def generate_trade_circle_messages(circles, circle_type):
                             for circle in circles:
-                                nation_names = [player.get('Nation Name','') for player in circle]
+                                nation_names = [player.get('Ruler Name','') for player in circle]
                                 for player in circle:
-                                    partners = [name for name in nation_names if name != player.get('Nation Name','')]
-                                    msg = f'To The Ruler: {row["Ruler Name"]}, please join a Trade Circle with partners: {", ".join(partners)}. Your assigned resource pair is {", ".join(player.get("Assigned Resources", []))}. Confirm your participation immediately. -Lord of Growth.'
+                                    partners = [name for name in nation_names if name != player.get('Ruler Name','')]
+                                    msg = f'To The Ruler: {player.get("Ruler Name","")}, please can you join a Trade Circle with partners: {", ".join(partners)}. Your assigned resource pair is {", ".join(player.get("Assigned Resources", []))}. Confirm your participation immediately. -Lord of Growth.'
                                     messages.append({"Message Type": f"{circle_type} Trade Circle", "Message": msg})
-                        
+
                         if trade_circles_peace:
                             generate_trade_circle_messages(trade_circles_peace, "Peacetime")
                         if trade_circles_war:
