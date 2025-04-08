@@ -484,93 +484,97 @@ def main():
 
                     st.dataframe(players_full[display_cols].reset_index(drop=True), use_container_width=True)
                 
-                    # -----------------------
-                    # RESOURCE MISMATCHES
-                    # -----------------------
-                    with st.expander("Resource Mismatches"):
-                        peacetime_mismatch = []
-                        wartime_mismatch = []
+                # -----------------------
+                # RESOURCE MISMATCHES
+                # -----------------------
+                with st.expander("Resource Mismatches"):
+                    peacetime_mismatch = []
+                    wartime_mismatch = []
+                
+                    for idx, row in players_full.iterrows():
+                        # Parse current resources from the "Current Resources" column
+                        current_resources = [res.strip() for res in row['Current Resources'].split(',') if res.strip()]
+                        # If the row contains "Resource 1" and "Resource 2", add them as well
+                        if "Resource 1" in row and pd.notnull(row["Resource 1"]):
+                            res1 = str(row["Resource 1"]).strip()
+                            if res1 and res1 not in current_resources:
+                                current_resources.append(res1)
+                        if "Resource 2" in row and pd.notnull(row["Resource 2"]):
+                            res2 = str(row["Resource 2"]).strip()
+                            if res2 and res2 not in current_resources:
+                                current_resources.append(res2)
+                                        
+                        # Calculate duplicate resources
+                        duplicates = [res for res, count in Counter(current_resources).items() if count > 1]
+                        dup_str = ", ".join(sorted(duplicates)) if duplicates else "None"
+                                        
+                        current_set = set(current_resources)
+                        peacetime_set = set(peacetime_resources)
+                        wartime_set = set(wartime_resources)
+                                        
+                        missing_peace = peacetime_set - current_set
+                        extra_peace = current_set - peacetime_set
+                        missing_war = wartime_set - current_set
+                        extra_war = current_set - wartime_set
+                                        
+                        # Only add to the list if there is a mismatch for peacetime resources
+                        if missing_peace or extra_peace:
+                            peacetime_mismatch.append({
+                                'Nation ID': row['Nation ID'],
+                                'Ruler Name': row['Ruler Name'],
+                                'Nation Name': row['Nation Name'],
+                                'Current Resources': row['Current Resources'],
+                                'Current Resource 1+2': get_resource_1_2(row),
+                                'Duplicate Resources': dup_str,
+                                'Missing Peacetime Resources': ", ".join(sorted(missing_peace)) if missing_peace else "None",
+                                'Extra Resources': ", ".join(sorted(extra_peace)) if extra_peace else "None",
+                                'Activity': row['Activity'],
+                                'Days Old': row['Days Old']
+                            })
+                                        
+                        # Only add to the list if there is a mismatch for wartime resources
+                        if missing_war or extra_war:
+                            wartime_mismatch.append({
+                                'Nation ID': row['Nation ID'],
+                                'Ruler Name': row['Ruler Name'],
+                                'Nation Name': row['Nation Name'],
+                                'Current Resources': row['Current Resources'],
+                                'Current Resource 1+2': get_resource_1_2(row),
+                                'Duplicate Resources': dup_str,
+                                'Missing Wartime Resources': ", ".join(sorted(missing_war)) if missing_war else "None",
+                                'Extra Resources': ", ".join(sorted(extra_war)) if extra_war else "None",
+                                'Activity': row['Activity'],
+                                'Days Old': row['Days Old']
+                            })
+                                        
+                    st.markdown("**Peacetime Resource Mismatches:**")
+                    peacetime_df = pd.DataFrame(peacetime_mismatch).reset_index(drop=True)
                     
-                        for idx, row in players_full.iterrows():
-                            # Parse current resources from the "Current Resources" column
-                            current_resources = [res.strip() for res in row['Current Resources'].split(',') if res.strip()]
-                            # If the row contains "Resource 1" and "Resource 2", add them as well
-                            if "Resource 1" in row and pd.notnull(row["Resource 1"]):
-                                res1 = str(row["Resource 1"]).strip()
-                                if res1 and res1 not in current_resources:
-                                    current_resources.append(res1)
-                            if "Resource 2" in row and pd.notnull(row["Resource 2"]):
-                                res2 = str(row["Resource 2"]).strip()
-                                if res2 and res2 not in current_resources:
-                                    current_resources.append(res2)
-                                            
-                            # Calculate duplicate resources
-                            duplicates = [res for res, count in Counter(current_resources).items() if count > 1]
-                            dup_str = ", ".join(sorted(duplicates)) if duplicates else "None"
-                                            
-                            current_set = set(current_resources)
-                            peacetime_set = set(peacetime_resources)
-                            wartime_set = set(wartime_resources)
-                                            
-                            missing_peace = peacetime_set - current_set
-                            extra_peace = current_set - peacetime_set
-                            missing_war = wartime_set - current_set
-                            extra_war = current_set - wartime_set
-                                            
-                            # Only add to the list if there is a mismatch for peacetime resources
-                            if missing_peace or extra_peace:
-                                peacetime_mismatch.append({
-                                    'Nation ID': row['Nation ID'],
-                                    'Ruler Name': row['Ruler Name'],
-                                    'Nation Name': row['Nation Name'],
-                                    'Current Resources': row['Current Resources'],
-                                    'Current Resource 1+2': get_resource_1_2(row),
-                                    'Duplicate Resources': dup_str,  # New column for duplicate resources
-                                    'Missing Peacetime Resources': ", ".join(sorted(missing_peace)) if missing_peace else "None",
-                                    'Extra Resources': ", ".join(sorted(extra_peace)) if extra_peace else "None",
-                                    'Activity': row['Activity'],
-                                    'Days Old': row['Days Old']
-                                })
-                                            
-                            # Only add to the list if there is a mismatch for wartime resources
-                            if missing_war or extra_war:
-                                wartime_mismatch.append({
-                                    'Nation ID': row['Nation ID'],
-                                    'Ruler Name': row['Ruler Name'],
-                                    'Nation Name': row['Nation Name'],
-                                    'Current Resources': row['Current Resources'],
-                                    'Current Resource 1+2': get_resource_1_2(row),
-                                    'Duplicate Resources': dup_str,  # New column for duplicate resources
-                                    'Missing Wartime Resources': ", ".join(sorted(missing_war)) if missing_war else "None",
-                                    'Extra Resources': ", ".join(sorted(extra_war)) if extra_war else "None",
-                                    'Activity': row['Activity'],
-                                    'Days Old': row['Days Old']
-                                })
-                                            
-                        st.markdown("**Peacetime Resource Mismatches:**")
-                        peacetime_df = pd.DataFrame(peacetime_mismatch).reset_index(drop=True)
-                        
-                        # Define the subset of columns you want to style.
+                    # Only style and display if there's data
+                    if not peacetime_df.empty:
                         subset_cols = ['Duplicate Resources', 'Extra Resources']
-                        # Filter only the columns that exist in the DataFrame.
+                        # Get only the subset columns that are present
                         existing_subset = [col for col in subset_cols if col in peacetime_df.columns]
-                        
                         if existing_subset:
                             styled_peace = peacetime_df.style.applymap(highlight_none, subset=existing_subset)
                             st.dataframe(styled_peace, use_container_width=True)
                         else:
                             st.dataframe(peacetime_df, use_container_width=True)
+                    else:
+                        st.info("No peacetime resource mismatches found.")
                     
-                        st.markdown("**Wartime Resource Mismatches:**")
-                        wartime_df = pd.DataFrame(wartime_mismatch).reset_index(drop=True)
-                        
-                        # Check for the expected columns for the wartime DataFrame as well.
+                    st.markdown("**Wartime Resource Mismatches:**")
+                    wartime_df = pd.DataFrame(wartime_mismatch).reset_index(drop=True)
+                    
+                    if not wartime_df.empty:
                         existing_subset_war = [col for col in subset_cols if col in wartime_df.columns]
                         if existing_subset_war:
                             styled_war = wartime_df.style.applymap(highlight_none, subset=existing_subset_war)
                             st.dataframe(styled_war, use_container_width=True)
                         else:
                             st.dataframe(wartime_df, use_container_width=True)
+                    else:
+                        st.info("No wartime resource mismatches found.")
 
                 # -----------------------
                 # RECOMMENDED TRADE CIRCLES
