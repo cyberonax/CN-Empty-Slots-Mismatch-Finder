@@ -110,7 +110,7 @@ def form_trade_circles(players, recommended_resources, circle_size=TRADE_CIRCLE_
             # Recalculate Trade Circle ID based on sorted Nation IDs so that the ID is consistent.
             sorted_ids = sorted([str(player.get('Nation ID','')) for player in members])
             new_tid = ".".join(sorted_ids)
-            for j, player in enumerate(members):
+            for player in members:
                 # For preserved circles, do not reassign resources.
                 # They keep their existing Assigned Resources.
                 player['Trade Circle ID'] = new_tid
@@ -119,7 +119,6 @@ def form_trade_circles(players, recommended_resources, circle_size=TRADE_CIRCLE_
                 circles[new_tid] = circles.pop(tid)
     
     # --- Step 3: Form new circles from remaining unassigned players ---
-    new_circles = []
     if unassigned:
         # First, try to form circles using players' existing "Current Resource 1+2" values.
         # We require that each player's "Current Resource 1+2" parses to exactly 2 resources,
@@ -207,7 +206,7 @@ def form_trade_circles(players, recommended_resources, circle_size=TRADE_CIRCLE_
             if len(current_circle) == circle_size:
                 default_circles.append(current_circle)
                 current_circle = []
-        # If there is a partially complete group remaining, try to merge it into an existing incomplete circle.
+        # FIX: If there is a partially complete group remaining, add them to circles under a new key so they are not lost.
         if current_circle:
             merged = False
             for tid, members in circles.items():
@@ -216,12 +215,7 @@ def form_trade_circles(players, recommended_resources, circle_size=TRADE_CIRCLE_
                     merged = True
                     break
             if not merged:
-                # Keep as leftovers if no merge is possible.
-                leftovers = current_circle
-            else:
-                leftovers = []
-        else:
-            leftovers = []
+                circles["leftover"] = circles.get("leftover", []) + current_circle
         
         # For each default circle, assign new resources based on the recommended list.
         for circle in default_circles:
@@ -237,16 +231,18 @@ def form_trade_circles(players, recommended_resources, circle_size=TRADE_CIRCLE_
             tid = circle[0].get('Trade Circle ID')
             circles[tid] = circle
         
-        # Combine leftovers from default formation with those already in circles.
-        leftover = leftovers
-
+        # Retrieve any leftovers stored in circles.
+        leftover = circles.get("leftover", [])
+    else:
+        leftover = []
+    
     # --- Step 4: Compile complete circles and leftovers ---
     complete_circles = []
     incomplete_players = []
     for circle in circles.values():
-        if len(circle) == circle_size:
+        if circle and len(circle) == circle_size:
             complete_circles.append(circle)
-        else:
+        elif circle and len(circle) != circle_size:
             incomplete_players.extend(circle)
             
     # If there are still enough leftover players among themselves to form a full circle, group them.
