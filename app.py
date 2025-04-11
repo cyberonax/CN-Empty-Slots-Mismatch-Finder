@@ -313,7 +313,7 @@ def download_and_extract_zip(url):
 # MAIN APP
 # -----------------------
 def main():
-    st.title("CyberNations | Nation Statistics & Trade Circle Formation Tool")
+    st.title("Cyber Nations | Nation Statistics & Trade Circle Formation Tool")
     
     # About section
     st.markdown(
