@@ -586,7 +586,22 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                     peace_b_combos = parse_combinations(peace_b_text)
                     peace_c_combos = parse_combinations(peace_c_text)
                     war_combos     = parse_combinations(war_text)
+
+                    st.markdown(
+                        """
+                        ### Understanding Peace Mode Levels
                     
+                        - **Peace Mode Level A:**  
+                          Nations that are less than **1000 days old**. This level is intended for newer or rapidly developing nations, which may still be adjusting their resource management.
+                    
+                        - **Peace Mode Level B:**  
+                          Nations that are between **1000 and 2000 days old**. These nations are moderately established; their resource combinations may be evolving as they fine-tune their trade strategies.
+                    
+                        - **Peace Mode Level C:**  
+                          Nations that are **2000 days or older**. These are mature nations with longstanding resource setups, typically expecting more stable and optimized resource combinations.
+                        """
+                    )
+
                     st.markdown("**Total valid combinations provided:**")
                     st.write(f"Peace Mode Level A: {len(peace_a_combos)}")
                     st.write(f"Peace Mode Level B: {len(peace_b_combos)}")
