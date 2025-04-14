@@ -501,17 +501,36 @@ Coal, Fish, Gems, Gold, Lead, Oil, Pigs, Rubber, Silver, Spices, Uranium, Wheat
 Aluminum, Coal, Fish, Gold, Iron, Lead, Lumber, Marble, Oil, Rubber, Uranium, Wheat
 Coal, Fish, Gems, Gold, Lead, Marble, Oil, Rubber, Silver, Spices, Uranium, Wheat
 Cattle, Coal, Fish, Gold, Lead, Lumber, Oil, Rubber, Spices, Sugar, Uranium, Wheat""",
-                        height=200
+                        height=100
                     )
                     peace_b_text = st.text_area(
                         "Peace Mode - Level B (one combination per line)",
-                        value="",
-                        height=150
+                        value="Aluminum, Cattle, Coal, Fish, Iron, Lumber, Marble, Oil, Rubber, Spices, Uranium, Wheat
+Aluminum, Coal, Fish, Iron, Lumber, Marble, Oil, Rubber, Spices, Uranium, Water, Wheat
+Aluminum, Coal, Fish, Iron, Lumber, Marble, Oil, Rubber, Spices, Sugar, Uranium, Wheat
+Aluminum, Coal, Fish, Gems, Iron, Lumber, Marble, Oil, Rubber, Spices, Uranium, Wheat
+Aluminum, Coal, Fish, Iron, Lumber, Marble, Oil, Pigs, Rubber, Spices, Uranium, Wheat
+Aluminum, Coal, Fish, Iron, Lumber, Marble, Oil, Rubber, Silver, Spices, Uranium, Wheat
+Aluminum, Coal, Fish, Iron, Lumber, Marble, Oil, Rubber, Spices, Uranium, Wheat, Wine
+Coal, Fish, Furs, Gems, Gold, Marble, Rubber, Silver, Spices, Uranium, Wheat, Wine
+Cattle, Coal, Fish, Furs, Gems, Gold, Rubber, Silver, Spices, Uranium, Wheat, Wine
+Aluminum, Cattle, Coal, Fish, Iron, Lumber, Marble, Rubber, Spices, Uranium, Water, Wheat
+",
+                        height=100
                     )
                     peace_c_text = st.text_area(
                         "Peace Mode - Level C (one combination per line)",
-                        value="",
-                        height=150
+                        value="Cattle, Coal, Fish, Furs, Gems, Gold, Rubber, Silver, Spices, Uranium, Wheat, Wine
+Coal, Fish, Furs, Gems, Gold, Rubber, Silver, Spices, Sugar, Uranium, Wheat, Wine
+Coal, Fish, Furs, Gems, Gold, Pigs, Rubber, Silver, Spices, Uranium, Wheat, Wine
+Cattle, Coal, Fish, Gems, Gold, Pigs, Rubber, Silver, Spices, Sugar, Uranium, Wheat
+Coal, Fish, Furs, Gems, Gold, Rubber, Silver, Spices, Uranium, Water, Wheat, Wine
+Coal, Fish, Furs, Gems, Gold, Oil, Rubber, Silver, Spices, Uranium, Wheat, Wine
+Cattle, Coal, Fish, Furs, Gems, Gold, Rubber, Silver, Spices, Sugar, Uranium, Wheat
+Cattle, Coal, Fish, Furs, Gems, Gold, Rubber, Silver, Spices, Sugar, Uranium, Wine
+Cattle, Coal, Fish, Furs, Gems, Gold, Pigs, Rubber, Silver, Spices, Uranium, Wine
+Cattle, Coal, Fish, Gems, Gold, Rubber, Silver, Spices, Sugar, Uranium, Wheat, Wine",
+                        height=100
                     )
                     war_text = st.text_area(
                         "War Mode (one combination per line)",
@@ -525,7 +544,7 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Silver, Ura
 Aluminum, Coal, Gems, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium
 Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wine
 Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Water""",
-                        height=200
+                        height=100
                     )
 
                     def parse_combinations(input_text):
@@ -537,27 +556,54 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                                 if resources:
                                     combos.append(resources)
                         return combos
-
-                    # Parse the text inputs into lists of valid combinations.
+                    
+                    # Helper: compare two lists of resources and compute missing/extra.
+                    def compare_resources(nation_resources, valid_combo):
+                        nation_set = set(nation_resources)
+                        valid_set = set(valid_combo)
+                        missing = valid_set - nation_set
+                        extra = nation_set - valid_set
+                        return missing, extra
+                    
+                    # Given a nation’s resource list and a list of valid combinations,
+                    # find the valid combination that minimizes the total mismatch.
+                    def find_best_match(nation_resources, valid_combinations):
+                        best_combo = None
+                        best_missing = set()
+                        best_extra = set()
+                        best_score = float('inf')
+                        for combo in valid_combinations:
+                            missing, extra = compare_resources(nation_resources, combo)
+                            score = len(missing) + len(extra)
+                            if score < best_score:
+                                best_score = score
+                                best_combo = combo
+                                best_missing = missing
+                                best_extra = extra
+                        return best_combo, best_missing, best_extra, best_score
+                    
+                    # Assume these text areas have already been defined in your Streamlit UI
                     peace_a_combos = parse_combinations(peace_a_text)
                     peace_b_combos = parse_combinations(peace_b_text)
                     peace_c_combos = parse_combinations(peace_c_text)
-                    war_combos = parse_combinations(war_text)
-                    # Combine all Peace mode combinations
-                    peace_all_combos = peace_a_combos + peace_b_combos + peace_c_combos
-
+                    war_combos     = parse_combinations(war_text)
+                    
                     st.markdown("**Total valid combinations provided:**")
-                    st.write(f"Peace Mode combinations: {len(peace_all_combos)}")
-                    st.write(f"War Mode combinations: {len(war_combos)}")
-
-                    # Now check resource mismatches using the user-specified valid combinations.
-                    peacetime_mismatch = []
-                    wartime_mismatch = []
-                
+                    st.write(f"Peace Mode Level A: {len(peace_a_combos)}")
+                    st.write(f"Peace Mode Level B: {len(peace_b_combos)}")
+                    st.write(f"Peace Mode Level C: {len(peace_c_combos)}")
+                    st.write(f"War Mode: {len(war_combos)}")
+                    
+                    # Create four lists for mismatches for the four categories.
+                    mismatch_peace_a = []
+                    mismatch_peace_b = []
+                    mismatch_peace_c = []
+                    mismatch_war     = []
+                    
                     for idx, row in players_full.iterrows():
                         # Get current resources as per the CSV-based list.
                         current_resources = [res.strip() for res in row['Current Resources'].split(',') if res.strip()]
-                        # Include Resource 1 and Resource 2 if not already present.
+                        # Ensure Resource 1 and Resource 2 are present (if not already included)
                         if "Resource 1" in row and pd.notnull(row["Resource 1"]):
                             res1 = str(row["Resource 1"]).strip()
                             if res1 and res1 not in current_resources:
@@ -566,7 +612,7 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                             res2 = str(row["Resource 2"]).strip()
                             if res2 and res2 not in current_resources:
                                 current_resources.append(res2)
-                        
+                                
                         # Create a sorted list for proper comparison.
                         current_resources_sorted = sorted(current_resources)
                         current_set_str = ", ".join(current_resources_sorted)
@@ -574,54 +620,95 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                         duplicates = [res for res, count in Counter(current_resources).items() if count > 1]
                         dup_str = ", ".join(sorted(duplicates)) if duplicates else "None"
                         
-                        # Check if the nation's sorted resources exactly match any valid Peace Mode combination.
-                        if current_resources_sorted not in peace_all_combos:
-                            peacetime_mismatch.append({
-                                'Nation ID': row['Nation ID'],
-                                'Ruler Name': row['Ruler Name'],
-                                'Nation Name': row['Nation Name'],
-                                'Current Resources': row['Current Resources'],
-                                'Current Resource 1+2': get_resource_1_2(row),
-                                'Duplicate Resources': dup_str,
-                                'Current Sorted Resources': current_set_str,
-                                'Activity': row['Activity'],
-                                'Days Old': row['Days Old']
+                        base_info = {
+                            'Nation ID': row['Nation ID'],
+                            'Ruler Name': row['Ruler Name'],
+                            'Nation Name': row['Nation Name'],
+                            'Current Resources': row['Current Resources'],
+                            'Current Resource 1+2': get_resource_1_2(row),
+                            'Duplicate Resources': dup_str,
+                            'Current Sorted Resources': current_set_str,
+                            'Activity': row['Activity'],
+                            'Days Old': row['Days Old']
+                        }
+                        
+                        # For Peace Mode Level A.
+                        best_combo, missing, extra, score = find_best_match(current_resources_sorted, peace_a_combos)
+                        if score != 0:  # mismatch exists if there is any missing or extra resource
+                            rec = base_info.copy()
+                            rec.update({
+                                'Valid Combination': ", ".join(best_combo),
+                                'Missing Resources': ", ".join(sorted(missing)) if missing else "None",
+                                'Extra Resources': ", ".join(sorted(extra)) if extra else "None"
                             })
-                        # And similarly for War Mode.
-                        if current_resources_sorted not in war_combos:
-                            wartime_mismatch.append({
-                                'Nation ID': row['Nation ID'],
-                                'Ruler Name': row['Ruler Name'],
-                                'Nation Name': row['Nation Name'],
-                                'Current Resources': row['Current Resources'],
-                                'Current Resource 1+2': get_resource_1_2(row),
-                                'Duplicate Resources': dup_str,
-                                'Current Sorted Resources': current_set_str,
-                                'Activity': row['Activity'],
-                                'Days Old': row['Days Old']
+                            mismatch_peace_a.append(rec)
+                        
+                        # For Peace Mode Level B.
+                        best_combo, missing, extra, score = find_best_match(current_resources_sorted, peace_b_combos)
+                        if score != 0:
+                            rec = base_info.copy()
+                            rec.update({
+                                'Valid Combination': ", ".join(best_combo),
+                                'Missing Resources': ", ".join(sorted(missing)) if missing else "None",
+                                'Extra Resources': ", ".join(sorted(extra)) if extra else "None"
                             })
+                            mismatch_peace_b.append(rec)
+                        
+                        # For Peace Mode Level C.
+                        best_combo, missing, extra, score = find_best_match(current_resources_sorted, peace_c_combos)
+                        if score != 0:
+                            rec = base_info.copy()
+                            rec.update({
+                                'Valid Combination': ", ".join(best_combo),
+                                'Missing Resources': ", ".join(sorted(missing)) if missing else "None",
+                                'Extra Resources': ", ".join(sorted(extra)) if extra else "None"
+                            })
+                            mismatch_peace_c.append(rec)
+                        
+                        # For War Mode.
+                        best_combo, missing, extra, score = find_best_match(current_resources_sorted, war_combos)
+                        if score != 0:
+                            rec = base_info.copy()
+                            rec.update({
+                                'Valid Combination': ", ".join(best_combo),
+                                'Missing Resources': ", ".join(sorted(missing)) if missing else "None",
+                                'Extra Resources': ", ".join(sorted(extra)) if extra else "None"
+                            })
+                            mismatch_war.append(rec)
                     
-                    st.markdown("**Peacetime Resource Mismatches:**")
-                    peacetime_df = pd.DataFrame(peacetime_mismatch).reset_index(drop=True)
-                    
-                    # Only style and display if there's data
-                    if not peacetime_df.empty:
-                        subset_cols = ['Duplicate Resources']
-                        styled_peace = peacetime_df.style.applymap(highlight_none, subset=subset_cols)
-                        st.dataframe(styled_peace, use_container_width=True)
+                    # Convert each list into a DataFrame and display it.
+                    st.markdown("**Peace Mode Level A Mismatches:**")
+                    df_peace_a = pd.DataFrame(mismatch_peace_a).reset_index(drop=True)
+                    if not df_peace_a.empty:
+                        styled_peace_a = df_peace_a.style.applymap(highlight_none, subset=['Duplicate Resources'])
+                        st.dataframe(styled_peace_a, use_container_width=True)
                     else:
-                        st.info("No peacetime resource mismatches found.")
+                        st.info("No mismatches found for Peace Mode Level A.")
                     
-                    st.markdown("**Wartime Resource Mismatches:**")
-                    wartime_df = pd.DataFrame(wartime_mismatch).reset_index(drop=True)
+                    st.markdown("**Peace Mode Level B Mismatches:**")
+                    df_peace_b = pd.DataFrame(mismatch_peace_b).reset_index(drop=True)
+                    if not df_peace_b.empty:
+                        styled_peace_b = df_peace_b.style.applymap(highlight_none, subset=['Duplicate Resources'])
+                        st.dataframe(styled_peace_b, use_container_width=True)
+                    else:
+                        st.info("No mismatches found for Peace Mode Level B.")
                     
-                    if not wartime_df.empty:
-                        subset_cols = ['Duplicate Resources']
-                        styled_war = wartime_df.style.applymap(highlight_none, subset=subset_cols)
+                    st.markdown("**Peace Mode Level C Mismatches:**")
+                    df_peace_c = pd.DataFrame(mismatch_peace_c).reset_index(drop=True)
+                    if not df_peace_c.empty:
+                        styled_peace_c = df_peace_c.style.applymap(highlight_none, subset=['Duplicate Resources'])
+                        st.dataframe(styled_peace_c, use_container_width=True)
+                    else:
+                        st.info("No mismatches found for Peace Mode Level C.")
+                    
+                    st.markdown("**War Mode Mismatches:**")
+                    df_war = pd.DataFrame(mismatch_war).reset_index(drop=True)
+                    if not df_war.empty:
+                        styled_war = df_war.style.applymap(highlight_none, subset=['Duplicate Resources'])
                         st.dataframe(styled_war, use_container_width=True)
                     else:
-                        st.info("No wartime resource mismatches found.")
-
+                        st.info("No mismatches found for War Mode.")
+                
                 # -----------------------
                 # RECOMMENDED TRADE CIRCLES
                 # -----------------------
