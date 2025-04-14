@@ -747,6 +747,7 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                 # -----------------------
                 # RECOMMENDED TRADE CIRCLES (UPDATED SECTION WITH STRICTER ASSIGNMENT LOGIC AND EXPORT FIX)
                 # -----------------------
+                final_circles = []  # Ensure this variable is always defined.
                 with st.expander("Recommended Trade Circles"):
                     st.markdown("### Paste Trade Circle Data")
                     trade_circle_text = st.text_area(
@@ -975,8 +976,7 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                 # -----------------------
                 # EXPORT/WRITE EXCEL FILE FOR DOWNLOAD WITH ADDITIONAL WORKSHEETS
                 # -----------------------
-                # Instead of iterating over the non-existent trade_circles_peace and trade_circles_war,
-                # we now use final_circles.
+                # NOTE: We now use final_circles, which is guaranteed to be defined (even as an empty list).
                 trade_circle_entries = []
                 for circle in final_circles:
                     # Determine the circle type (for display) and create a Trade Circle ID from available Nation IDs.
