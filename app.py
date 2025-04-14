@@ -971,28 +971,59 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                 # -----------------------
                 # WRITE EXCEL FILE FOR DOWNLOAD WITH ADDITIONAL WORKSHEETS
                 # -----------------------
-                # -----------------------
-                # WRITE EXCEL FILE FOR DOWNLOAD WITH ADDITIONAL WORKSHEETS
-                # -----------------------
                 if sheets:
                     output = io.BytesIO()
                     # Using openpyxl engine instead of xlsxwriter.
                     with pd.ExcelWriter(output, engine='openpyxl') as writer:
-                        # Write each sheet.
+                        # Write each pre-existing sheet.
                         for sheet_name, df_sheet in sheets.items():
                             df_sheet.to_excel(writer, sheet_name=sheet_name, index=False)
                         
-                        # Access the workbook and add additional worksheets.
+                        # Access the workbook for additional worksheets.
                         workbook = writer.book
+                        
+                        # Add a separate worksheet for Peacetime Level A mismatches.
+                        if not df_peace_a.empty:
+                            ws_pa = workbook.create_sheet("Peacetime Mismatch Level A")
+                            df_pa = df_peace_a.copy()
+                            df_pa['Category'] = 'Peacetime Level A Mismatch'
+                            for r in dataframe_to_rows(add_nation_drill_url(df_pa), index=False, header=True):
+                                ws_pa.append(r)
+                            ws_pa.column_dimensions["A"].width = 100
+                        
+                        # Add a separate worksheet for Peacetime Level B mismatches.
+                        if not df_peace_b.empty:
+                            ws_pb = workbook.create_sheet("Peacetime Mismatch Level B")
+                            df_pb = df_peace_b.copy()
+                            df_pb['Category'] = 'Peacetime Level B Mismatch'
+                            for r in dataframe_to_rows(add_nation_drill_url(df_pb), index=False, header=True):
+                                ws_pb.append(r)
+                            ws_pb.column_dimensions["A"].width = 100
+                        
+                        # Add a separate worksheet for Peacetime Level C mismatches.
+                        if not df_peace_c.empty:
+                            ws_pc = workbook.create_sheet("Peacetime Mismatch Level C")
+                            df_pc = df_peace_c.copy()
+                            df_pc['Category'] = 'Peacetime Level C Mismatch'
+                            for r in dataframe_to_rows(add_nation_drill_url(df_pc), index=False, header=True):
+                                ws_pc.append(r)
+                            ws_pc.column_dimensions["A"].width = 100
+                        
+                        # Optionally, you can choose not to create a consolidated peacetime sheet if you prefer separate ones.
+                        # For Wartime mismatches, we create a worksheet as before.
+                        if not wartime_df.empty:
+                            ws_w = workbook.create_sheet("Wartime Mismatch")
+                            for r in dataframe_to_rows(add_nation_drill_url(wartime_df), index=False, header=True):
+                                ws_w.append(r)
+                            ws_w.column_dimensions["A"].width = 100
                         
                         # Add Summary Overview worksheet.
                         summary_ws = workbook.create_sheet("Summary Overview")
-                        # Construct an updated summary_text including the breakdown for Peacetime Mismatches.
                         summary_text = (
                             f"Total Players (Empty + Complete): {total_players}\n"
                             f"Players with Empty Trade Slots: {len(players_empty)} ({empty_percentage:.2f}%)\n"
                             f"Players in Complete Trade Circle: {total_full}\n\n"
-                            f"Peacetime Mismatch Breakdown among Complete Trade Circles:\n"
+                            f"Peacetime Mismatch Breakdown:\n"
                             f"    Level A (< 1000 days): {unique_peaceA}\n"
                             f"    Level B (1000-2000 days): {unique_peaceB}\n"
                             f"    Level C (>= 2000 days): {unique_peaceC}\n"
@@ -1007,7 +1038,6 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                         # Add Message Templates worksheet.
                         messages_ws = workbook.create_sheet("Message Templates")
                         messages = []
-                        # Peacetime mismatch messages.
                         if not peacetime_df.empty:
                             for idx, row in peacetime_df.iterrows():
                                 extra = row["Duplicate Resources"]
@@ -1017,7 +1047,6 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                                     f"Missing: {row['Missing Resources']}; Extra: {row['Extra Resources']}. -Lord of Growth."
                                 )
                                 messages.append({"Message Type": "Peacetime Resource Mismatch", "Message": msg})
-                        # Wartime mismatch messages.
                         if not wartime_df.empty:
                             for idx, row in wartime_df.iterrows():
                                 extra = row["Duplicate Resources"]
@@ -1027,8 +1056,8 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                                     f"Missing: {row['Missing Resources']}; Extra: {row['Extra Resources']}. -Lord of Growth."
                                 )
                                 messages.append({"Message Type": "Wartime Resource Mismatch", "Message": msg})
-                
-                        # Trade circle messages: include partner information.
+                        
+                        # Trade Circle messages.
                         def generate_trade_circle_messages(circles, circle_type):
                             for circle in circles:
                                 nation_names = [player.get('Ruler Name','') for player in circle]
@@ -1038,7 +1067,6 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                                            f"{', '.join(partners)}. Your assigned resource pair is "
                                            f"{', '.join(player.get('Assigned Resources', [])) if player.get('Assigned Resources') else 'None'}. -Lord of Growth.")
                                     messages.append({"Message Type": f"{circle_type} Trade Circle", "Message": msg})
-                        
                         if trade_circles_peace:
                             generate_trade_circle_messages(trade_circles_peace, "Peacetime")
                         if trade_circles_war:
@@ -1060,7 +1088,8 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                 # -----------------------
                 st.markdown("### Download All Processed Data")
                 if excel_data:
-                    st.download_button("Download Summary Report", excel_data, file_name="full_summary_report.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", key="download_report")
+                    st.download_button("Download Summary Report", excel_data, file_name="full_summary_report.xlsx", 
+                                       mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", key="download_report")
                 else:
                     st.info("No data available for download.")
     else:
