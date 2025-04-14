@@ -61,6 +61,15 @@ def get_resource_1_2(row):
             return resources[0]
         return ""
 
+def add_nation_drill_url(df):
+    """
+    Append a 'Nation Drill URL' column to the DataFrame based on the 'Nation ID' column.
+    """
+    df = df.copy()
+    if 'Nation ID' in df.columns:
+        df['Nation Drill URL'] = "https://www.cybernations.net/nation_drill_display.asp?Nation_ID=" + df['Nation ID'].astype(str)
+    return df
+    
 def get_current_resources(row, resource_cols):
     """Return a comma-separated string of non-blank resources sorted alphabetically."""
     resources = sorted([str(x).strip() for x in row[resource_cols] if pd.notnull(x) and str(x).strip() != ''])
