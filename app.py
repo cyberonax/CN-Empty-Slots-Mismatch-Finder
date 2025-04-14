@@ -748,7 +748,7 @@ def main():
                         alliances = []
                 
                     if not alliances or len(alliances) == 0:
-                        heading_alliance = "all Alliances"
+                        heading_alliance = "Alliances"
                     elif len(alliances) == 1:
                         heading_alliance = alliances[0]
                     else:
