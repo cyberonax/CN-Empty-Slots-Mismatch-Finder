@@ -492,57 +492,57 @@ def main():
                     peace_a_text = st.text_area(
                         "Peace Mode - Level A (one combination per line)",
                         value="""Cattle, Coal, Fish, Gems, Gold, Lead, Oil, Rubber, Silver, Spices, Uranium, Wheat
-                Cattle, Coal, Fish, Gold, Lead, Oil, Pigs, Rubber, Spices, Sugar, Uranium, Wheat
-                Coal, Fish, Furs, Gems, Gold, Lead, Oil, Rubber, Silver, Uranium, Wheat, Wine
-                Coal, Fish, Gems, Gold, Lead, Oil, Rubber, Silver, Spices, Sugar, Uranium, Wheat
-                Coal, Fish, Gems, Gold, Lead, Lumber, Oil, Rubber, Silver, Spices, Uranium, Wheat
-                Cattle, Coal, Fish, Furs, Gems, Gold, Rubber, Silver, Spices, Uranium, Wheat, Wine
-                Coal, Fish, Gems, Gold, Lead, Oil, Pigs, Rubber, Silver, Spices, Uranium, Wheat
-                Aluminum, Coal, Fish, Gold, Iron, Lead, Lumber, Marble, Oil, Rubber, Uranium, Wheat
-                Coal, Fish, Gems, Gold, Lead, Marble, Oil, Rubber, Silver, Spices, Uranium, Wheat
-                Cattle, Coal, Fish, Gold, Lead, Lumber, Oil, Rubber, Spices, Sugar, Uranium, Wheat""",
+Cattle, Coal, Fish, Gold, Lead, Oil, Pigs, Rubber, Spices, Sugar, Uranium, Wheat
+Coal, Fish, Furs, Gems, Gold, Lead, Oil, Rubber, Silver, Uranium, Wheat, Wine
+Coal, Fish, Gems, Gold, Lead, Oil, Rubber, Silver, Spices, Sugar, Uranium, Wheat
+Coal, Fish, Gems, Gold, Lead, Lumber, Oil, Rubber, Silver, Spices, Uranium, Wheat
+Cattle, Coal, Fish, Furs, Gems, Gold, Rubber, Silver, Spices, Uranium, Wheat, Wine
+Coal, Fish, Gems, Gold, Lead, Oil, Pigs, Rubber, Silver, Spices, Uranium, Wheat
+Aluminum, Coal, Fish, Gold, Iron, Lead, Lumber, Marble, Oil, Rubber, Uranium, Wheat
+Coal, Fish, Gems, Gold, Lead, Marble, Oil, Rubber, Silver, Spices, Uranium, Wheat
+Cattle, Coal, Fish, Gold, Lead, Lumber, Oil, Rubber, Spices, Sugar, Uranium, Wheat""",
                         height=100
                     )
                     peace_b_text = st.text_area(
                         "Peace Mode - Level B (one combination per line)",
                         value="""Aluminum, Cattle, Coal, Fish, Iron, Lumber, Marble, Oil, Rubber, Spices, Uranium, Wheat
-                Aluminum, Coal, Fish, Iron, Lumber, Marble, Oil, Rubber, Spices, Uranium, Water, Wheat
-                Aluminum, Coal, Fish, Iron, Lumber, Marble, Oil, Rubber, Spices, Sugar, Uranium, Wheat
-                Aluminum, Coal, Fish, Gems, Iron, Lumber, Marble, Oil, Rubber, Spices, Uranium, Wheat
-                Aluminum, Coal, Fish, Iron, Lumber, Marble, Oil, Pigs, Rubber, Spices, Uranium, Wheat
-                Aluminum, Coal, Fish, Iron, Lumber, Marble, Oil, Rubber, Silver, Spices, Uranium, Wheat
-                Aluminum, Coal, Fish, Iron, Lumber, Marble, Oil, Rubber, Spices, Uranium, Wheat, Wine
-                Coal, Fish, Furs, Gems, Gold, Marble, Rubber, Silver, Spices, Uranium, Wheat, Wine
-                Cattle, Coal, Fish, Furs, Gems, Gold, Rubber, Silver, Spices, Uranium, Wheat, Wine
-                Aluminum, Cattle, Coal, Fish, Iron, Lumber, Marble, Rubber, Spices, Uranium, Water, Wheat""",
+Aluminum, Coal, Fish, Iron, Lumber, Marble, Oil, Rubber, Spices, Uranium, Water, Wheat
+Aluminum, Coal, Fish, Iron, Lumber, Marble, Oil, Rubber, Spices, Sugar, Uranium, Wheat
+Aluminum, Coal, Fish, Gems, Iron, Lumber, Marble, Oil, Rubber, Spices, Uranium, Wheat
+Aluminum, Coal, Fish, Iron, Lumber, Marble, Oil, Pigs, Rubber, Spices, Uranium, Wheat
+Aluminum, Coal, Fish, Iron, Lumber, Marble, Oil, Rubber, Silver, Spices, Uranium, Wheat
+Aluminum, Coal, Fish, Iron, Lumber, Marble, Oil, Rubber, Spices, Uranium, Wheat, Wine
+Coal, Fish, Furs, Gems, Gold, Marble, Rubber, Silver, Spices, Uranium, Wheat, Wine
+Cattle, Coal, Fish, Furs, Gems, Gold, Rubber, Silver, Spices, Uranium, Wheat, Wine
+Aluminum, Cattle, Coal, Fish, Iron, Lumber, Marble, Rubber, Spices, Uranium, Water, Wheat""",
                         height=100
                     )
                     peace_c_text = st.text_area(
                         "Peace Mode - Level C (one combination per line)",
                         value="""Cattle, Coal, Fish, Furs, Gems, Gold, Rubber, Silver, Spices, Uranium, Wheat, Wine
-                Coal, Fish, Furs, Gems, Gold, Rubber, Silver, Spices, Sugar, Uranium, Wheat, Wine
-                Coal, Fish, Furs, Gems, Gold, Pigs, Rubber, Silver, Spices, Uranium, Wheat, Wine
-                Cattle, Coal, Fish, Gems, Gold, Pigs, Rubber, Silver, Spices, Sugar, Uranium, Wheat
-                Coal, Fish, Furs, Gems, Gold, Rubber, Silver, Spices, Uranium, Water, Wheat, Wine
-                Coal, Fish, Furs, Gems, Gold, Oil, Rubber, Silver, Spices, Uranium, Wheat, Wine
-                Cattle, Coal, Fish, Furs, Gems, Gold, Rubber, Silver, Spices, Sugar, Uranium, Wheat
-                Cattle, Coal, Fish, Furs, Gems, Gold, Rubber, Silver, Spices, Sugar, Uranium, Wine
-                Cattle, Coal, Fish, Furs, Gems, Gold, Pigs, Rubber, Silver, Spices, Uranium, Wine
-                Cattle, Coal, Fish, Gems, Gold, Rubber, Silver, Spices, Sugar, Uranium, Wheat, Wine""",
+Coal, Fish, Furs, Gems, Gold, Rubber, Silver, Spices, Sugar, Uranium, Wheat, Wine
+Coal, Fish, Furs, Gems, Gold, Pigs, Rubber, Silver, Spices, Uranium, Wheat, Wine
+Cattle, Coal, Fish, Gems, Gold, Pigs, Rubber, Silver, Spices, Sugar, Uranium, Wheat
+Coal, Fish, Furs, Gems, Gold, Rubber, Silver, Spices, Uranium, Water, Wheat, Wine
+Coal, Fish, Furs, Gems, Gold, Oil, Rubber, Silver, Spices, Uranium, Wheat, Wine
+Cattle, Coal, Fish, Furs, Gems, Gold, Rubber, Silver, Spices, Sugar, Uranium, Wheat
+Cattle, Coal, Fish, Furs, Gems, Gold, Rubber, Silver, Spices, Sugar, Uranium, Wine
+Cattle, Coal, Fish, Furs, Gems, Gold, Pigs, Rubber, Silver, Spices, Uranium, Wine
+Cattle, Coal, Fish, Gems, Gold, Rubber, Silver, Spices, Sugar, Uranium, Wheat, Wine""",
                         height=100
                     )
                     war_text = st.text_area(
                         "War Mode (one combination per line)",
                         value="""Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Spices, Uranium
-                Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wheat
-                Aluminum, Coal, Fish, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium
-                Aluminum, Cattle, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium
-                Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Sugar, Uranium
-                Aluminum, Coal, Furs, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium
-                Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Silver, Uranium
-                Aluminum, Coal, Gems, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium
-                Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wine
-                Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Water""",
+Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wheat
+Aluminum, Coal, Fish, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium
+Aluminum, Cattle, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium
+Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Sugar, Uranium
+Aluminum, Coal, Furs, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium
+Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Silver, Uranium
+Aluminum, Coal, Gems, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium
+Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wine
+Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Water""",
                         height=100
                     )
                     
@@ -707,6 +707,13 @@ def main():
                         st.dataframe(styled_war, use_container_width=True)
                     else:
                         st.info("No mismatches found for War Mode.")
+                    
+                    # --- Consolidate mismatch DataFrames for later use (summary, Excel export) ---
+                    if not (df_peace_a.empty and df_peace_b.empty and df_peace_c.empty):
+                        peacetime_df = pd.concat([df_peace_a, df_peace_b, df_peace_c], ignore_index=True)
+                    else:
+                        peacetime_df = pd.DataFrame()
+                    wartime_df = df_war.copy()
                 
                 # -----------------------
                 # RECOMMENDED TRADE CIRCLES
@@ -766,9 +773,9 @@ def main():
                         st.dataframe(pd.DataFrame(leftover_data), use_container_width=True)
                     else:
                         st.success("All players have been grouped into trade circles.")
-
+                
                 # -----------------------
-                # PREPARE DATA FOR EXCEL DOWNLOAD WITH SEPARATE WORKSHEETS
+                # PREPARE DATA FOR EXCEL DOWNLOAD WITH ADDITIONAL WORKSHEETS
                 # -----------------------
                 # Function to add Nation Drill URL column
                 def add_nation_drill_url(df):
@@ -873,7 +880,6 @@ def main():
                 # -----------------------
                 with st.expander("Summary Overview"):
                     # Determine the heading based on the Alliance filter selection stored in session state.
-                    # (Make sure that in your Filter Data section you also save the 'selected_alliances' to session state.)
                     if "selected_alliances" in st.session_state:
                         alliances = st.session_state.selected_alliances
                     else:
@@ -884,7 +890,6 @@ def main():
                     elif len(alliances) == 1:
                         heading_alliance = alliances[0]
                     else:
-                        # If multiple alliances are selected, you may either join them or simply say 'multiple alliances'
                         heading_alliance = ", ".join(alliances)
                     
                     st.subheader(f"General Statistics for {heading_alliance}")
@@ -893,7 +898,7 @@ def main():
                     total_players = len(players_empty) + len(players_full)
                     empty_percentage = (len(players_empty) / total_players * 100) if total_players else 0
 
-                    # For players in complete trade circles, count unique mismatches
+                    # For players in complete trade circles, count unique mismatches using consolidated DataFrames.
                     total_full = len(players_full)
                     unique_peacetime_mismatch = peacetime_df['Nation ID'].nunique() if not peacetime_df.empty else 0
                     unique_wartime_mismatch = wartime_df['Nation ID'].nunique() if not wartime_df.empty else 0
@@ -908,31 +913,23 @@ def main():
                     st.markdown('---')
 
                     st.subheader("Action Plan for Alliance Management")
-                    # Use dedent to ensure proper bullet point formatting
                     action_plan = textwrap.dedent("""\
                     **1. Identify Affected Trade Circles:**
                     - Review the **Peacetime Resource Mismatches** and **Wartime Resource Mismatches** reports.
                     - For each entry, note the following:
                       - **Player Identification:** Nation Name, Nation ID, Ruler Name.
-                      - **Resources:** The extra resources (listed under *Extra Resources*) and the missing resources (listed under *Missing Peacetime Resources* or *Missing Wartime Resources*).
-
+                      - **Resources:** The extra resources (listed under *Extra Resources*) and the missing resources (listed under *Missing Resources*).
+    
                     **2. Notify Affected Players:**
                     - For each player with a peacetime mismatch, send a message:
-                      - *"To The Ruler: [Ruler Name], your Trade Circle currently has mismatched/duplicate resource(s) [list Extra Resources] which must be exchanged for the missing resource(s) [list Missing Peacetime Resources] to meet peacetime trade requirements. Please can you either change your resources or get in contact with your trade partners to coordinate adjustments to your agreements. Peacetime resources must be: Aluminum, Cattle, Fish, Iron, Lumber, Marble, Pigs, Spices, Sugar, Uranium, Water, Wheat. -Lord of Growth."*
-                    - For each player with a wartime mismatch, send a similar message:
-                      - *"To The Ruler: [Ruler Name], your Trade Circle currently has mismatched/duplicate resource(s) [list Extra Resources] which must be exchanged for the missing resource(s) [list Missing Wartime Resources] to meet wartime trade requirements. Please can you either change your resources or get in contact with your trade partners to coordinate adjustments to your agreements. Wartime resources must be: Aluminum, Coal, Fish, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, and Uranium. -Lord of Growth."*
-
+                      - *"To The Ruler: [Ruler Name], your Trade Circle currently has mismatched/duplicate resource(s) [Extra Resources] which must be exchanged for the missing resource(s) [Missing Resources] to meet peacetime trade requirements. Please can you either change your resources or get in contact with your trade partners. -Lord of Growth."*
+                    - For each player with a wartime mismatch, send a similar message.
+    
                     **3. Reconfigure Incomplete Trade Circles:**
-                    - Review the **Players with Empty Trade Slots** report.
-                    - For players not fully assigned, identify the recommended trade circle from the **Recommended Trade Circles** report.
-                    - For each affected player, send a message:
-                      - *"To The Ruler: [Ruler Name], please join a Trade Circle with partners: [list partner Nation Names]. Your assigned resource pair is [Assigned Resources]. Confirm your participation immediately. -Lord of Growth."*
-                    - For any leftover players, send an individual notification to arrange an immediate meeting for reconfiguration.
-
+                    - Review the **Players with Empty Trade Slots** report and arrange a meeting for any player not in a full trade circle.
+    
                     **4. Document and Follow-Up:**
-                    - Log each notification with the following details: Nation ID, Nation Name, Ruler Name, category (Peacetime/Wartime/Trade Circle), and specific action required.
-                    - Set a follow-up review after 48-72 hours to ensure all players have confirmed the required changes.
-                    - Re-run the analysis after adjustments and update the report accordingly.
+                    - Log each notification with details for follow-up.
                     """)
                     st.markdown(action_plan)
 
@@ -941,16 +938,16 @@ def main():
                 # -----------------------
                 if sheets:
                     output = io.BytesIO()
-                    # Using openpyxl engine instead of xlsxwriter
+                    # Using openpyxl engine instead of xlsxwriter.
                     with pd.ExcelWriter(output, engine='openpyxl') as writer:
-                        # Write existing sheets
+                        # Write each sheet.
                         for sheet_name, df_sheet in sheets.items():
                             df_sheet.to_excel(writer, sheet_name=sheet_name, index=False)
                         
-                        # Get access to the workbook
+                        # Access the workbook and add additional worksheets.
                         workbook = writer.book
                         
-                        # Add Summary Overview worksheet
+                        # Add Summary Overview worksheet.
                         summary_ws = workbook.create_sheet("Summary Overview")
                         summary_text = (
                             f"Total Players (Empty + Complete): {total_players}\n"
@@ -964,53 +961,50 @@ def main():
                         summary_ws.column_dimensions["A"].width = 100
                         summary_ws["A1"].alignment = Alignment(wrapText=True)
                         
-                        # Add Message Templates worksheet
+                        # Add Message Templates worksheet.
                         messages_ws = workbook.create_sheet("Message Templates")
                         messages = []
-                        # Peacetime mismatch messages:
+                        # Peacetime mismatch messages.
                         if not peacetime_df.empty:
                             for idx, row in peacetime_df.iterrows():
                                 extra = row["Duplicate Resources"]
-                                # Using extra duplicate info here; adjust message if desired.
                                 msg = (
-                                    f'To The Ruler: {row["Ruler Name"]}, your Trade Circle currently has mismatched/duplicate resource(s) '
-                                    f'{extra} which must be exchanged for any resource changes needed to match valid combinations. '
-                                    f'Please can you either change your resources or get in contact with '
-                                    f'your trade partners to coordinate adjustments to your agreements. -Lord of Growth.'
+                                    f"To The Ruler: {row['Ruler Name']}, your Trade Circle currently has mismatched/duplicate resource(s) "
+                                    f"{extra} which must be exchanged to match the ideal combination ({row['Valid Combination']}). "
+                                    f"Missing: {row['Missing Resources']}; Extra: {row['Extra Resources']}. -Lord of Growth."
                                 )
                                 messages.append({"Message Type": "Peacetime Resource Mismatch", "Message": msg})
-                        # Wartime mismatch messages:
+                        # Wartime mismatch messages.
                         if not wartime_df.empty:
                             for idx, row in wartime_df.iterrows():
                                 extra = row["Duplicate Resources"]
                                 msg = (
-                                    f'To The Ruler: {row["Ruler Name"]}, your Trade Circle currently has mismatched/duplicate resource(s) '
-                                    f'{extra} which must be exchanged for any resource changes needed to match valid combinations. '
-                                    f'Please can you either change your resources or get in contact with '
-                                    f'your trade partners to coordinate adjustments to your agreements. -Lord of Growth.'
+                                    f"To The Ruler: {row['Ruler Name']}, your Trade Circle currently has mismatched/duplicate resource(s) "
+                                    f"{extra} which must be exchanged to match the ideal combination ({row['Valid Combination']}). "
+                                    f"Missing: {row['Missing Resources']}; Extra: {row['Extra Resources']}. -Lord of Growth."
                                 )
                                 messages.append({"Message Type": "Wartime Resource Mismatch", "Message": msg})
-
-                        # Trade circle messages: include partner information
+    
+                        # Trade circle messages: include partner information.
                         def generate_trade_circle_messages(circles, circle_type):
                             for circle in circles:
                                 nation_names = [player.get('Ruler Name','') for player in circle]
                                 for player in circle:
                                     partners = [name for name in nation_names if name != player.get('Ruler Name','')]
-                                    msg = f'To The Ruler: {player.get("Ruler Name","")}, please can you join a Trade Circle with partners: {", ".join(partners)}. Your assigned resource pair is {", ".join(player.get("Assigned Resources", [])) if player.get("Assigned Resources") else "None"}. Confirm your participation immediately. -Lord of Growth.'
+                                    msg = (f"To The Ruler: {player.get('Ruler Name','')}, please join a Trade Circle with partners: "
+                                           f"{', '.join(partners)}. Your assigned resource pair is "
+                                           f"{', '.join(player.get('Assigned Resources', [])) if player.get('Assigned Resources') else 'None'}. -Lord of Growth.")
                                     messages.append({"Message Type": f"{circle_type} Trade Circle", "Message": msg})
-
+    
                         if trade_circles_peace:
                             generate_trade_circle_messages(trade_circles_peace, "Peacetime")
                         if trade_circles_war:
                             generate_trade_circle_messages(trade_circles_war, "Wartime")
                         
                         messages_df = pd.DataFrame(messages)
-                        # Write the messages DataFrame starting at A1 in Message Templates worksheet
                         from openpyxl.utils.dataframe import dataframe_to_rows
                         for r in dataframe_to_rows(messages_df, index=False, header=True):
                             messages_ws.append(r)
-                        # Adjust column widths for Message Templates
                         messages_ws.column_dimensions["A"].width = 30
                         messages_ws.column_dimensions["B"].width = 150
                     output.seek(0)
@@ -1018,14 +1012,14 @@ def main():
                 else:
                     excel_data = None
 
-            # -----------------------
-            # DOWNLOAD ALL DATA EXCEL (positioned at the bottom of the page)
-            # -----------------------
-            st.markdown("### Download All Processed Data")
-            if excel_data:
-                st.download_button("Download Summary Report", excel_data, file_name="full_summary_report.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", key="download_report")
-            else:
-                st.info("No data available for download.")
+                # -----------------------
+                # DOWNLOAD ALL DATA EXCEL (positioned at the bottom of the page)
+                # -----------------------
+                st.markdown("### Download All Processed Data")
+                if excel_data:
+                    st.download_button("Download Summary Report", excel_data, file_name="full_summary_report.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", key="download_report")
+                else:
+                    st.info("No data available for download.")
     else:
         st.info("Please enter the correct password to access the functionality.")
 
