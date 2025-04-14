@@ -1096,6 +1096,7 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                             generate_trade_circle_messages(trade_circles_war, "Wartime")
                         
                         messages_df = pd.DataFrame(messages)
+                        from openpyxl.utils.dataframe import dataframe_to_rows
                         for r in dataframe_to_rows(messages_df, index=False, header=True):
                             messages_ws.append(r)
                         messages_ws.column_dimensions["A"].width = 30
