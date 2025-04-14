@@ -943,7 +943,7 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                     st.write(f"- **Level A** (< 1000 days old): **{unique_peaceA}**")
                     st.write(f"- **Level B** (1000 to 2000 days old): **{unique_peaceB}**")
                     st.write(f"- **Level C** (>= 2000 days old): **{unique_peaceC}**")
-                    st.markdown("#### Total Peacetime Mismatch among Complete Trade Circles:** {total_peace_mismatch}")
+                    st.markdown("#### Total Peacetime Mismatch among Complete Trade Circles: {total_peace_mismatch}")
                     st.markdown("#### Wartime Mismatch among Complete Trade Circles: {unique_wartime_mismatch} ({wartime_mismatch_percentage:.2f}%)")
                     st.markdown('---')
 
