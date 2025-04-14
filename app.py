@@ -390,7 +390,8 @@ def main():
                         # Get unique sorted alliances from the DataFrame.
                         alliances = sorted(df["Alliance"].dropna().unique())
                         # Use a multiselect; default to all available alliances.
-                        selected_alliances = st.multiselect("Select Alliance(s) to filter", alliances, default=alliances, key="alliance_filter")
+                        default_alliances = ["Freehold of The Wolves"] if "Freehold of The Wolves" in alliances else alliances
+                        selected_alliances = st.multiselect("Select Alliance(s) to filter", alliances, default=default_alliances, key="alliance_filter")
                         if selected_alliances:
                             filtered_df = df[df["Alliance"].isin(selected_alliances)]
                         else:
