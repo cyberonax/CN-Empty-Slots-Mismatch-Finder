@@ -729,7 +729,14 @@ def main():
                 # SUMMARY OVERVIEW SECTION (UI)
                 # -----------------------
                 with st.expander("Summary Overview"):
-                    st.subheader("General Statistics")
+                    # Determine the current selected Alliance name (if applicable)
+                    selected_alliance = "All Alliances"
+                    if "filtered_df" in st.session_state and "Alliance" in st.session_state.filtered_df.columns:
+                        unique_alliances = st.session_state.filtered_df["Alliance"].unique()
+                        if len(unique_alliances) == 1:
+                            selected_alliance = unique_alliances[0]
+                    st.subheader(f"General Statistics for {selected_alliance}")
+
                     # Total players in either group (empty slots + complete)
                     total_players = len(players_empty) + len(players_full)
                     empty_percentage = (len(players_empty) / total_players * 100) if total_players else 0
