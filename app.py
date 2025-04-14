@@ -971,6 +971,9 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                 # -----------------------
                 # WRITE EXCEL FILE FOR DOWNLOAD WITH ADDITIONAL WORKSHEETS
                 # -----------------------
+                # -----------------------
+                # WRITE EXCEL FILE FOR DOWNLOAD WITH ADDITIONAL WORKSHEETS
+                # -----------------------
                 if sheets:
                     output = io.BytesIO()
                     # Using openpyxl engine instead of xlsxwriter.
@@ -984,11 +987,16 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                         
                         # Add Summary Overview worksheet.
                         summary_ws = workbook.create_sheet("Summary Overview")
+                        # Construct an updated summary_text including the breakdown for Peacetime Mismatches.
                         summary_text = (
                             f"Total Players (Empty + Complete): {total_players}\n"
                             f"Players with Empty Trade Slots: {len(players_empty)} ({empty_percentage:.2f}%)\n"
-                            f"Players in Complete Trade Circle: {total_full}\n"
-                            f"Peacetime Mismatch among Complete Trade Circles: {unique_peacetime_mismatch} ({peacetime_mismatch_percentage:.2f}%)\n"
+                            f"Players in Complete Trade Circle: {total_full}\n\n"
+                            f"Peacetime Mismatch Breakdown among Complete Trade Circles:\n"
+                            f"    Level A (< 1000 days): {unique_peaceA}\n"
+                            f"    Level B (1000-2000 days): {unique_peaceB}\n"
+                            f"    Level C (>= 2000 days): {unique_peaceC}\n"
+                            f"    Total Peacetime Mismatch: {total_peace_mismatch} ({peacetime_mismatch_percentage:.2f}%)\n"
                             f"Wartime Mismatch among Complete Trade Circles: {unique_wartime_mismatch} ({wartime_mismatch_percentage:.2f}%)"
                         )
                         summary_ws["A1"] = summary_text
@@ -1019,7 +1027,7 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                                     f"Missing: {row['Missing Resources']}; Extra: {row['Extra Resources']}. -Lord of Growth."
                                 )
                                 messages.append({"Message Type": "Wartime Resource Mismatch", "Message": msg})
-    
+                
                         # Trade circle messages: include partner information.
                         def generate_trade_circle_messages(circles, circle_type):
                             for circle in circles:
@@ -1030,7 +1038,7 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                                            f"{', '.join(partners)}. Your assigned resource pair is "
                                            f"{', '.join(player.get('Assigned Resources', [])) if player.get('Assigned Resources') else 'None'}. -Lord of Growth.")
                                     messages.append({"Message Type": f"{circle_type} Trade Circle", "Message": msg})
-    
+                        
                         if trade_circles_peace:
                             generate_trade_circle_messages(trade_circles_peace, "Peacetime")
                         if trade_circles_war:
@@ -1046,7 +1054,7 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                     excel_data = output.read()
                 else:
                     excel_data = None
-
+                
                 # -----------------------
                 # DOWNLOAD ALL DATA EXCEL (positioned at the bottom of the page)
                 # -----------------------
