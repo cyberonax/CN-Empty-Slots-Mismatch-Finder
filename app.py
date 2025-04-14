@@ -487,6 +487,21 @@ def main():
                 # RESOURCE MISMATCHES
                 # -----------------------
                 with st.expander("Resource Mismatches"):
+                    st.markdown(
+                        """
+                        ### Understanding Peace Mode Levels
+                    
+                        - **Peace Mode Level A:**  
+                          Nations that are less than **1000 days old**. This level is intended for newer or rapidly developing nations, which may still be adjusting their resource management.
+                    
+                        - **Peace Mode Level B:**  
+                          Nations that are between **1000 and 2000 days old**. These nations are moderately established; their resource combinations may be evolving as they fine-tune their trade strategies.
+                    
+                        - **Peace Mode Level C:**  
+                          Nations that are **2000 days or older**. These are mature nations with longstanding resource setups, typically expecting more stable and optimized resource combinations.
+                        """
+                    )
+                    
                     st.markdown("### Valid Resource Combinations Input")
                     # Text box for Peace Mode - Level A with default combinations.
                     peace_a_text = st.text_area(
@@ -598,21 +613,6 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                     mismatch_peace_b = []
                     mismatch_peace_c = []
                     mismatch_war     = []
-
-                    st.markdown(
-                        """
-                        ### Understanding Peace Mode Levels
-                    
-                        - **Peace Mode Level A:**  
-                          Nations that are less than **1000 days old**. This level is intended for newer or rapidly developing nations, which may still be adjusting their resource management.
-                    
-                        - **Peace Mode Level B:**  
-                          Nations that are between **1000 and 2000 days old**. These nations are moderately established; their resource combinations may be evolving as they fine-tune their trade strategies.
-                    
-                        - **Peace Mode Level C:**  
-                          Nations that are **2000 days or older**. These are mature nations with longstanding resource setups, typically expecting more stable and optimized resource combinations.
-                        """
-                    )
                     
                     for idx, row in players_full.iterrows():
                         # Get current resources as per the CSV-based list.
