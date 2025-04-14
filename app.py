@@ -981,17 +981,15 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                             st.dataframe(df_leftover, use_container_width=True)
                     else:
                         st.info("Paste trade circle data in the text box above to process.")
-                
+
                 # -----------------------
                 # EXPORT/WRITE EXCEL FILE FOR DOWNLOAD WITH ADDITIONAL WORKSHEETS
                 # -----------------------
-                sheets = {}  # Initialize the sheets dictionary
+                sheets = {}  # Ensure sheets is initialized
                 
-                # Instead of iterating over the non-existent trade_circles_peace and trade_circles_war,
-                # we now use final_circles.
+                # Build trade circle export entries based on final_circles
                 trade_circle_entries = []
                 for circle in final_circles:
-                    # Determine the circle type (for display) and create a Trade Circle ID from available Nation IDs.
                     circle_type = circle[0].get("Trade Circle Category", "Uncategorized")
                     trade_circle_id = ".".join([str(p.get('Nation ID', '')) for p in circle if p.get('Nation ID')])
                     for player in circle:
@@ -1015,12 +1013,35 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                     sheets["Trade Circles"] = add_nation_drill_url(trade_circle_df)
                 
                 # -----------------------
-                # COMPARATIVE ALLIANCE STATS
+                # GENERATE MESSAGE TEMPLATES FOR TRADE CIRCLES
+                # -----------------------
+                def generate_trade_circle_messages(final_circles):
+                    messages = []
+                    for circle in final_circles:
+                        circle_type = circle[0].get("Trade Circle Category", "Uncategorized")
+                        nation_names = [player.get('Ruler Name', '') for player in circle if player.get('Ruler Name')]
+                        for player in circle:
+                            partners = [name for name in nation_names if name != player.get('Ruler Name', '')]
+                            msg = (
+                                f"To The Ruler: {player.get('Ruler Name', '')}, please join a Trade Circle with partners: "
+                                f"{', '.join(partners)}. Your assigned resource pair is "
+                                f"{', '.join(player.get('Assigned Resource 1+2', [])) if player.get('Assigned Resource 1+2') else 'None'}. -Lord of Growth."
+                            )
+                            messages.append({"Message Type": f"{circle_type} Trade Circle", "Message": msg})
+                    return messages
+                
+                message_entries = generate_trade_circle_messages(final_circles)
+                
+                if message_entries:
+                    messages_df = pd.DataFrame(message_entries)
+                    sheets["Message Templates"] = messages_df.copy()
+                
+                # -----------------------
+                # COMPARATIVE ALLIANCE STATS (EXAMPLE)
                 # -----------------------
                 if "Alliance" in df.columns:
                     original_df = st.session_state.df.copy()
                     resource_cols = [f"Connected Resource {i}" for i in range(1, 11)]
-                    # Determine players with empty trade slots in the original data
                     mask_empty_all = original_df[resource_cols].isnull().any(axis=1) | (
                         original_df[resource_cols].apply(lambda col: col.astype(str).str.strip() == '').any(axis=1)
                     )
@@ -1033,7 +1054,6 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                         total_players = len(original_df[original_df['Alliance'] == alliance])
                         empty_players = len(players_empty_all[players_empty_all['Alliance'] == alliance])
                         full_players = len(players_full_all[players_full_all['Alliance'] == alliance])
-                        # Empty Trade Slot (%) stored as a numerical value.
                         empty_percentage = (empty_players / total_players * 100) if total_players else 0
                 
                         comp_stats.append({
@@ -1044,119 +1064,34 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                             "Players in Complete Trade Circle": full_players,
                         })
                     
-                comp_stats_df = pd.DataFrame(comp_stats)
-                # Sort by the percentage column in ascending order.
-                comp_stats_df = comp_stats_df.sort_values("Empty Trade Slot (%)", ascending=True).reset_index(drop=True)
-                comp_stats_df.index = comp_stats_df.index + 1
+                    comp_stats_df = pd.DataFrame(comp_stats)
+                    comp_stats_df = comp_stats_df.sort_values("Empty Trade Slot (%)", ascending=True).reset_index(drop=True)
+                    comp_stats_df.index = comp_stats_df.index + 1
                 
-                with st.expander("Comparative Alliance Stats"):
-                    st.dataframe(comp_stats_df.style.format({"Empty Trade Slot (%)": "{:.2f}%"}), use_container_width=True)
+                    with st.expander("Comparative Alliance Stats"):
+                        st.dataframe(comp_stats_df.style.format({"Empty Trade Slot (%)": "{:.2f}%"}), use_container_width=True)
                 
-                    # Add Comparative Alliance Stats to the Excel sheets
                     sheets["Comparative Alliance Stats"] = comp_stats_df.copy()
-
-                # -----------------------
-                # SUMMARY OVERVIEW SECTION (UI)
-                # -----------------------
-                with st.expander("Summary Overview"):
-                    # Determine the heading based on the Alliance filter selection stored in session state.
-                    if "selected_alliances" in st.session_state:
-                        alliances = st.session_state.selected_alliances
-                    else:
-                        alliances = []
                 
-                    if not alliances or len(alliances) == 0:
-                        heading_alliance = "Alliances"
-                    elif len(alliances) == 1:
-                        heading_alliance = alliances[0]
-                    else:
-                        heading_alliance = ", ".join(alliances)
-                    
-                    st.subheader(f"General Statistics for {heading_alliance}")
-
-                    # Total players in either group (empty slots + complete)
-                    total_players = len(players_empty) + len(players_full)
-                    empty_percentage = (len(players_empty) / total_players * 100) if total_players else 0
-
-                    # For players in complete trade circles, count unique mismatches using consolidated DataFrames.
-                    total_full = len(players_full)
-                    unique_peacetime_mismatch = peacetime_df['Nation ID'].nunique() if not peacetime_df.empty else 0
-                    unique_wartime_mismatch = wartime_df['Nation ID'].nunique() if not wartime_df.empty else 0
-                    peacetime_mismatch_percentage = (unique_peacetime_mismatch / total_full * 100) if total_full else 0
-                    wartime_mismatch_percentage = (unique_wartime_mismatch / total_full * 100) if total_full else 0
-
-                    st.write(f"**Total Players (Empty + Complete):** {total_players}")
-                    st.write(f"**Players with Empty Trade Slots:** {len(players_empty)} ({empty_percentage:.2f}%)")
-                    st.write(f"**Players in Complete Trade Circle:** {total_full}")
-                    
-                    # Break down the peacetime mismatches by Peace Mode Level
-                    unique_peaceA = df_peace_a['Nation ID'].nunique() if not df_peace_a.empty else 0
-                    unique_peaceB = df_peace_b['Nation ID'].nunique() if not df_peace_b.empty else 0
-                    unique_peaceC = df_peace_c['Nation ID'].nunique() if not df_peace_c.empty else 0
-                    
-                    total_peace_mismatch = unique_peaceA + unique_peaceB + unique_peaceC
-                    
-                    st.markdown("#### Peacetime Mismatches Breakdown by Level")
-                    st.write(f"- **Level A** (< 1000 days old): **{unique_peaceA}**")
-                    st.write(f"- **Level B** (1000 to 2000 days old): **{unique_peaceB}**")
-                    st.write(f"- **Level C** (>= 2000 days old): **{unique_peaceC}**")
-                    st.write(f"Total Peacetime Mismatch among Complete Trade Circles: {total_peace_mismatch} ({peacetime_mismatch_percentage:.2f}%)")
-                    st.write(f"Wartime Mismatch among Complete Trade Circles: {unique_wartime_mismatch} ({wartime_mismatch_percentage:.2f}%)")
-                    st.markdown('---')
-
-                    st.subheader("Action Plan for Alliance Management")
-                    action_plan = textwrap.dedent("""\
-                    **1. Identify Affected Trade Circles:**
-                    - Review the **Peacetime Resource Mismatches** and **Wartime Resource Mismatches** reports.
-                    - For each entry, note the following:
-                      - **Player Identification:** Nation Name, Nation ID, Ruler Name.
-                      - **Resources:** The extra resources (listed under *Extra Resources*) and the missing resources (listed under *Missing Resources*).
-    
-                    **2. Notify Affected Players:**
-                    - For each player with a peacetime mismatch, send a message:
-                      - *"To The Ruler: [Ruler Name], your Trade Circle currently has mismatched/duplicate resource(s) [Extra Resources] which must be exchanged for the missing resource(s) [Missing Resources] to meet peacetime trade requirements. Please can you either change your resources or get in contact with your trade partners. -Lord of Growth."*
-                    - For each player with a wartime mismatch, send a similar message.
-    
-                    **3. Reconfigure Incomplete Trade Circles:**
-                    - Review the **Players with Empty Trade Slots** report and arrange a meeting for any player not in a full trade circle.
-    
-                    **4. Document and Follow-Up:**
-                    - Log each notification with details for follow-up.
-                    """)
-                    st.markdown(action_plan)
-
                 # -----------------------
-                # WRITE EXCEL FILE FOR DOWNLOAD WITH ADDITIONAL WORKSHEETS
+                # WRITE EXCEL FILE FOR DOWNLOAD
                 # -----------------------
-                if sheets:
-                    output = io.BytesIO()
-                    # Using openpyxl engine instead of xlsxwriter.
-                    with pd.ExcelWriter(output, engine='openpyxl') as writer:
-                        # Write each pre-existing sheet.
-                        for sheet_name, df_sheet in sheets.items():
-                            df_sheet.to_excel(writer, sheet_name=sheet_name, index=False)
-                        
-                        # Access the workbook for additional worksheets.
-                        workbook = writer.book
-                        
-                        # Import helper for converting DataFrame rows to worksheet rows.
-                        from openpyxl.utils.dataframe import dataframe_to_rows
-                        from openpyxl.styles import Font, Border, Side, Alignment
-                
-                        # Define header formatting: bold with a thin border.
-                        header_font = Font(bold=True)
-                        thin_border = Border(
-                            left=Side(style='thin'),
-                            right=Side(style='thin'),
-                            top=Side(style='thin'),
-                            bottom=Side(style='thin')
-                        )
-                
-                        # Helper function to format the header row.
-                        def format_header(ws):
-                            for cell in ws[1]:
-                                cell.font = header_font
-                                cell.border = thin_border
+                output = io.BytesIO()
+                with pd.ExcelWriter(output, engine='openpyxl') as writer:
+                    for sheet_name, df_sheet in sheets.items():
+                        df_sheet.to_excel(writer, sheet_name=sheet_name, index=False)
+                    
+                    workbook = writer.book
+                    from openpyxl.utils.dataframe import dataframe_to_rows
+                    from openpyxl.styles import Font, Border, Side, Alignment
+                    header_font = Font(bold=True)
+                    thin_border = Border(left=Side(style='thin'), right=Side(style='thin'),
+                                         top=Side(style='thin'), bottom=Side(style='thin'))
+                    
+                    def format_header(ws):
+                        for cell in ws[1]:
+                            cell.font = header_font
+                            cell.border = thin_border
                         
                         # Create separate worksheets for each Peacetime Mismatch Level using the same formatting as your consolidated sheet.
                         if not df_peace_a.empty:
