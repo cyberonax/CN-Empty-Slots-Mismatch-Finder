@@ -384,28 +384,40 @@ def main():
                 if not df.empty:
                     column_options = list(df.columns)
                     default_index = column_options.index("Alliance") if "Alliance" in column_options else 0
-                    # Add keys to preserve filter selections.
                     selected_column = st.selectbox("Select column to filter", column_options, index=default_index, key="filter_select")
-                    search_text = st.text_input("Filter by text (separate words by comma)", value="Freehold of the Wolves", key="filter_text")
-                            
-                    if search_text:
-                        # Support multiple filters separated by comma
-                        filters = [f.strip() for f in search_text.split(",") if f.strip()]
-                        pattern = "|".join(filters)
-                        filtered_df = df[df[selected_column].astype(str).str.contains(pattern, case=False, na=False)]
-                        st.write(f"Showing results where **{selected_column}** contains any of {filters}:")
-                        # Use the filtered table's own "Resource 1" and "Resource 2" columns for current resource display
-                        if "Resource 1" in filtered_df.columns and "Resource 2" in filtered_df.columns:
-                            filtered_df = filtered_df.copy()
-                            filtered_df['Current Resource 1+2'] = filtered_df.apply(lambda row: get_resource_1_2(row), axis=1)
-                        st.dataframe(filtered_df, use_container_width=True)
-                        # Save the filtered DataFrame and CSV content to session state for later use.
-                        st.session_state.filtered_df = filtered_df
-                        csv_content = filtered_df.to_csv(index=False)
-                        st.session_state.filtered_csv = csv_content
-                        st.download_button("Download Filtered CSV", csv_content, file_name="filtered_nation_stats.csv", mime="text/csv", key="download_csv")
+                    
+                    if selected_column == "Alliance":
+                        # Get unique sorted alliances from the DataFrame.
+                        alliances = sorted(df["Alliance"].dropna().unique())
+                        # Use a multiselect; default to all available alliances.
+                        selected_alliances = st.multiselect("Select Alliance(s) to filter", alliances, default=alliances, key="alliance_filter")
+                        if selected_alliances:
+                            filtered_df = df[df["Alliance"].isin(selected_alliances)]
+                        else:
+                            # If nothing is selected, return the aggregate (all alliances)
+                            filtered_df = df.copy()
                     else:
-                        st.info("Enter text to filter the data.")
+                        search_text = st.text_input("Filter by text (separate words by comma)", value="Freehold of the Wolves", key="filter_text")
+                        if search_text:
+                            # Support multiple filters separated by comma
+                            filters = [f.strip() for f in search_text.split(",") if f.strip()]
+                            pattern = "|".join(filters)
+                            filtered_df = df[df[selected_column].astype(str).str.contains(pattern, case=False, na=False)]
+                        else:
+                            st.info("Enter text to filter the data.")
+                            filtered_df = df.copy()
+                            
+                    st.write(f"Showing results where **{selected_column}** is filtered:")
+                    # Use the filtered table's own "Resource 1" and "Resource 2" columns for current resource display
+                    if "Resource 1" in filtered_df.columns and "Resource 2" in filtered_df.columns:
+                        filtered_df = filtered_df.copy()
+                        filtered_df['Current Resource 1+2'] = filtered_df.apply(lambda row: get_resource_1_2(row), axis=1)
+                    st.dataframe(filtered_df, use_container_width=True)
+                    # Save the filtered DataFrame and CSV content to session state for later use.
+                    st.session_state.filtered_df = filtered_df
+                    csv_content = filtered_df.to_csv(index=False)
+                    st.session_state.filtered_csv = csv_content
+                    st.download_button("Download Filtered CSV", csv_content, file_name="filtered_nation_stats.csv", mime="text/csv", key="download_csv")
                 else:
                     st.warning("DataFrame is empty, nothing to filter.")
 
