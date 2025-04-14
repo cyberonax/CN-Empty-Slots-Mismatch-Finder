@@ -587,6 +587,18 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                     peace_c_combos = parse_combinations(peace_c_text)
                     war_combos     = parse_combinations(war_text)
 
+                    st.markdown("**Total valid combinations provided:**")
+                    st.write(f"Peace Mode Level A: {len(peace_a_combos)}")
+                    st.write(f"Peace Mode Level B: {len(peace_b_combos)}")
+                    st.write(f"Peace Mode Level C: {len(peace_c_combos)}")
+                    st.write(f"War Mode: {len(war_combos)}")
+                    
+                    # Create four lists to hold mismatches for each category.
+                    mismatch_peace_a = []
+                    mismatch_peace_b = []
+                    mismatch_peace_c = []
+                    mismatch_war     = []
+
                     st.markdown(
                         """
                         ### Understanding Peace Mode Levels
@@ -601,18 +613,6 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                           Nations that are **2000 days or older**. These are mature nations with longstanding resource setups, typically expecting more stable and optimized resource combinations.
                         """
                     )
-
-                    st.markdown("**Total valid combinations provided:**")
-                    st.write(f"Peace Mode Level A: {len(peace_a_combos)}")
-                    st.write(f"Peace Mode Level B: {len(peace_b_combos)}")
-                    st.write(f"Peace Mode Level C: {len(peace_c_combos)}")
-                    st.write(f"War Mode: {len(war_combos)}")
-                    
-                    # Create four lists to hold mismatches for each category.
-                    mismatch_peace_a = []
-                    mismatch_peace_b = []
-                    mismatch_peace_c = []
-                    mismatch_war     = []
                     
                     for idx, row in players_full.iterrows():
                         # Get current resources as per the CSV-based list.
