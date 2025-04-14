@@ -334,6 +334,7 @@ def main():
         if password:
             if password == "secret":
                 st.session_state.password_verified = True
+                st.experimental_rerun()  # <- forces rerun to hide the password box immediately
             else:
                 st.error("Incorrect password. Please try again.")
     
