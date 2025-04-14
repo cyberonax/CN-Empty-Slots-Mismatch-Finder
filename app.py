@@ -1100,10 +1100,24 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                             messages_ws.append(r)
                         messages_ws.column_dimensions["A"].width = 30
                         messages_ws.column_dimensions["B"].width = 150
+                        
+                        # --- Reorder worksheets so that Peacetime Level sheets follow the consolidated "Peacetime Mismatch" sheet ---
+                        sheets_list = workbook._sheets  # Get the current order of sheets.
+                        p_mismatch_index = None
+                        for i, sheet in enumerate(sheets_list):
+                            if sheet.title == "Peacetime Mismatch":
+                                p_mismatch_index = i
+                                break
+                        if p_mismatch_index is not None:
+                            extra_titles = ["Peacetime Mismatch Level A", "Peacetime Mismatch Level B", "Peacetime Mismatch Level C"]
+                            extra_sheets = [sheet for sheet in sheets_list if sheet.title in extra_titles]
+                            sheets_list = [sheet for sheet in sheets_list if sheet.title not in extra_titles]
+                            insertion_index = p_mismatch_index + 1
+                            sheets_list[insertion_index:insertion_index] = extra_sheets
+                            workbook._sheets = sheets_list
+                        
                     output.seek(0)
                     excel_data = output.read()
-                else:
-                    excel_data = None
                 
                 # -----------------------
                 # DOWNLOAD ALL DATA EXCEL (positioned at the bottom of the page)
