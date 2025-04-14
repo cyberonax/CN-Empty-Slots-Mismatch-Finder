@@ -830,7 +830,13 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                     peacetime_df_copy = peacetime_df.copy()
                     peacetime_df_copy['Category'] = 'Peacetime Resource Mismatch'
                     sheets["Peacetime Mismatch"] = add_nation_drill_url(peacetime_df_copy)
-
+                    
+                # Mismatched resources data - wartime
+                if not wartime_df.empty:
+                    wartime_df_copy = wartime_df.copy()
+                    wartime_df_copy['Category'] = 'Wartime Resource Mismatch'
+                    sheets["Wartime Mismatch"] = add_nation_drill_url(wartime_df_copy)
+                    
                 # Recommended trade circles data
                 trade_circle_entries = []
                 for circle_type, circles in [("Peacetime", trade_circles_peace), ("Wartime", trade_circles_war)]:
@@ -1023,14 +1029,6 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                             for r in dataframe_to_rows(pc_df, index=False, header=True):
                                 ws_pc.append(r)
                             format_header(ws_pc)
-                        
-                        # For Wartime mismatches, create a worksheet (format the header as well).
-                        if not wartime_df.empty:
-                            ws_w = workbook.create_sheet("Wartime Mismatch")
-                            wartime_df_formatted = add_nation_drill_url(wartime_df.copy())
-                            for r in dataframe_to_rows(wartime_df_formatted, index=False, header=True):
-                                ws_w.append(r)
-                            format_header(ws_w)
                         
                         # Add Summary Overview worksheet.
                         summary_ws = workbook.create_sheet("Summary Overview")
