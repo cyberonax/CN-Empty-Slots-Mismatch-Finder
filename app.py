@@ -340,39 +340,33 @@ def main():
             else:
                 st.error("Incorrect password. Please try again.")
     
-    # Only display the download functionality if the password is verified.
+    # Only proceed if the password is verified.
     if st.session_state.password_verified:
-        # Added a key to the download button so that its state is preserved.
-        if st.button("Download and Display Nation Statistics", key="download_button"):
-            with st.spinner("Constructing download links and retrieving data..."):
-                today = datetime.now()
-                base_url = "https://www.cybernations.net/assets/CyberNations_SE_Nation_Stats_"
-                
-                # Create a list of dates to try: current day, previous day, and next day.
-                dates_to_try = [today, today - timedelta(days=1), today + timedelta(days=1)]
-                df = None  # to hold the DataFrame if a download succeeds
-                
-                # Iterate through the dates and try both URL variants
-                for dt in dates_to_try:
-                    date_str = f"{dt.month}{dt.day}{dt.year}"
-                    url1 = base_url + date_str + "510001.zip"
-                    url2 = base_url + date_str + "510002.zip"
-                    
-                    st.write(f"Attempting to download from: {url1}")
-                    df = download_and_extract_zip(url1)
-                    if df is None:
-                        st.write(f"Trying alternative link: {url2}")
-                        df = download_and_extract_zip(url2)
-                    
-                    # If a valid DataFrame is found, break out of the loop.
-                    if df is not None:
-                        st.success(f"Data loaded successfully from a file dated with {date_str}!")
-                        break
+        # Automatically download the Nation Statistics ZIP on UI load.
+        with st.spinner("Retrieving Nation Statistics..."):
+            today = datetime.now()
+            base_url = "https://www.cybernations.net/assets/CyberNations_SE_Nation_Stats_"
+            # Create a list of dates to try: current day, previous day, and next day.
+            dates_to_try = [today, today - timedelta(days=1), today + timedelta(days=1)]
+            df = None  # to hold the DataFrame if a download succeeds
 
+            # Iterate through the dates and try both URL variants
+            for dt in dates_to_try:
+                date_str = f"{dt.month}{dt.day}{dt.year}"
+                url1 = base_url + date_str + "510001.zip"
+                url2 = base_url + date_str + "510002.zip"
+                
+                df = download_and_extract_zip(url1)
+                if df is None:
+                    df = download_and_extract_zip(url2)
+                
                 if df is not None:
-                    st.session_state.df = df
-                else:
-                    st.error("Failed to load data from any of the constructed URLs.")
+                    break
+
+            if df is not None:
+                st.session_state.df = df
+            else:
+                st.error("Failed to load data from any of the constructed URLs.")
 
         # Proceed if data is loaded
         if "df" in st.session_state and st.session_state.df is not None:
