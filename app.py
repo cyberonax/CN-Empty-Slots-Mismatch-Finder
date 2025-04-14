@@ -482,7 +482,7 @@ def main():
                     players_full['Days Old'] = (current_date - players_full['Created']).dt.days
 
                     st.dataframe(players_full[display_cols].reset_index(drop=True), use_container_width=True)
-                
+
                 # -----------------------
                 # RESOURCE MISMATCHES
                 # -----------------------
@@ -492,61 +492,61 @@ def main():
                     peace_a_text = st.text_area(
                         "Peace Mode - Level A (one combination per line)",
                         value="""Cattle, Coal, Fish, Gems, Gold, Lead, Oil, Rubber, Silver, Spices, Uranium, Wheat
-Cattle, Coal, Fish, Gold, Lead, Oil, Pigs, Rubber, Spices, Sugar, Uranium, Wheat
-Coal, Fish, Furs, Gems, Gold, Lead, Oil, Rubber, Silver, Uranium, Wheat, Wine
-Coal, Fish, Gems, Gold, Lead, Oil, Rubber, Silver, Spices, Sugar, Uranium, Wheat
-Coal, Fish, Gems, Gold, Lead, Lumber, Oil, Rubber, Silver, Spices, Uranium, Wheat
-Cattle, Coal, Fish, Furs, Gems, Gold, Rubber, Silver, Spices, Uranium, Wheat, Wine
-Coal, Fish, Gems, Gold, Lead, Oil, Pigs, Rubber, Silver, Spices, Uranium, Wheat
-Aluminum, Coal, Fish, Gold, Iron, Lead, Lumber, Marble, Oil, Rubber, Uranium, Wheat
-Coal, Fish, Gems, Gold, Lead, Marble, Oil, Rubber, Silver, Spices, Uranium, Wheat
-Cattle, Coal, Fish, Gold, Lead, Lumber, Oil, Rubber, Spices, Sugar, Uranium, Wheat""",
+                Cattle, Coal, Fish, Gold, Lead, Oil, Pigs, Rubber, Spices, Sugar, Uranium, Wheat
+                Coal, Fish, Furs, Gems, Gold, Lead, Oil, Rubber, Silver, Uranium, Wheat, Wine
+                Coal, Fish, Gems, Gold, Lead, Oil, Rubber, Silver, Spices, Sugar, Uranium, Wheat
+                Coal, Fish, Gems, Gold, Lead, Lumber, Oil, Rubber, Silver, Spices, Uranium, Wheat
+                Cattle, Coal, Fish, Furs, Gems, Gold, Rubber, Silver, Spices, Uranium, Wheat, Wine
+                Coal, Fish, Gems, Gold, Lead, Oil, Pigs, Rubber, Silver, Spices, Uranium, Wheat
+                Aluminum, Coal, Fish, Gold, Iron, Lead, Lumber, Marble, Oil, Rubber, Uranium, Wheat
+                Coal, Fish, Gems, Gold, Lead, Marble, Oil, Rubber, Silver, Spices, Uranium, Wheat
+                Cattle, Coal, Fish, Gold, Lead, Lumber, Oil, Rubber, Spices, Sugar, Uranium, Wheat""",
                         height=100
                     )
                     peace_b_text = st.text_area(
                         "Peace Mode - Level B (one combination per line)",
-                        value="Aluminum, Cattle, Coal, Fish, Iron, Lumber, Marble, Oil, Rubber, Spices, Uranium, Wheat
-Aluminum, Coal, Fish, Iron, Lumber, Marble, Oil, Rubber, Spices, Uranium, Water, Wheat
-Aluminum, Coal, Fish, Iron, Lumber, Marble, Oil, Rubber, Spices, Sugar, Uranium, Wheat
-Aluminum, Coal, Fish, Gems, Iron, Lumber, Marble, Oil, Rubber, Spices, Uranium, Wheat
-Aluminum, Coal, Fish, Iron, Lumber, Marble, Oil, Pigs, Rubber, Spices, Uranium, Wheat
-Aluminum, Coal, Fish, Iron, Lumber, Marble, Oil, Rubber, Silver, Spices, Uranium, Wheat
-Aluminum, Coal, Fish, Iron, Lumber, Marble, Oil, Rubber, Spices, Uranium, Wheat, Wine
-Coal, Fish, Furs, Gems, Gold, Marble, Rubber, Silver, Spices, Uranium, Wheat, Wine
-Cattle, Coal, Fish, Furs, Gems, Gold, Rubber, Silver, Spices, Uranium, Wheat, Wine
-Aluminum, Cattle, Coal, Fish, Iron, Lumber, Marble, Rubber, Spices, Uranium, Water, Wheat
-",
+                        value="""Aluminum, Cattle, Coal, Fish, Iron, Lumber, Marble, Oil, Rubber, Spices, Uranium, Wheat
+                Aluminum, Coal, Fish, Iron, Lumber, Marble, Oil, Rubber, Spices, Uranium, Water, Wheat
+                Aluminum, Coal, Fish, Iron, Lumber, Marble, Oil, Rubber, Spices, Sugar, Uranium, Wheat
+                Aluminum, Coal, Fish, Gems, Iron, Lumber, Marble, Oil, Rubber, Spices, Uranium, Wheat
+                Aluminum, Coal, Fish, Iron, Lumber, Marble, Oil, Pigs, Rubber, Spices, Uranium, Wheat
+                Aluminum, Coal, Fish, Iron, Lumber, Marble, Oil, Rubber, Silver, Spices, Uranium, Wheat
+                Aluminum, Coal, Fish, Iron, Lumber, Marble, Oil, Rubber, Spices, Uranium, Wheat, Wine
+                Coal, Fish, Furs, Gems, Gold, Marble, Rubber, Silver, Spices, Uranium, Wheat, Wine
+                Cattle, Coal, Fish, Furs, Gems, Gold, Rubber, Silver, Spices, Uranium, Wheat, Wine
+                Aluminum, Cattle, Coal, Fish, Iron, Lumber, Marble, Rubber, Spices, Uranium, Water, Wheat""",
                         height=100
                     )
                     peace_c_text = st.text_area(
                         "Peace Mode - Level C (one combination per line)",
-                        value="Cattle, Coal, Fish, Furs, Gems, Gold, Rubber, Silver, Spices, Uranium, Wheat, Wine
-Coal, Fish, Furs, Gems, Gold, Rubber, Silver, Spices, Sugar, Uranium, Wheat, Wine
-Coal, Fish, Furs, Gems, Gold, Pigs, Rubber, Silver, Spices, Uranium, Wheat, Wine
-Cattle, Coal, Fish, Gems, Gold, Pigs, Rubber, Silver, Spices, Sugar, Uranium, Wheat
-Coal, Fish, Furs, Gems, Gold, Rubber, Silver, Spices, Uranium, Water, Wheat, Wine
-Coal, Fish, Furs, Gems, Gold, Oil, Rubber, Silver, Spices, Uranium, Wheat, Wine
-Cattle, Coal, Fish, Furs, Gems, Gold, Rubber, Silver, Spices, Sugar, Uranium, Wheat
-Cattle, Coal, Fish, Furs, Gems, Gold, Rubber, Silver, Spices, Sugar, Uranium, Wine
-Cattle, Coal, Fish, Furs, Gems, Gold, Pigs, Rubber, Silver, Spices, Uranium, Wine
-Cattle, Coal, Fish, Gems, Gold, Rubber, Silver, Spices, Sugar, Uranium, Wheat, Wine",
+                        value="""Cattle, Coal, Fish, Furs, Gems, Gold, Rubber, Silver, Spices, Uranium, Wheat, Wine
+                Coal, Fish, Furs, Gems, Gold, Rubber, Silver, Spices, Sugar, Uranium, Wheat, Wine
+                Coal, Fish, Furs, Gems, Gold, Pigs, Rubber, Silver, Spices, Uranium, Wheat, Wine
+                Cattle, Coal, Fish, Gems, Gold, Pigs, Rubber, Silver, Spices, Sugar, Uranium, Wheat
+                Coal, Fish, Furs, Gems, Gold, Rubber, Silver, Spices, Uranium, Water, Wheat, Wine
+                Coal, Fish, Furs, Gems, Gold, Oil, Rubber, Silver, Spices, Uranium, Wheat, Wine
+                Cattle, Coal, Fish, Furs, Gems, Gold, Rubber, Silver, Spices, Sugar, Uranium, Wheat
+                Cattle, Coal, Fish, Furs, Gems, Gold, Rubber, Silver, Spices, Sugar, Uranium, Wine
+                Cattle, Coal, Fish, Furs, Gems, Gold, Pigs, Rubber, Silver, Spices, Uranium, Wine
+                Cattle, Coal, Fish, Gems, Gold, Rubber, Silver, Spices, Sugar, Uranium, Wheat, Wine""",
                         height=100
                     )
                     war_text = st.text_area(
                         "War Mode (one combination per line)",
                         value="""Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Spices, Uranium
-Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wheat
-Aluminum, Coal, Fish, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium
-Aluminum, Cattle, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium
-Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Sugar, Uranium
-Aluminum, Coal, Furs, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium
-Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Silver, Uranium
-Aluminum, Coal, Gems, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium
-Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wine
-Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Water""",
+                Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wheat
+                Aluminum, Coal, Fish, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium
+                Aluminum, Cattle, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium
+                Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Sugar, Uranium
+                Aluminum, Coal, Furs, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium
+                Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Silver, Uranium
+                Aluminum, Coal, Gems, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium
+                Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wine
+                Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Water""",
                         height=100
                     )
-
+                    
+                    # Helper: parse input text into a list of sorted resource lists.
                     def parse_combinations(input_text):
                         combos = []
                         for line in input_text.strip().splitlines():
@@ -556,17 +556,16 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                                 if resources:
                                     combos.append(resources)
                         return combos
-                    
-                    # Helper: compare two lists of resources and compute missing/extra.
+                
+                    # Helper: compare two lists of resources and compute missing and extra resources.
                     def compare_resources(nation_resources, valid_combo):
                         nation_set = set(nation_resources)
                         valid_set = set(valid_combo)
                         missing = valid_set - nation_set
                         extra = nation_set - valid_set
                         return missing, extra
-                    
-                    # Given a nation’s resource list and a list of valid combinations,
-                    # find the valid combination that minimizes the total mismatch.
+                
+                    # Helper: find the best matching valid combination that minimizes total mismatches.
                     def find_best_match(nation_resources, valid_combinations):
                         best_combo = None
                         best_missing = set()
@@ -581,8 +580,8 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                                 best_missing = missing
                                 best_extra = extra
                         return best_combo, best_missing, best_extra, best_score
-                    
-                    # Assume these text areas have already been defined in your Streamlit UI
+                
+                    # Parse the text inputs into lists of valid combinations.
                     peace_a_combos = parse_combinations(peace_a_text)
                     peace_b_combos = parse_combinations(peace_b_text)
                     peace_c_combos = parse_combinations(peace_c_text)
@@ -594,7 +593,7 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                     st.write(f"Peace Mode Level C: {len(peace_c_combos)}")
                     st.write(f"War Mode: {len(war_combos)}")
                     
-                    # Create four lists for mismatches for the four categories.
+                    # Create four lists to hold mismatches for each category.
                     mismatch_peace_a = []
                     mismatch_peace_b = []
                     mismatch_peace_c = []
@@ -603,7 +602,7 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                     for idx, row in players_full.iterrows():
                         # Get current resources as per the CSV-based list.
                         current_resources = [res.strip() for res in row['Current Resources'].split(',') if res.strip()]
-                        # Ensure Resource 1 and Resource 2 are present (if not already included)
+                        # Ensure Resource 1 and Resource 2 are included if not already present.
                         if "Resource 1" in row and pd.notnull(row["Resource 1"]):
                             res1 = str(row["Resource 1"]).strip()
                             if res1 and res1 not in current_resources:
@@ -612,7 +611,7 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                             res2 = str(row["Resource 2"]).strip()
                             if res2 and res2 not in current_resources:
                                 current_resources.append(res2)
-                                
+                        
                         # Create a sorted list for proper comparison.
                         current_resources_sorted = sorted(current_resources)
                         current_set_str = ", ".join(current_resources_sorted)
@@ -632,9 +631,9 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                             'Days Old': row['Days Old']
                         }
                         
-                        # For Peace Mode Level A.
+                        # Check against Peace Mode Level A.
                         best_combo, missing, extra, score = find_best_match(current_resources_sorted, peace_a_combos)
-                        if score != 0:  # mismatch exists if there is any missing or extra resource
+                        if score != 0:  # mismatch exists if any resource is missing or extra
                             rec = base_info.copy()
                             rec.update({
                                 'Valid Combination': ", ".join(best_combo),
@@ -643,7 +642,7 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                             })
                             mismatch_peace_a.append(rec)
                         
-                        # For Peace Mode Level B.
+                        # Check against Peace Mode Level B.
                         best_combo, missing, extra, score = find_best_match(current_resources_sorted, peace_b_combos)
                         if score != 0:
                             rec = base_info.copy()
@@ -654,7 +653,7 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                             })
                             mismatch_peace_b.append(rec)
                         
-                        # For Peace Mode Level C.
+                        # Check against Peace Mode Level C.
                         best_combo, missing, extra, score = find_best_match(current_resources_sorted, peace_c_combos)
                         if score != 0:
                             rec = base_info.copy()
@@ -665,7 +664,7 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                             })
                             mismatch_peace_c.append(rec)
                         
-                        # For War Mode.
+                        # Check against War Mode.
                         best_combo, missing, extra, score = find_best_match(current_resources_sorted, war_combos)
                         if score != 0:
                             rec = base_info.copy()
@@ -676,7 +675,7 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                             })
                             mismatch_war.append(rec)
                     
-                    # Convert each list into a DataFrame and display it.
+                    # Convert each list into a DataFrame and display the table.
                     st.markdown("**Peace Mode Level A Mismatches:**")
                     df_peace_a = pd.DataFrame(mismatch_peace_a).reset_index(drop=True)
                     if not df_peace_a.empty:
