@@ -326,12 +326,10 @@ def main():
         """
     )
     
-    # Password protection block
     if "password_verified" not in st.session_state:
         st.session_state.password_verified = False
-
+    
     if not st.session_state.password_verified:
-        # Added key to preserve the value in session state
         password = st.text_input("Enter Password", type="password", key="password_input")
         if password:
             if password == "secret":
@@ -742,20 +740,22 @@ def main():
                 # SUMMARY OVERVIEW SECTION (UI)
                 # -----------------------
                 with st.expander("Summary Overview"):
-                    selected_alliance = ""
-                    if "filtered_df" in st.session_state and "Alliance" in st.session_state.filtered_df.columns:
-                        # Remove any null values and get unique alliances
-                        alliances = st.session_state.filtered_df["Alliance"].dropna().unique()
-                        if len(alliances) == 1:
-                            selected_alliance = alliances[0]
-                        elif len(alliances) > 1:
-                            selected_alliance = "Multiple Alliances: " + ", ".join(alliances)
-                        else:
-                            selected_alliance = "All Alliances"
+                    # Determine the heading based on the Alliance filter selection stored in session state.
+                    # (Make sure that in your Filter Data section you also save the 'selected_alliances' to session state.)
+                    if "selected_alliances" in st.session_state:
+                        alliances = st.session_state.selected_alliances
                     else:
-                        selected_alliance = "All Alliances"
-                        
-                    st.subheader(f"General Statistics for {selected_alliance}")
+                        alliances = []
+                
+                    if not alliances or len(alliances) == 0:
+                        heading_alliance = "all Alliances"
+                    elif len(alliances) == 1:
+                        heading_alliance = alliances[0]
+                    else:
+                        # If multiple alliances are selected, you may either join them or simply say 'multiple alliances'
+                        heading_alliance = ", ".join(alliances)
+                    
+                    st.subheader(f"General Statistics for {heading_alliance}")
 
                     # Total players in either group (empty slots + complete)
                     total_players = len(players_empty) + len(players_full)
