@@ -385,15 +385,13 @@ def main():
                     selected_column = st.selectbox("Select column to filter", column_options, index=default_index, key="filter_select")
                     
                     if selected_column == "Alliance":
-                        # Get unique sorted alliances from the DataFrame.
                         alliances = sorted(df["Alliance"].dropna().unique())
-                        # Use a multiselect; default to all available alliances.
                         default_alliances = ["Freehold of The Wolves"] if "Freehold of The Wolves" in alliances else alliances
                         selected_alliances = st.multiselect("Select Alliance(s) to filter", alliances, default=default_alliances, key="alliance_filter")
+                        st.session_state.selected_alliances = selected_alliances  # Save the selection
                         if selected_alliances:
                             filtered_df = df[df["Alliance"].isin(selected_alliances)]
                         else:
-                            # If nothing is selected, return the aggregate (all alliances)
                             filtered_df = df.copy()
                     else:
                         search_text = st.text_input("Filter by text (separate words by comma)", value="Freehold of the Wolves", key="filter_text")
