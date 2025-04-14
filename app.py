@@ -931,7 +931,19 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                     st.write(f"**Total Players (Empty + Complete):** {total_players}")
                     st.write(f"**Players with Empty Trade Slots:** {len(players_empty)} ({empty_percentage:.2f}%)")
                     st.write(f"**Players in Complete Trade Circle:** {total_full}")
-                    st.write(f"**Peacetime Mismatch among Complete Trade Circles:** {unique_peacetime_mismatch} ({peacetime_mismatch_percentage:.2f}%)")
+                    
+                    # Break down the peacetime mismatches by Peace Mode Level
+                    unique_peaceA = df_peace_a['Nation ID'].nunique() if not df_peace_a.empty else 0
+                    unique_peaceB = df_peace_b['Nation ID'].nunique() if not df_peace_b.empty else 0
+                    unique_peaceC = df_peace_c['Nation ID'].nunique() if not df_peace_c.empty else 0
+                    
+                    total_peace_mismatch = unique_peaceA + unique_peaceB + unique_peaceC
+                    
+                    st.subheader("Peacetime Mismatches Breakdown by Level")
+                    st.write(f"- **Level A** (< 1000 days old): **{unique_peaceA}**")
+                    st.write(f"- **Level B** (1000 to 2000 days old): **{unique_peaceB}**")
+                    st.write(f"- **Level C** (>= 2000 days old): **{unique_peaceC}**")
+                    st.write(f"**Total Peacetime Mismatch among Complete Trade Circles:** {total_peace_mismatch}")
                     st.write(f"**Wartime Mismatch among Complete Trade Circles:** {unique_wartime_mismatch} ({wartime_mismatch_percentage:.2f}%)")
                     st.markdown('---')
 
