@@ -729,12 +729,19 @@ def main():
                 # SUMMARY OVERVIEW SECTION (UI)
                 # -----------------------
                 with st.expander("Summary Overview"):
-                    # Determine the current selected Alliance name (if applicable)
-                    selected_alliance = "All Alliances"
+                    selected_alliance = ""
                     if "filtered_df" in st.session_state and "Alliance" in st.session_state.filtered_df.columns:
-                        unique_alliances = st.session_state.filtered_df["Alliance"].unique()
-                        if len(unique_alliances) == 1:
-                            selected_alliance = unique_alliances[0]
+                        # Remove any null values and get unique alliances
+                        alliances = st.session_state.filtered_df["Alliance"].dropna().unique()
+                        if len(alliances) == 1:
+                            selected_alliance = alliances[0]
+                        elif len(alliances) > 1:
+                            selected_alliance = "Multiple Alliances: " + ", ".join(alliances)
+                        else:
+                            selected_alliance = "All Alliances"
+                    else:
+                        selected_alliance = "All Alliances"
+                        
                     st.subheader(f"General Statistics for {selected_alliance}")
 
                     # Total players in either group (empty slots + complete)
