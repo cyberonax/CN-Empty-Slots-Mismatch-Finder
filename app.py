@@ -982,6 +982,9 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                         # Access the workbook for additional worksheets.
                         workbook = writer.book
                         
+                        # Import the helper function for converting DataFrame rows to worksheet rows.
+                        from openpyxl.utils.dataframe import dataframe_to_rows
+                        
                         # Add a separate worksheet for Peacetime Level A mismatches.
                         if not df_peace_a.empty:
                             ws_pa = workbook.create_sheet("Peacetime Mismatch Level A")
@@ -1009,8 +1012,7 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                                 ws_pc.append(r)
                             ws_pc.column_dimensions["A"].width = 100
                         
-                        # Optionally, you can choose not to create a consolidated peacetime sheet if you prefer separate ones.
-                        # For Wartime mismatches, we create a worksheet as before.
+                        # For Wartime mismatches, create a worksheet as before.
                         if not wartime_df.empty:
                             ws_w = workbook.create_sheet("Wartime Mismatch")
                             for r in dataframe_to_rows(add_nation_drill_url(wartime_df), index=False, header=True):
@@ -1038,6 +1040,7 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                         # Add Message Templates worksheet.
                         messages_ws = workbook.create_sheet("Message Templates")
                         messages = []
+                        # Generate Peacetime mismatch messages.
                         if not peacetime_df.empty:
                             for idx, row in peacetime_df.iterrows():
                                 extra = row["Duplicate Resources"]
@@ -1047,6 +1050,7 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                                     f"Missing: {row['Missing Resources']}; Extra: {row['Extra Resources']}. -Lord of Growth."
                                 )
                                 messages.append({"Message Type": "Peacetime Resource Mismatch", "Message": msg})
+                        # Generate Wartime mismatch messages.
                         if not wartime_df.empty:
                             for idx, row in wartime_df.iterrows():
                                 extra = row["Duplicate Resources"]
@@ -1057,7 +1061,7 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                                 )
                                 messages.append({"Message Type": "Wartime Resource Mismatch", "Message": msg})
                         
-                        # Trade Circle messages.
+                        # Trade circle messages: include partner information.
                         def generate_trade_circle_messages(circles, circle_type):
                             for circle in circles:
                                 nation_names = [player.get('Ruler Name','') for player in circle]
@@ -1067,13 +1071,13 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                                            f"{', '.join(partners)}. Your assigned resource pair is "
                                            f"{', '.join(player.get('Assigned Resources', [])) if player.get('Assigned Resources') else 'None'}. -Lord of Growth.")
                                     messages.append({"Message Type": f"{circle_type} Trade Circle", "Message": msg})
+                        
                         if trade_circles_peace:
                             generate_trade_circle_messages(trade_circles_peace, "Peacetime")
                         if trade_circles_war:
                             generate_trade_circle_messages(trade_circles_war, "Wartime")
                         
                         messages_df = pd.DataFrame(messages)
-                        from openpyxl.utils.dataframe import dataframe_to_rows
                         for r in dataframe_to_rows(messages_df, index=False, header=True):
                             messages_ws.append(r)
                         messages_ws.column_dimensions["A"].width = 30
