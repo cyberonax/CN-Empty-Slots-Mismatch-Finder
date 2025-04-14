@@ -336,7 +336,6 @@ def main():
         if password:
             if password == "secret":
                 st.session_state.password_verified = True
-                st.success("Password accepted!")
             else:
                 st.error("Incorrect password. Please try again.")
     
@@ -704,20 +703,24 @@ def main():
                         total_players = len(original_df[original_df['Alliance'] == alliance])
                         empty_players = len(players_empty_all[players_empty_all['Alliance'] == alliance])
                         full_players = len(players_full_all[players_full_all['Alliance'] == alliance])
+                        # Empty Trade Slot (%) stored as a numerical value.
                         empty_percentage = (empty_players / total_players * 100) if total_players else 0
 
                         comp_stats.append({
                             "Alliance": alliance,
                             "Total Alliance Members": total_players,
                             "Players with Empty Trade Slots": empty_players,
-                            "Empty Trade Slot (%)": f"{empty_percentage:.2f}%",
+                            "Empty Trade Slot (%)": empty_percentage,
                             "Players in Complete Trade Circle": full_players,
                         })
                     
                     comp_stats_df = pd.DataFrame(comp_stats)
+                    # Sort by the percentage column in ascending order.
+                    comp_stats_df = comp_stats_df.sort_values("Empty Trade Slot (%)", ascending=True)
                     
+                    # Display using a formatter for the percentage column.
                     with st.expander("Comparative Alliance Stats"):
-                        st.dataframe(comp_stats_df, use_container_width=True)
+                        st.dataframe(comp_stats_df.style.format({"Empty Trade Slot (%)": "{:.2f}%"}), use_container_width=True)
                     
                     # Add Comparative Alliance Stats to the Excel sheets
                     sheets["Comparative Alliance Stats"] = comp_stats_df.copy()
