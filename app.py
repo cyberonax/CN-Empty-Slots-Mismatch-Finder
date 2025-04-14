@@ -10,6 +10,7 @@ from collections import Counter  # Added for duplicate resource counting
 import textwrap  # For dedenting multi-line strings
 from openpyxl.utils.dataframe import dataframe_to_rows
 from openpyxl.styles import Font, Border, Side
+import warnings
 
 # -----------------------
 # CONFIGURATION & CONSTANTS
@@ -304,8 +305,11 @@ def download_and_extract_zip(url):
         file_name = file_list[0]
         with z.open(file_name) as file:
             try:
-                # Adjust delimiter and encoding as needed
-                df = pd.read_csv(file, delimiter="|", encoding="ISO-8859-1")
+                # Suppress warnings during CSV reading
+                with warnings.catch_warnings():
+                    warnings.simplefilter("ignore")
+                    # Adjust delimiter and encoding as needed
+                    df = pd.read_csv(file, delimiter="|", encoding="ISO-8859-1")
                 return df
             except Exception as e:
                 st.error(f"Error reading the CSV file: {e}")
