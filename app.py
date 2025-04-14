@@ -8,6 +8,8 @@ import copy
 from datetime import datetime, timedelta
 from collections import Counter  # Added for duplicate resource counting
 import textwrap  # For dedenting multi-line strings
+from openpyxl.utils.dataframe import dataframe_to_rows
+from openpyxl.styles import Font, Border, Side
 
 # -----------------------
 # CONFIGURATION & CONSTANTS
@@ -985,32 +987,44 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                         # Import the helper function for converting DataFrame rows to worksheet rows.
                         from openpyxl.utils.dataframe import dataframe_to_rows
                         
-                        # Add a separate worksheet for Peacetime Level A mismatches.
+                        # Define header formatting: bold font with a thin border.
+                        header_font = Font(bold=True)
+                        thin_border = Border(
+                            left=Side(style='thin'),
+                            right=Side(style='thin'),
+                            top=Side(style='thin'),
+                            bottom=Side(style='thin')
+                        )
+                        
+                        # Helper function to format header row in a worksheet.
+                        def format_header(ws):
+                            for cell in ws[1]:
+                                cell.font = header_font
+                                cell.border = thin_border
+                        
+                        # Peacetime Level A worksheet
                         if not df_peace_a.empty:
                             ws_pa = workbook.create_sheet("Peacetime Mismatch Level A")
-                            df_pa = df_peace_a.copy()
-                            df_pa['Category'] = 'Peacetime Level A Mismatch'
-                            for r in dataframe_to_rows(add_nation_drill_url(df_pa), index=False, header=True):
+                            pa_df = add_nation_drill_url(df_peace_a.copy())
+                            for r in dataframe_to_rows(pa_df, index=False, header=True):
                                 ws_pa.append(r)
-                            ws_pa.column_dimensions["A"].width = 100
+                            format_header(ws_pa)
                         
-                        # Add a separate worksheet for Peacetime Level B mismatches.
+                        # Peacetime Level B worksheet
                         if not df_peace_b.empty:
                             ws_pb = workbook.create_sheet("Peacetime Mismatch Level B")
-                            df_pb = df_peace_b.copy()
-                            df_pb['Category'] = 'Peacetime Level B Mismatch'
-                            for r in dataframe_to_rows(add_nation_drill_url(df_pb), index=False, header=True):
+                            pb_df = add_nation_drill_url(df_peace_b.copy())
+                            for r in dataframe_to_rows(pb_df, index=False, header=True):
                                 ws_pb.append(r)
-                            ws_pb.column_dimensions["A"].width = 100
+                            format_header(ws_pb)
                         
-                        # Add a separate worksheet for Peacetime Level C mismatches.
+                        # Peacetime Level C worksheet
                         if not df_peace_c.empty:
                             ws_pc = workbook.create_sheet("Peacetime Mismatch Level C")
-                            df_pc = df_peace_c.copy()
-                            df_pc['Category'] = 'Peacetime Level C Mismatch'
-                            for r in dataframe_to_rows(add_nation_drill_url(df_pc), index=False, header=True):
+                            pc_df = add_nation_drill_url(df_peace_c.copy())
+                            for r in dataframe_to_rows(pc_df, index=False, header=True):
                                 ws_pc.append(r)
-                            ws_pc.column_dimensions["A"].width = 100
+                            format_header(ws_pc)
                         
                         # For Wartime mismatches, create a worksheet as before.
                         if not wartime_df.empty:
