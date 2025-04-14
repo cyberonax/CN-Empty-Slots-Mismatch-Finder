@@ -487,13 +487,77 @@ def main():
                 # RESOURCE MISMATCHES
                 # -----------------------
                 with st.expander("Resource Mismatches"):
+                    st.markdown("### Valid Resource Combinations Input")
+                    # Text box for Peace Mode - Level A with default combinations.
+                    peace_a_text = st.text_area(
+                        "Peace Mode - Level A (one combination per line)",
+                        value="""Cattle, Coal, Fish, Gems, Gold, Lead, Oil, Rubber, Silver, Spices, Uranium, Wheat
+Cattle, Coal, Fish, Gold, Lead, Oil, Pigs, Rubber, Spices, Sugar, Uranium, Wheat
+Coal, Fish, Furs, Gems, Gold, Lead, Oil, Rubber, Silver, Uranium, Wheat, Wine
+Coal, Fish, Gems, Gold, Lead, Oil, Rubber, Silver, Spices, Sugar, Uranium, Wheat
+Coal, Fish, Gems, Gold, Lead, Lumber, Oil, Rubber, Silver, Spices, Uranium, Wheat
+Cattle, Coal, Fish, Furs, Gems, Gold, Rubber, Silver, Spices, Uranium, Wheat, Wine
+Coal, Fish, Gems, Gold, Lead, Oil, Pigs, Rubber, Silver, Spices, Uranium, Wheat
+Aluminum, Coal, Fish, Gold, Iron, Lead, Lumber, Marble, Oil, Rubber, Uranium, Wheat
+Coal, Fish, Gems, Gold, Lead, Marble, Oil, Rubber, Silver, Spices, Uranium, Wheat
+Cattle, Coal, Fish, Gold, Lead, Lumber, Oil, Rubber, Spices, Sugar, Uranium, Wheat""",
+                        height=200
+                    )
+                    peace_b_text = st.text_area(
+                        "Peace Mode - Level B (one combination per line)",
+                        value="",
+                        height=150
+                    )
+                    peace_c_text = st.text_area(
+                        "Peace Mode - Level C (one combination per line)",
+                        value="",
+                        height=150
+                    )
+                    war_text = st.text_area(
+                        "War Mode (one combination per line)",
+                        value="""Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Spices, Uranium
+Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wheat
+Aluminum, Coal, Fish, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium
+Aluminum, Cattle, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium
+Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Sugar, Uranium
+Aluminum, Coal, Furs, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium
+Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Silver, Uranium
+Aluminum, Coal, Gems, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium
+Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wine
+Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Water""",
+                        height=200
+                    )
+
+                    def parse_combinations(input_text):
+                        combos = []
+                        for line in input_text.strip().splitlines():
+                            line = line.strip()
+                            if line:
+                                resources = sorted([res.strip() for res in line.split(",") if res.strip()])
+                                if resources:
+                                    combos.append(resources)
+                        return combos
+
+                    # Parse the text inputs into lists of valid combinations.
+                    peace_a_combos = parse_combinations(peace_a_text)
+                    peace_b_combos = parse_combinations(peace_b_text)
+                    peace_c_combos = parse_combinations(peace_c_text)
+                    war_combos = parse_combinations(war_text)
+                    # Combine all Peace mode combinations
+                    peace_all_combos = peace_a_combos + peace_b_combos + peace_c_combos
+
+                    st.markdown("**Total valid combinations provided:**")
+                    st.write(f"Peace Mode combinations: {len(peace_all_combos)}")
+                    st.write(f"War Mode combinations: {len(war_combos)}")
+
+                    # Now check resource mismatches using the user-specified valid combinations.
                     peacetime_mismatch = []
                     wartime_mismatch = []
                 
                     for idx, row in players_full.iterrows():
-                        # Parse current resources from the "Current Resources" column
+                        # Get current resources as per the CSV-based list.
                         current_resources = [res.strip() for res in row['Current Resources'].split(',') if res.strip()]
-                        # If the row contains "Resource 1" and "Resource 2", add them as well
+                        # Include Resource 1 and Resource 2 if not already present.
                         if "Resource 1" in row and pd.notnull(row["Resource 1"]):
                             res1 = str(row["Resource 1"]).strip()
                             if res1 and res1 not in current_resources:
@@ -502,22 +566,16 @@ def main():
                             res2 = str(row["Resource 2"]).strip()
                             if res2 and res2 not in current_resources:
                                 current_resources.append(res2)
-                                        
-                        # Calculate duplicate resources
+                        
+                        # Create a sorted list for proper comparison.
+                        current_resources_sorted = sorted(current_resources)
+                        current_set_str = ", ".join(current_resources_sorted)
+                        # Calculate duplicate resources.
                         duplicates = [res for res, count in Counter(current_resources).items() if count > 1]
                         dup_str = ", ".join(sorted(duplicates)) if duplicates else "None"
-                                        
-                        current_set = set(current_resources)
-                        peacetime_set = set(peacetime_resources)
-                        wartime_set = set(wartime_resources)
-                                        
-                        missing_peace = peacetime_set - current_set
-                        extra_peace = current_set - peacetime_set
-                        missing_war = wartime_set - current_set
-                        extra_war = current_set - wartime_set
-                                        
-                        # Only add to the list if there is a mismatch for peacetime resources
-                        if missing_peace or extra_peace:
+                        
+                        # Check if the nation's sorted resources exactly match any valid Peace Mode combination.
+                        if current_resources_sorted not in peace_all_combos:
                             peacetime_mismatch.append({
                                 'Nation ID': row['Nation ID'],
                                 'Ruler Name': row['Ruler Name'],
@@ -525,14 +583,12 @@ def main():
                                 'Current Resources': row['Current Resources'],
                                 'Current Resource 1+2': get_resource_1_2(row),
                                 'Duplicate Resources': dup_str,
-                                'Missing Peacetime Resources': ", ".join(sorted(missing_peace)) if missing_peace else "None",
-                                'Extra Resources': ", ".join(sorted(extra_peace)) if extra_peace else "None",
+                                'Current Sorted Resources': current_set_str,
                                 'Activity': row['Activity'],
                                 'Days Old': row['Days Old']
                             })
-                                        
-                        # Only add to the list if there is a mismatch for wartime resources
-                        if missing_war or extra_war:
+                        # And similarly for War Mode.
+                        if current_resources_sorted not in war_combos:
                             wartime_mismatch.append({
                                 'Nation ID': row['Nation ID'],
                                 'Ruler Name': row['Ruler Name'],
@@ -540,25 +596,19 @@ def main():
                                 'Current Resources': row['Current Resources'],
                                 'Current Resource 1+2': get_resource_1_2(row),
                                 'Duplicate Resources': dup_str,
-                                'Missing Wartime Resources': ", ".join(sorted(missing_war)) if missing_war else "None",
-                                'Extra Resources': ", ".join(sorted(extra_war)) if extra_war else "None",
+                                'Current Sorted Resources': current_set_str,
                                 'Activity': row['Activity'],
                                 'Days Old': row['Days Old']
                             })
-                                        
+                    
                     st.markdown("**Peacetime Resource Mismatches:**")
                     peacetime_df = pd.DataFrame(peacetime_mismatch).reset_index(drop=True)
                     
                     # Only style and display if there's data
                     if not peacetime_df.empty:
-                        subset_cols = ['Duplicate Resources', 'Extra Resources']
-                        # Get only the subset columns that are present
-                        existing_subset = [col for col in subset_cols if col in peacetime_df.columns]
-                        if existing_subset:
-                            styled_peace = peacetime_df.style.applymap(highlight_none, subset=existing_subset)
-                            st.dataframe(styled_peace, use_container_width=True)
-                        else:
-                            st.dataframe(peacetime_df, use_container_width=True)
+                        subset_cols = ['Duplicate Resources']
+                        styled_peace = peacetime_df.style.applymap(highlight_none, subset=subset_cols)
+                        st.dataframe(styled_peace, use_container_width=True)
                     else:
                         st.info("No peacetime resource mismatches found.")
                     
@@ -566,12 +616,9 @@ def main():
                     wartime_df = pd.DataFrame(wartime_mismatch).reset_index(drop=True)
                     
                     if not wartime_df.empty:
-                        existing_subset_war = [col for col in subset_cols if col in wartime_df.columns]
-                        if existing_subset_war:
-                            styled_war = wartime_df.style.applymap(highlight_none, subset=existing_subset_war)
-                            st.dataframe(styled_war, use_container_width=True)
-                        else:
-                            st.dataframe(wartime_df, use_container_width=True)
+                        subset_cols = ['Duplicate Resources']
+                        styled_war = wartime_df.style.applymap(highlight_none, subset=subset_cols)
+                        st.dataframe(styled_war, use_container_width=True)
                     else:
                         st.info("No wartime resource mismatches found.")
 
@@ -776,7 +823,7 @@ def main():
 
                     st.subheader("Action Plan for Alliance Management")
                     # Use dedent to ensure proper bullet point formatting
-                    action_plan = textwrap.dedent("""
+                    action_plan = textwrap.dedent("""\
                     **1. Identify Affected Trade Circles:**
                     - Review the **Peacetime Resource Mismatches** and **Wartime Resource Mismatches** reports.
                     - For each entry, note the following:
@@ -837,45 +884,24 @@ def main():
                         # Peacetime mismatch messages:
                         if not peacetime_df.empty:
                             for idx, row in peacetime_df.iterrows():
-                                extra = row["Extra Resources"]
-                                dup = row["Duplicate Resources"]
-                                # Determine which resource(s) to change:
-                                if extra == "None" and dup != "None":
-                                    resources_to_change = dup
-                                elif extra != "None" and dup != "None":
-                                    resources_to_change = f"{extra} and {dup}"
-                                else:
-                                    resources_to_change = extra
+                                extra = row["Duplicate Resources"]
+                                # Using extra duplicate info here; adjust message if desired.
                                 msg = (
                                     f'To The Ruler: {row["Ruler Name"]}, your Trade Circle currently has mismatched/duplicate resource(s) '
-                                    f'{resources_to_change} which must be exchanged for any of the missing resource(s) '
-                                    f'{row["Missing Peacetime Resources"]} to meet peacetime trade requirements. '
+                                    f'{extra} which must be exchanged for any resource changes needed to match valid combinations. '
                                     f'Please can you either change your resources or get in contact with '
-                                    f'your trade partners to coordinate adjustments to your agreements. '
-                                    f'Peacetime resources must be: Aluminum, Cattle, Fish, Iron, Lumber, Marble, Pigs, '
-                                    f'Spices, Sugar, Uranium, Water, Wheat. -Lord of Growth.'
+                                    f'your trade partners to coordinate adjustments to your agreements. -Lord of Growth.'
                                 )
                                 messages.append({"Message Type": "Peacetime Resource Mismatch", "Message": msg})
                         # Wartime mismatch messages:
                         if not wartime_df.empty:
                             for idx, row in wartime_df.iterrows():
-                                extra = row["Extra Resources"]
-                                dup = row["Duplicate Resources"]
-                                # Determine which resource(s) to change:
-                                if extra == "None" and dup != "None":
-                                    resources_to_change = dup
-                                elif extra != "None" and dup != "None":
-                                    resources_to_change = f"{extra} and {dup}"
-                                else:
-                                    resources_to_change = extra
+                                extra = row["Duplicate Resources"]
                                 msg = (
                                     f'To The Ruler: {row["Ruler Name"]}, your Trade Circle currently has mismatched/duplicate resource(s) '
-                                    f'{resources_to_change} which must be exchanged for any of the missing resource(s) '
-                                    f'{row["Missing Wartime Resources"]} to meet wartime trade requirements. '
+                                    f'{extra} which must be exchanged for any resource changes needed to match valid combinations. '
                                     f'Please can you either change your resources or get in contact with '
-                                    f'your trade partners to coordinate adjustments to your agreements. '
-                                    f'Wartime resources must be: Aluminum, Coal, Fish, Gold, Iron, Lead, Lumber, '
-                                    f'Marble, Oil, Pigs, Rubber, and Uranium. -Lord of Growth.'
+                                    f'your trade partners to coordinate adjustments to your agreements. -Lord of Growth.'
                                 )
                                 messages.append({"Message Type": "Wartime Resource Mismatch", "Message": msg})
 
