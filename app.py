@@ -976,7 +976,10 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                 # -----------------------
                 # EXPORT/WRITE EXCEL FILE FOR DOWNLOAD WITH ADDITIONAL WORKSHEETS
                 # -----------------------
-                # NOTE: We now use final_circles, which is guaranteed to be defined (even as an empty list).
+                sheets = {}  # Initialize the sheets dictionary
+                
+                # Instead of iterating over the non-existent trade_circles_peace and trade_circles_war,
+                # we now use final_circles.
                 trade_circle_entries = []
                 for circle in final_circles:
                     # Determine the circle type (for display) and create a Trade Circle ID from available Nation IDs.
@@ -1001,11 +1004,10 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                 if trade_circle_entries:
                     trade_circle_df = pd.DataFrame(trade_circle_entries)
                     sheets["Trade Circles"] = add_nation_drill_url(trade_circle_df)
-
+                
                 # -----------------------
-                # COMPARATIVE STATISTICS (NEW SECTION)
+                # COMPARATIVE ALLIANCE STATS
                 # -----------------------
-                # We compute per-alliance stats using the original data (st.session_state.df)
                 if "Alliance" in df.columns:
                     original_df = st.session_state.df.copy()
                     resource_cols = [f"Connected Resource {i}" for i in range(1, 11)]
@@ -1015,7 +1017,7 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                     )
                     players_empty_all = original_df[mask_empty_all].copy()
                     players_full_all = original_df[~mask_empty_all].copy()
-
+                
                     alliances = original_df['Alliance'].unique()
                     comp_stats = []
                     for alliance in alliances:
@@ -1024,7 +1026,7 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                         full_players = len(players_full_all[players_full_all['Alliance'] == alliance])
                         # Empty Trade Slot (%) stored as a numerical value.
                         empty_percentage = (empty_players / total_players * 100) if total_players else 0
-
+                
                         comp_stats.append({
                             "Alliance": alliance,
                             "Total Alliance Members": total_players,
@@ -1040,7 +1042,7 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                 
                 with st.expander("Comparative Alliance Stats"):
                     st.dataframe(comp_stats_df.style.format({"Empty Trade Slot (%)": "{:.2f}%"}), use_container_width=True)
-
+                
                     # Add Comparative Alliance Stats to the Excel sheets
                     sheets["Comparative Alliance Stats"] = comp_stats_df.copy()
 
