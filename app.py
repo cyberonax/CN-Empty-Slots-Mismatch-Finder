@@ -294,25 +294,25 @@ def download_and_extract_zip(url):
         response = requests.get(url)
         response.raise_for_status()
     except requests.RequestException as e:
-        st.error(f"Error downloading file from {url}: {e}")
+        # Comment out or remove the st.error message to suppress it.
+        # st.error(f"Error downloading file from {url}: {e}")
         return None
 
     with zipfile.ZipFile(io.BytesIO(response.content)) as z:
         file_list = z.namelist()
         if not file_list:
-            st.error("The zip file is empty.")
+            # st.error("The zip file is empty.")
             return None
         file_name = file_list[0]
         with z.open(file_name) as file:
             try:
-                # Suppress warnings during CSV reading
+                # Suppress warnings during CSV reading.
                 with warnings.catch_warnings():
                     warnings.simplefilter("ignore")
-                    # Adjust delimiter and encoding as needed
                     df = pd.read_csv(file, delimiter="|", encoding="ISO-8859-1")
                 return df
             except Exception as e:
-                st.error(f"Error reading the CSV file: {e}")
+                # st.error(f"Error reading the CSV file: {e}")
                 return None
 
 # -----------------------
@@ -988,10 +988,11 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                         # Access the workbook for additional worksheets.
                         workbook = writer.book
                         
-                        # Import the helper function for converting DataFrame rows to worksheet rows.
+                        # Import helper for converting DataFrame rows to worksheet rows.
                         from openpyxl.utils.dataframe import dataframe_to_rows
-                        
-                        # Define header formatting: bold font with a thin border.
+                        from openpyxl.styles import Font, Border, Side, Alignment
+                
+                        # Define header formatting: bold with a thin border.
                         header_font = Font(bold=True)
                         thin_border = Border(
                             left=Side(style='thin'),
@@ -999,14 +1000,14 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                             top=Side(style='thin'),
                             bottom=Side(style='thin')
                         )
-                        
-                        # Helper function to format header row in a worksheet.
+                
+                        # Helper function to format the header row.
                         def format_header(ws):
                             for cell in ws[1]:
                                 cell.font = header_font
                                 cell.border = thin_border
                         
-                        # Peacetime Level A worksheet
+                        # Create separate worksheets for each Peacetime Mismatch Level using the same formatting as your consolidated sheet.
                         if not df_peace_a.empty:
                             ws_pa = workbook.create_sheet("Peacetime Mismatch Level A")
                             pa_df = add_nation_drill_url(df_peace_a.copy())
@@ -1014,7 +1015,6 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                                 ws_pa.append(r)
                             format_header(ws_pa)
                         
-                        # Peacetime Level B worksheet
                         if not df_peace_b.empty:
                             ws_pb = workbook.create_sheet("Peacetime Mismatch Level B")
                             pb_df = add_nation_drill_url(df_peace_b.copy())
@@ -1022,7 +1022,6 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                                 ws_pb.append(r)
                             format_header(ws_pb)
                         
-                        # Peacetime Level C worksheet
                         if not df_peace_c.empty:
                             ws_pc = workbook.create_sheet("Peacetime Mismatch Level C")
                             pc_df = add_nation_drill_url(df_peace_c.copy())
@@ -1030,12 +1029,13 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                                 ws_pc.append(r)
                             format_header(ws_pc)
                         
-                        # For Wartime mismatches, create a worksheet as before.
+                        # For Wartime mismatches, create a worksheet (format the header as well).
                         if not wartime_df.empty:
                             ws_w = workbook.create_sheet("Wartime Mismatch")
-                            for r in dataframe_to_rows(add_nation_drill_url(wartime_df), index=False, header=True):
+                            wartime_df_formatted = add_nation_drill_url(wartime_df.copy())
+                            for r in dataframe_to_rows(wartime_df_formatted, index=False, header=True):
                                 ws_w.append(r)
-                            ws_w.column_dimensions["A"].width = 100
+                            format_header(ws_w)
                         
                         # Add Summary Overview worksheet.
                         summary_ws = workbook.create_sheet("Summary Overview")
@@ -1051,14 +1051,13 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                             f"Wartime Mismatch among Complete Trade Circles: {unique_wartime_mismatch} ({wartime_mismatch_percentage:.2f}%)"
                         )
                         summary_ws["A1"] = summary_text
-                        from openpyxl.styles import Alignment
                         summary_ws.column_dimensions["A"].width = 100
                         summary_ws["A1"].alignment = Alignment(wrapText=True)
                         
                         # Add Message Templates worksheet.
                         messages_ws = workbook.create_sheet("Message Templates")
                         messages = []
-                        # Generate Peacetime mismatch messages.
+                        # Generate messages for Peacetime mismatches (using consolidated peacetime_df if desired).
                         if not peacetime_df.empty:
                             for idx, row in peacetime_df.iterrows():
                                 extra = row["Duplicate Resources"]
@@ -1068,7 +1067,6 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                                     f"Missing: {row['Missing Resources']}; Extra: {row['Extra Resources']}. -Lord of Growth."
                                 )
                                 messages.append({"Message Type": "Peacetime Resource Mismatch", "Message": msg})
-                        # Generate Wartime mismatch messages.
                         if not wartime_df.empty:
                             for idx, row in wartime_df.iterrows():
                                 extra = row["Duplicate Resources"]
@@ -1079,31 +1077,31 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                                 )
                                 messages.append({"Message Type": "Wartime Resource Mismatch", "Message": msg})
                         
-                        # Trade circle messages: include partner information.
+                        # Trade circle messages: include partner info.
                         def generate_trade_circle_messages(circles, circle_type):
                             for circle in circles:
-                                nation_names = [player.get('Ruler Name','') for player in circle]
+                                nation_names = [player.get('Ruler Name', '') for player in circle]
                                 for player in circle:
-                                    partners = [name for name in nation_names if name != player.get('Ruler Name','')]
-                                    msg = (f"To The Ruler: {player.get('Ruler Name','')}, please join a Trade Circle with partners: "
-                                           f"{', '.join(partners)}. Your assigned resource pair is "
-                                           f"{', '.join(player.get('Assigned Resources', [])) if player.get('Assigned Resources') else 'None'}. -Lord of Growth.")
+                                    partners = [name for name in nation_names if name != player.get('Ruler Name', '')]
+                                    msg = (
+                                        f"To The Ruler: {player.get('Ruler Name', '')}, please join a Trade Circle with partners: "
+                                        f"{', '.join(partners)}. Your assigned resource pair is "
+                                        f"{', '.join(player.get('Assigned Resources', [])) if player.get('Assigned Resources') else 'None'}. -Lord of Growth."
+                                    )
                                     messages.append({"Message Type": f"{circle_type} Trade Circle", "Message": msg})
-                        
                         if trade_circles_peace:
                             generate_trade_circle_messages(trade_circles_peace, "Peacetime")
                         if trade_circles_war:
                             generate_trade_circle_messages(trade_circles_war, "Wartime")
                         
                         messages_df = pd.DataFrame(messages)
-                        from openpyxl.utils.dataframe import dataframe_to_rows
                         for r in dataframe_to_rows(messages_df, index=False, header=True):
                             messages_ws.append(r)
                         messages_ws.column_dimensions["A"].width = 30
                         messages_ws.column_dimensions["B"].width = 150
                         
-                        # --- Reorder worksheets so that Peacetime Level sheets follow the consolidated "Peacetime Mismatch" sheet ---
-                        sheets_list = workbook._sheets  # Get the current order of sheets.
+                        # --- Reorder worksheets: Move individual Peacetime Mismatch Level sheets to follow the consolidated "Peacetime Mismatch" sheet ---
+                        sheets_list = workbook._sheets  # Retrieve current sheet order.
                         p_mismatch_index = None
                         for i, sheet in enumerate(sheets_list):
                             if sheet.title == "Peacetime Mismatch":
@@ -1119,14 +1117,17 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                         
                     output.seek(0)
                     excel_data = output.read()
-                
+                else:
+                    excel_data = None
                 # -----------------------
                 # DOWNLOAD ALL DATA EXCEL (positioned at the bottom of the page)
                 # -----------------------
                 st.markdown("### Download All Processed Data")
                 if excel_data:
-                    st.download_button("Download Summary Report", excel_data, file_name="full_summary_report.xlsx", 
-                                       mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", key="download_report")
+                    st.download_button("Download Summary Report", excel_data, 
+                                       file_name="full_summary_report.xlsx", 
+                                       mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", 
+                                       key="download_report")
                 else:
                     st.info("No data available for download.")
     else:
