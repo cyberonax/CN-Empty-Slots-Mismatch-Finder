@@ -830,11 +830,6 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                     peacetime_df_copy = peacetime_df.copy()
                     peacetime_df_copy['Category'] = 'Peacetime Resource Mismatch'
                     sheets["Peacetime Mismatch"] = add_nation_drill_url(peacetime_df_copy)
-                # Mismatched resources data - wartime
-                if not wartime_df.empty:
-                    wartime_df_copy = wartime_df.copy()
-                    wartime_df_copy['Category'] = 'Wartime Resource Mismatch'
-                    sheets["Wartime Mismatch"] = add_nation_drill_url(wartime_df_copy)
 
                 # Recommended trade circles data
                 trade_circle_entries = []
