@@ -714,14 +714,14 @@ def main():
                             "Players in Complete Trade Circle": full_players,
                         })
                     
-                    comp_stats_df = pd.DataFrame(comp_stats)
-                    # Sort by the percentage column in ascending order.
-                    comp_stats_df = comp_stats_df.sort_values("Empty Trade Slot (%)", ascending=True)
-                    
-                    # Display using a formatter for the percentage column.
-                    with st.expander("Comparative Alliance Stats"):
-                        st.dataframe(comp_stats_df.style.format({"Empty Trade Slot (%)": "{:.2f}%"}), use_container_width=True)
-                    
+                comp_stats_df = pd.DataFrame(comp_stats)
+                # Sort by the percentage column in ascending order.
+                comp_stats_df = comp_stats_df.sort_values("Empty Trade Slot (%)", ascending=True).reset_index(drop=True)
+                comp_stats_df.index = comp_stats_df.index + 1
+                
+                with st.expander("Comparative Alliance Stats"):
+                    st.dataframe(comp_stats_df.style.format({"Empty Trade Slot (%)": "{:.2f}%"}), use_container_width=True)
+
                     # Add Comparative Alliance Stats to the Excel sheets
                     sheets["Comparative Alliance Stats"] = comp_stats_df.copy()
 
