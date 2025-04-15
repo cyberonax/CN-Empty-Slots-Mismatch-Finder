@@ -982,6 +982,43 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                             st.dataframe(df_leftover, use_container_width=True)
                     else:
                         st.info("Paste trade circle data in the text box above to process.")
+                
+                # -----------------------
+                # COMPARATIVE ALLIANCE STATS (EXAMPLE)
+                # -----------------------
+                if "Alliance" in df.columns:
+                    original_df = st.session_state.df.copy()
+                    resource_cols = [f"Connected Resource {i}" for i in range(1, 11)]
+                    mask_empty_all = original_df[resource_cols].isnull().any(axis=1) | (
+                        original_df[resource_cols].apply(lambda col: col.astype(str).str.strip() == '').any(axis=1)
+                    )
+                    players_empty_all = original_df[mask_empty_all].copy()
+                    players_full_all = original_df[~mask_empty_all].copy()
+                
+                    alliances = original_df['Alliance'].unique()
+                    comp_stats = []
+                    for alliance in alliances:
+                        total_players = len(original_df[original_df['Alliance'] == alliance])
+                        empty_players = len(players_empty_all[players_empty_all['Alliance'] == alliance])
+                        full_players = len(players_full_all[players_full_all['Alliance'] == alliance])
+                        empty_percentage = (empty_players / total_players * 100) if total_players else 0
+                
+                        comp_stats.append({
+                            "Alliance": alliance,
+                            "Total Alliance Members": total_players,
+                            "Players with Empty Trade Slots": empty_players,
+                            "Empty Trade Slot (%)": empty_percentage,
+                            "Players in Complete Trade Circle": full_players,
+                        })
+                    
+                    comp_stats_df = pd.DataFrame(comp_stats)
+                    comp_stats_df = comp_stats_df.sort_values("Empty Trade Slot (%)", ascending=True).reset_index(drop=True)
+                    comp_stats_df.index = comp_stats_df.index + 1
+                
+                    with st.expander("Comparative Alliance Stats"):
+                        st.dataframe(comp_stats_df.style.format({"Empty Trade Slot (%)": "{:.2f}%"}), use_container_width=True)
+                
+                    sheets["Comparative Alliance Stats"] = comp_stats_df.copy()
 
                 # -----------------------
                 # SUMMARY OVERVIEW SECTION (UI)
@@ -1106,43 +1143,6 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                 if message_entries:
                     messages_df = pd.DataFrame(message_entries)
                     sheets["Message Templates"] = messages_df.copy()
-                
-                # -----------------------
-                # COMPARATIVE ALLIANCE STATS (EXAMPLE)
-                # -----------------------
-                if "Alliance" in df.columns:
-                    original_df = st.session_state.df.copy()
-                    resource_cols = [f"Connected Resource {i}" for i in range(1, 11)]
-                    mask_empty_all = original_df[resource_cols].isnull().any(axis=1) | (
-                        original_df[resource_cols].apply(lambda col: col.astype(str).str.strip() == '').any(axis=1)
-                    )
-                    players_empty_all = original_df[mask_empty_all].copy()
-                    players_full_all = original_df[~mask_empty_all].copy()
-                
-                    alliances = original_df['Alliance'].unique()
-                    comp_stats = []
-                    for alliance in alliances:
-                        total_players = len(original_df[original_df['Alliance'] == alliance])
-                        empty_players = len(players_empty_all[players_empty_all['Alliance'] == alliance])
-                        full_players = len(players_full_all[players_full_all['Alliance'] == alliance])
-                        empty_percentage = (empty_players / total_players * 100) if total_players else 0
-                
-                        comp_stats.append({
-                            "Alliance": alliance,
-                            "Total Alliance Members": total_players,
-                            "Players with Empty Trade Slots": empty_players,
-                            "Empty Trade Slot (%)": empty_percentage,
-                            "Players in Complete Trade Circle": full_players,
-                        })
-                    
-                    comp_stats_df = pd.DataFrame(comp_stats)
-                    comp_stats_df = comp_stats_df.sort_values("Empty Trade Slot (%)", ascending=True).reset_index(drop=True)
-                    comp_stats_df.index = comp_stats_df.index + 1
-                
-                    with st.expander("Comparative Alliance Stats"):
-                        st.dataframe(comp_stats_df.style.format({"Empty Trade Slot (%)": "{:.2f}%"}), use_container_width=True)
-                
-                    sheets["Comparative Alliance Stats"] = comp_stats_df.copy()
                 
                 # -----------------------
                 # WRITE EXCEL FILE FOR DOWNLOAD
