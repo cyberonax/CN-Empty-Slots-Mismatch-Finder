@@ -867,8 +867,11 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                         height=200
                     )
                 
-                    # Helper: determine level for a player based on Days Old.
+                    # -----------------------------------------
+                    # Helper functions for trade circle formation
+                    # -----------------------------------------
                     def determine_player_level(player):
+                        """Determine a player's level based on Days Old."""
                         try:
                             d = float(player.get("Days Old", 0))
                         except:
@@ -880,15 +883,49 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                         else:
                             return "C"
                 
-                    # Filter out any players whose Activity is 14 or higher.
                     def eligible(player):
+                        """
+                        Only include players with Activity below 14 and who are in the selected alliance.
+                        (Assumes st.session_state.selected_alliances exists.)
+                        """
                         try:
                             act = float(player.get("Activity", 0))
                         except:
                             act = 99  # treat non-numeric as ineligible
-                        return act < 14
+                        return act < 14 and (player.get("Alliance") in st.session_state.selected_alliances)
                 
-                    # Parse the pasted text into blocks (each block is a potential trade circle).
+                    def filter_by_level(pool, level):
+                        """Return players from pool that match a given level (A, B, or C) based on Days Old."""
+                        res = []
+                        for p in pool:
+                            try:
+                                d = float(p.get("Days Old", 0))
+                            except:
+                                continue
+                            if level == "A" and d < 1000:
+                                res.append(p)
+                            elif level == "B" and 1000 <= d < 2000:
+                                res.append(p)
+                            elif level == "C" and d >= 2000:
+                                res.append(p)
+                        return res
+                
+                    def is_high_quality(candidate, circle):
+                        """
+                        Returns True if the candidate's resource pair is disjoint from the resources already in the circle.
+                        This ensures no overlap when merging circles.
+                        """
+                        current_str = candidate.get("Resource 1+2", "")
+                        candidate_pair = sorted([r.strip() for r in str(current_str).split(",") if r.strip()])
+                        circle_resources = set()
+                        for p in circle:
+                            cur = p.get("Resource 1+2", "")
+                            circle_resources.update([r.strip() for r in str(cur).split(",") if r.strip()])
+                        return set(candidate_pair).isdisjoint(circle_resources)
+                
+                    # -----------------------------------------
+                    # Parse pasted trade circle text into blocks
+                    # -----------------------------------------
                     blocks = []
                     current_block = []
                     for line in trade_circle_text.splitlines():
@@ -902,15 +939,16 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                     if current_block:
                         blocks.append(current_block)
                 
-                    # Build an initial list of circles (each circle is a list of player dictionaries).
+                    # Build initial list of circles from pasted data
                     pasted_circles = []
                     for block in blocks:
                         circle = []
                         for line in block:
                             fields = [f.strip() for f in line.split("\t")]
+                            # Expect at least 7 fields; if not, skip the line.
                             if len(fields) < 7:
                                 continue
-                            # Check for an empty slot
+                            # If first field is empty or 'x', treat as an empty slot.
                             if not fields[0] or fields[0].lower() == "x":
                                 circle.append({
                                     "Ruler Name": None,
@@ -937,19 +975,19 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                                     "Activity": fields[6],
                                     "Empty": False
                                 }
-                                # Only add players if they are both eligible and in the selected alliance.
-                                if eligible(player) and (player.get("Alliance") in st.session_state.selected_alliances):
+                                # Only add players that are eligible (activity and alliance check)
+                                if eligible(player):
                                     circle.append(player)
                         if circle:
                             pasted_circles.append(circle)
                 
-                    # For each pasted circle, determine the intended level.
+                    # Group pasted circles by player level.
+                    # Each circle is split into level groups according to non‑empty players.
                     valid_circles = []
                     for circle in pasted_circles:
                         non_empty = [p for p in circle if not p["Empty"]]
                         if not non_empty:
                             continue
-                        # Build a dictionary grouping by level based on Days Old.
                         level_groups = {}
                         for player in non_empty:
                             lvl = determine_player_level(player)
@@ -959,130 +997,143 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                         if not level_groups:
                             st.warning("A pasted circle contains no valid player levels; skipping this circle.")
                             continue
-                        # After grouping by level, re-add the empty slots to each level group.
+                        # Re-add empty slots to each group and tag members with the trade circle level.
                         for lvl, group in level_groups.items():
-                            # Add in all empty slots back so you can later fill them from the free pool.
                             for p in circle:
                                 if p["Empty"]:
                                     group.append(p)
-                            # Tag each member with the circle’s level.
                             for p in group:
                                 p["Trade Circle Level"] = lvl
                             valid_circles.append(group)
                 
-                    # Free pool: use filtered_df from session state.
+                    # Sort circles so that those with more filled slots are processed first (i.e. nearly complete circles)
+                    valid_circles.sort(key=lambda circle: len([p for p in circle if not p.get("Empty")]), reverse=True)
+                
+                    # -----------------------------------------
+                    # Build the free pool of eligible players
+                    # -----------------------------------------
                     if "filtered_df" in st.session_state:
                         free_pool_all = st.session_state.filtered_df.to_dict("records")
                     else:
                         free_pool_all = []
-                    # Further restrict free pool to those who are eligible and in the correct alliance:
-                    free_pool_all = [
-                        p for p in free_pool_all 
-                        if eligible(p) and (p.get("Alliance") in st.session_state.selected_alliances)
-                    ]
+                    # Ensure only eligible free players are considered
+                    free_pool_all = [p for p in free_pool_all if eligible(p)]
                 
-                    # Helper: filter free pool by desired level.
-                    def filter_by_level(pool, level):
-                        res = []
-                        for p in pool:
-                            try:
-                                d = float(p.get("Days Old", 0))
-                            except:
-                                continue
-                            if level == "A" and d < 1000:
-                                res.append(p)
-                            elif level == "B" and 1000 <= d < 2000:
-                                res.append(p)
-                            elif level == "C" and d >= 2000:
-                                res.append(p)
-                        return res
-                
-                    # Define a helper function to evaluate candidate quality.
-                    def is_high_quality(candidate, circle):
-                        """
-                        Returns True if the candidate's resource pair is disjoint from the resources already in the circle.
-                        Adjust the logic as needed.
-                        """
-                        current_str = candidate.get("Resource 1+2", "")
-                        candidate_pair = sorted([r.strip() for r in str(current_str).split(",") if r.strip()])
-                        circle_resources = set()
-                        for p in circle:
-                            cur = p.get("Resource 1+2", "")
-                            circle_resources.update([r.strip() for r in str(cur).split(",") if r.strip()])
-                        return set(candidate_pair).isdisjoint(circle_resources)
-
-                        # Sort circles in descending order based on the number of filled player slots.
-                        valid_circles.sort(
-                            key=lambda circle: len([p for p in circle if not p.get("Empty")]),
-                            reverse=True
-                        )
-
-                    final_circles = []  # This will hold complete circles of size TRADE_CIRCLE_SIZE.
+                    # -----------------------------------------
+                    # Merge pasted circles with free pool to complete circles
+                    # -----------------------------------------
+                    final_circles = []  # Will hold complete circles of size TRADE_CIRCLE_SIZE.
                     for circle in valid_circles:
                         level = circle[0].get("Trade Circle Level")
-                        # Extract the non-empty entries.
                         current_members = [p for p in circle if not p.get("Empty")]
                         missing_slots = TRADE_CIRCLE_SIZE - len(current_members)
-                        new_circle = list(current_members)
-                        
-                        # Get eligible free pool candidates for the corresponding level.
+                        new_circle = list(current_members)  # Start with the existing members
+                
+                        # Get free pool candidates for this level, then sort by Days Old.
                         eligible_free = filter_by_level(free_pool_all, level)
-                        
-                        # Optionally sort by Days Old (for A/B sort ascending vs. descending for C) as per your logic.
                         if level in ["A", "B"]:
                             eligible_free.sort(key=lambda p: float(p.get("Days Old", 9999)))
                         else:
                             eligible_free.sort(key=lambda p: float(p.get("Days Old", 0)), reverse=True)
-                        
-                        # Only accept candidates if they can help fill the small gap (i.e. prioritize circles missing only few partners)
-                        if missing_slots > 0 and len(eligible_free) >= missing_slots:
-                            fill = eligible_free[:missing_slots]
-                            for p in fill:
-                                free_pool_all.remove(p)  # Remove the candidate from the free pool once assigned.
-                                p["Pasted"] = False
-                                p["Trade Circle Level"] = level
-                            new_circle.extend(fill)
-                        else:
-                            # If not enough free candidates to completely fill the circle,
-                            # try merging from other circles (or leave as-is).
-                            # Example: search final_circles for a circle with a candidate that can be moved.
-                            for other_circle in final_circles:
-                                if other_circle == circle:
-                                    continue
-                                for candidate in other_circle.copy():
-                                    if (not candidate.get("Empty")) and is_high_quality(candidate, circle):
-                                        other_circle.remove(candidate)
-                                        new_circle.append(candidate)
-                                        if len(new_circle) == TRADE_CIRCLE_SIZE:
-                                            break
-                                if len(new_circle) == TRADE_CIRCLE_SIZE:
-                                    break
-                        # Finalize the circle only if it has exactly TRADE_CIRCLE_SIZE members.
-                        if len(new_circle) == TRADE_CIRCLE_SIZE:
-                            # (Run your global optimization assignment on the complete circle, as in your code.)
-                            # For example, compute the union of resources, build cost matrix, assign ideal slices, etc.
-                            # Then set the appropriate "Trade Circle Category" based on level.
-                            if level == "A":
-                                p_cat = "Peace Mode Level A"
-                            elif level == "B":
-                                p_cat = "Peace Mode Level B"
-                            elif level == "C":
-                                p_cat = "Peace Mode Level C"
-                            elif level == "War":
-                                p_cat = "War Mode"
+                
+                        if missing_slots > 0:
+                            if len(eligible_free) >= missing_slots:
+                                fill = eligible_free[:missing_slots]
+                                for p in fill:
+                                    free_pool_all.remove(p)
+                                    p["Pasted"] = False
+                                    p["Trade Circle Level"] = level
+                                new_circle.extend(fill)
                             else:
-                                p_cat = "Uncategorized"
-                            for p in new_circle:
-                                p["Trade Circle Category"] = p_cat
-                            final_circles.append(new_circle)
+                                # Not enough free candidates; try to reassign from already formed circles.
+                                for other_circle in final_circles:
+                                    if other_circle == circle:
+                                        continue
+                                    for candidate in other_circle.copy():
+                                        if not candidate.get("Empty") and is_high_quality(candidate, circle):
+                                            other_circle.remove(candidate)
+                                            new_circle.append(candidate)
+                                            if len(new_circle) == TRADE_CIRCLE_SIZE:
+                                                break
+                                    if len(new_circle) == TRADE_CIRCLE_SIZE:
+                                        break
+                                # If circle still remains incomplete, revert to the original pasted circle.
+                                if len(new_circle) < TRADE_CIRCLE_SIZE:
+                                    new_circle = circle
                         else:
-                            st.warning("A pasted circle for level " + level + " could not be completed to 6 members.")
-
-                    # -----------------------
-                    # DISPLAY THE FINAL RECOMMENDED TRADE CIRCLES
-                    # -----------------------
-                    final_circles = [circle for circle in final_circles if len(circle) > 0]
-                    
+                            new_circle = circle
+                
+                        # Only perform global optimization if the circle is complete.
+                        if len(new_circle) == TRADE_CIRCLE_SIZE:
+                            # Global Optimization Assignment
+                            current_resources = []
+                            for p in new_circle:
+                                current_str = p.get("Resource 1+2", "")
+                                current_resources.extend([r.strip() for r in str(current_str).split(",") if r.strip()])
+                            current_resources_sorted = sorted(set(current_resources))
+                
+                            if level == "A":
+                                valid_combos_list = peace_a_combos
+                            elif level == "B":
+                                valid_combos_list = peace_b_combos
+                            elif level == "C":
+                                valid_combos_list = peace_c_combos
+                            elif level == "War":
+                                valid_combos_list = war_combos
+                            else:
+                                valid_combos_list = []
+                
+                            best_combo, missing_res, extra_res, score = find_best_match(current_resources_sorted, valid_combos_list)
+                            if not best_combo or len(best_combo) != 12:
+                                st.error("Could not determine a valid full resource combination for the circle.")
+                            else:
+                                ideal_slices = [best_combo[2*i:2*i+2] for i in range(TRADE_CIRCLE_SIZE)]
+                                cost_matrix = []
+                                for p in new_circle:
+                                    current_str = p.get("Resource 1+2", "")
+                                    current_pair = sorted([r.strip() for r in str(current_str).split(",") if r.strip()])
+                                    row = []
+                                    for slice_candidate in ideal_slices:
+                                        ideal_sorted = sorted(slice_candidate)
+                                        common = set(current_pair).intersection(set(ideal_sorted))
+                                        cost = 2 - len(common)
+                                        row.append(cost)
+                                    cost_matrix.append(row)
+                                cost_matrix = np.array(cost_matrix)
+                                row_ind, col_ind = linear_sum_assignment(cost_matrix)
+                                for player_idx, slice_idx in zip(row_ind, col_ind):
+                                    assigned_cost = cost_matrix[player_idx, slice_idx]
+                                    if assigned_cost == 0:
+                                        new_circle[player_idx]["Assigned Resource 1+2"] = "No Change"
+                                    else:
+                                        new_circle[player_idx]["Assigned Resource 1+2"] = ideal_slices[slice_idx]
+                                connected_str = ", ".join(best_combo)
+                                for p in new_circle:
+                                    p["Connected Resources"] = connected_str
+                
+                                # Assign Trade Circle Category based on level.
+                                if level == "A":
+                                    p_cat = "Peace Mode Level A"
+                                elif level == "B":
+                                    p_cat = "Peace Mode Level B"
+                                elif level == "C":
+                                    p_cat = "Peace Mode Level C"
+                                elif level == "War":
+                                    p_cat = "War Mode"
+                                else:
+                                    p_cat = "Uncategorized"
+                                for p in new_circle:
+                                    p["Trade Circle Category"] = p_cat
+                
+                                # Append only complete circles.
+                                if new_circle and len(new_circle) == TRADE_CIRCLE_SIZE:
+                                    final_circles.append(new_circle)
+                        else:
+                            st.warning("A pasted circle could not be completed to 6 members with eligible partners for level " + level)
+                
+                    # -----------------------------------------
+                    # Display the Final Recommended Trade Circles
+                    # -----------------------------------------
                     st.markdown("### Final Recommended Trade Circles")
                     for idx, circle in enumerate(final_circles, start=1):
                         circle_type = circle[0].get("Trade Circle Category", "Uncategorized")
@@ -1106,40 +1157,32 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                                 "Days Old": p.get("Days Old", ""),
                                 "Nation Drill Link": p.get("Nation Drill Link", ""),
                                 "Activity": p.get("Activity", ""),
-                                "Assign Resource 1+2": assign_display,
+                                "Assigned Resource 1+2": assign_display,
                                 "Connected Resources": connected_resources,
                                 "Trade Circle Category": p.get("Trade Circle Category", "")
                             })
                         df_circle = pd.DataFrame(display_data)
                         cols_order = [
                             "Ruler Name", "Resource 1+2", "Alliance", "Team", "Days Old",
-                            "Nation Drill Link", "Activity", "Assign Resource 1+2",
+                            "Nation Drill Link", "Activity", "Assigned Resource 1+2",
                             "Connected Resources", "Trade Circle Category"
                         ]
                         df_circle = df_circle[[col for col in cols_order if col in df_circle.columns]]
                         st.dataframe(df_circle, use_container_width=True)
-
-                        # -----------------------
-                        # DISPLAY ANY LEFTOVER FREE-ROAMING PLAYERS
-                        # -----------------------
-                        # Ensure free_pool_all is defined
-                        free_pool_all = []
-                        if "filtered_df" in st.session_state:
-                            free_pool_all = st.session_state.filtered_df.to_dict("records")
-                        free_pool_all = [p for p in free_pool_all if eligible(p)]
-                        
-                        # Later, when displaying leftover free-roaming players:
-                        if free_pool_all and len(free_pool_all) > 0:
-                            st.markdown("### Players Remaining Without a Full Trade Circle")
-                            df_leftover = pd.DataFrame(free_pool_all)
-                            # Ensure that 'Current Resource 1+2' is in the DataFrame.
-                            if "Current Resource 1+2" not in df_leftover.columns:
-                                df_leftover["Current Resource 1+2"] = df_leftover.get("Resource 1+2", "")
-                            display_cols = ["Nation ID", "Ruler Name", "Nation Name", "Team", "Current Resource 1+2", "Days Old", "Activity"]
-                            df_leftover = df_leftover[[col for col in display_cols if col in df_leftover.columns]]
-                            st.dataframe(df_leftover, use_container_width=True)
-                        else:
-                            st.info("No leftover free players available.")
+                
+                    # -----------------------------------------
+                    # Display any leftover free-roaming players
+                    # -----------------------------------------
+                    if free_pool_all and len(free_pool_all) > 0:
+                        st.markdown("### Players Remaining Without a Full Trade Circle")
+                        df_leftover = pd.DataFrame(free_pool_all)
+                        if "Current Resource 1+2" not in df_leftover.columns:
+                            df_leftover["Current Resource 1+2"] = df_leftover.get("Resource 1+2", "")
+                        display_cols = ["Nation ID", "Ruler Name", "Nation Name", "Team", "Current Resource 1+2", "Days Old", "Activity"]
+                        df_leftover = df_leftover[[col for col in display_cols if col in df_leftover.columns]]
+                        st.dataframe(df_leftover, use_container_width=True)
+                    else:
+                        st.info("No leftover free players available.")
 
                 # -----------------------
                 # EXPORT/WRITE EXCEL FILE FOR DOWNLOAD WITH ADDITIONAL WORKSHEETS
