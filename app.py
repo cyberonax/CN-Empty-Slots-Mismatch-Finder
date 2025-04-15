@@ -896,7 +896,7 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                     )
                         
                     # Process the filter input into a set of values for quick lookup.
-                    filter_set = set([line.strip() for line in filter_text.splitlines() if line.strip()])
+                    filter_set = set([line.strip().lower() for line in filter_text.splitlines() if line.strip()])
 
                     # -----------------------------------------
                     # Helper functions for trade circle formation
@@ -983,12 +983,11 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
 
                             # Check if this player should be filtered out:
                             # We filter if any of the fields (Ruler Name, Nation Name) appear in the filter_set.
-                            ruler_name = fields[0]
-                            nation_name = fields[2] if len(fields) > 2 else ""
+                            ruler_name = fields[0].strip().lower() if fields[0] else ""
+                            nation_name = fields[2].strip().lower() if len(fields) > 2 else ""
                             # For now, we assume only Ruler Name and Nation Name are provided.
                             if ruler_name in filter_set or nation_name in filter_set:
                                 continue
-
                             # If first field is empty or 'x', treat it as an empty slot.
                             if not fields[0] or fields[0].lower() == "x":
                                 circle.append({
