@@ -1018,7 +1018,7 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                 # -----------------------
                 def generate_trade_circle_messages(circles):
                     messages = []
-                    for circle in circles:
+                    for circle in final_circles:
                         circle_type = circle[0].get("Trade Circle Category", "Uncategorized")
                         nation_names = [player.get('Ruler Name', '') for player in circle if player.get('Ruler Name')]
                         for player in circle:
