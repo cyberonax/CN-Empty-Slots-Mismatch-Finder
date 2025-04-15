@@ -556,6 +556,12 @@ def main():
                 else:
                     df_to_use = df
 
+                if "Created" in df_to_use.columns:
+                    # Use errors='coerce' to convert any non-parsable dates to NaT
+                    df_to_use['Created'] = pd.to_datetime(df_to_use['Created'], errors='coerce')
+                    current_date = pd.to_datetime("now")
+                    df_to_use['Days Old'] = (current_date - df_to_use['Created']).dt.days
+
                 # Assume that the resource columns are named "Connected Resource 1" to "Connected Resource 10"
                 resource_cols = [f"Connected Resource {i}" for i in range(1, 11)]
                 # Identify players with at least one blank in any resource column
@@ -571,10 +577,10 @@ def main():
                 # Compute empty trade slots (each slot covers 2 resources)
                 players_empty['Empty Slots Count'] = players_empty.apply(lambda row: count_empty_slots(row, resource_cols), axis=1)
                 # Convert "Created" to datetime and compute age in days (optional, still displayed)
-                date_format = "%m/%d/%Y %I:%M:%S %p"  # Adjust if necessary
-                players_empty['Created'] = pd.to_datetime(players_empty['Created'], format=date_format, errors='coerce')
-                current_date = pd.to_datetime("now")
-                players_empty['Days Old'] = (current_date - players_empty['Created']).dt.days
+                #date_format = "%m/%d/%Y %I:%M:%S %p"  # Adjust if necessary
+                #players_empty['Created'] = pd.to_datetime(players_empty['Created'], format=date_format, errors='coerce')
+                #current_date = pd.to_datetime("now")
+                #players_empty['Days Old'] = (current_date - players_empty['Created']).dt.days
 
                 # Filter out players who are inactive based on the "Activity" column.
                 # Only include players whose Activity is NOT "Active Three Weeks Ago" or "Active More Than Three Weeks Ago"
@@ -603,8 +609,8 @@ def main():
                     # Also compute "Empty Slots Count" to verify these players have complete resource sets (should be 0)
                     players_full['Empty Slots Count'] = players_full.apply(lambda row: count_empty_slots(row, resource_cols), axis=1)
                     # Process "Created" and "Days Old"
-                    players_full['Created'] = pd.to_datetime(players_full['Created'], format=date_format, errors='coerce')
-                    players_full['Days Old'] = (current_date - players_full['Created']).dt.days
+                    #players_full['Created'] = pd.to_datetime(players_full['Created'], format=date_format, errors='coerce')
+                    #players_full['Days Old'] = (current_date - players_full['Created']).dt.days
 
                     st.dataframe(players_full[display_cols].reset_index(drop=True), use_container_width=True)
 
