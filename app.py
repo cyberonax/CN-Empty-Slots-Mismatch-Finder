@@ -1220,11 +1220,13 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                         total_alliance = len(alliance_rulers)
                         total_matched = len(matched_rulers)
                         total_unmatched = total_alliance - total_matched
-                    
+                        percentage_total_unmatched = round((total_unmatched / total_alliance) * 100, 2)
+
                         summary_data = {
                             "Total Alliance Members": [total_alliance],
                             "Rulers in Trade Circles": [total_matched],
                             "Rulers not in Trade Circles": [total_unmatched]
+                            "% Not in Trade Circles": [percentage_total_unmatched]
                         }
                         summary_df = pd.DataFrame(summary_data)
                         st.markdown("### Trade Circle Coverage Summary")
@@ -1239,8 +1241,8 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                         
                         # (Optional) Define an ordered list of columns that represent the complete nation profile.
                         # Adjust these columns as appropriate for your data.
-                        profile_cols = ["Nation ID", "Ruler Name", "Nation Name", "Alliance", "Team", 
-                                        "Current Resources", "Resource 1", "Resource 2", "Days Old", "Activity"]
+                        profile_cols = ["Ruler Name", "Current Resource 1+2", "Alliance", "Team", 
+                                        "Days Old", "Nation Drill Link", "Activity"]
                         
                         # If some columns are missing from your DataFrame, filter accordingly.
                         profile_cols = [col for col in profile_cols if col in unmatched_df.columns]
