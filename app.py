@@ -548,22 +548,20 @@ def main():
             # TRADE CIRCLE & RESOURCE PROCESSING (automatically triggered)
             # -----------------------
             if "df" in st.session_state:
-                # Instead of using st.session_state.filtered_df, reload the filtered CSV if available.
-                if "filtered_csv" in st.session_state:
-                    filtered_csv = st.session_state.filtered_csv
-                    # Read the CSV content into a DataFrame.
-                    df_to_use = pd.read_csv(io.StringIO(filtered_csv))
+                # Use the filtered DataFrame directly if available, otherwise fall back to the original DataFrame.
+                if "filtered_df" in st.session_state:
+                    df_to_use = st.session_state.filtered_df.copy()
                 else:
-                    df_to_use = df
+                    df_to_use = df.copy()
 
-                # Re-calculate the 'Created' and 'Days Old' columns to ensure correct types.
+                # Re-calculate the 'Created' and 'Days Old' columns on the filtered DataFrame.
                 if "Created" in df_to_use.columns:
-                    date_format = "%m/%d/%Y %I:%M:%S %p"  # Adjust if necessary.
+                    date_format = "%m/%d/%Y %I:%M:%S %p"  # Adjust as needed.
                     df_to_use['Created'] = pd.to_datetime(df_to_use['Created'], format=date_format, errors='coerce')
                     current_date = datetime.now()
                     df_to_use['Days Old'] = (current_date - df_to_use['Created']).dt.days
 
-                # Continue with processing:
+                # Continue processing using df_to_use.
                 resource_cols = [f"Connected Resource {i}" for i in range(1, 11)]
                 mask_empty = df_to_use[resource_cols].isnull().any(axis=1) | (
                     df_to_use[resource_cols].apply(lambda col: col.astype(str).str.strip() == '').any(axis=1)
@@ -574,6 +572,7 @@ def main():
                 players_empty['Current Resource 1+2'] = players_empty.apply(lambda row: get_resource_1_2(row), axis=1)
                 players_empty['Empty Slots Count'] = players_empty.apply(lambda row: count_empty_slots(row, resource_cols), axis=1)
 
+                # Filter out inactive players.
                 players_empty = players_empty[~players_empty['Activity'].isin(["Active Three Weeks Ago", "Active More Than Three Weeks Ago"])]
 
                 if "Alliance Status" in players_empty.columns:
