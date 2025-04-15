@@ -908,27 +908,27 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                         circle = []
                         for line in block:
                             fields = [f.strip() for f in line.split("\t")]
-                            # Expect exactly 7 fields; skip otherwise.
+                            # Expect at least 7 fields
                             if len(fields) < 7:
                                 continue
-                            if fields[0].lower() == "x":
-                                # Mark as an empty slot.
+                            # Check if the first field is empty or equals "x" (case-insensitive)
+                            if not fields[0] or fields[0].lower() == "x":
+                                # Mark this as an empty slot.
                                 circle.append({
                                     "Ruler Name": None,
-                                    "Resource 1+2": None,
-                                    "Alliance": None,
-                                    "Team": None,
+                                    "Resource 1+2": fields[1] if len(fields) > 1 else None,
+                                    "Alliance": fields[2] if len(fields) > 2 else None,
+                                    "Team": fields[3] if len(fields) > 3 else None,
                                     "Days Old": None,
-                                    "Nation Drill Link": None,
-                                    "Activity": None,
+                                    "Nation Drill Link": fields[5] if len(fields) > 5 else None,
+                                    "Activity": fields[6] if len(fields) > 6 else None,
                                     "Empty": True
                                 })
                             else:
                                 try:
                                     days_old = float(fields[4])
-                                except:
+                                except Exception:
                                     days_old = None
-                                # Build the player record. (Keep the original Resource 1+2 intact.)
                                 player = {
                                     "Ruler Name": fields[0],
                                     "Resource 1+2": fields[1],
@@ -941,8 +941,8 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                                 }
                                 if eligible(player):
                                     circle.append(player)
-                        if circle:
-                            pasted_circles.append(circle)
+                            if circle:
+                                pasted_circles.append(circle)
                     
                     # For each pasted circle, determine the intended level.
                     valid_circles = []
@@ -994,20 +994,45 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                     final_circles = []  # This will hold complete circles of 6.
                     for circle in valid_circles:
                         level = circle[0].get("Trade Circle Level")
-                        current_members = [p for p in circle if not p["Empty"]]
-                        missing = TRADE_CIRCLE_SIZE - len(current_members)
+                        current_members = [p for p in circle if not p.get("Empty")]
+                        missing_slots = TRADE_CIRCLE_SIZE - len(current_members)
+                        
+                        # Get and sort the eligible free pool candidates based on the level.
                         eligible_free = filter_by_level(free_pool_all, level)
                         if level in ["A", "B"]:
                             eligible_free.sort(key=lambda p: float(p.get("Days Old", 9999)))
                         else:
                             eligible_free.sort(key=lambda p: float(p.get("Days Old", 0)), reverse=True)
-                        if missing > 0 and len(eligible_free) >= missing:
-                            fill = eligible_free[:missing]
-                            for p in fill:
-                                free_pool_all.remove(p)
-                                p["Pasted"] = False
-                                p["Trade Circle Level"] = level
-                            new_circle = current_members + fill
+                        
+                        # Attempt to fill the missing slots.
+                        if missing_slots > 0:
+                            if len(eligible_free) >= missing_slots:
+                                fill = eligible_free[:missing_slots]
+                                for p in fill:
+                                    free_pool_all.remove(p)
+                                    p["Pasted"] = False
+                                    p["Trade Circle Level"] = level
+                                new_circle = current_members + fill
+                            else:
+                                # Not enough in the free pool, so check other circles for high quality candidates.
+                                new_circle = list(current_members)  # Start with current members.
+                                candidate_found = False
+                                for other_circle in final_circles:
+                                    if other_circle == circle:
+                                        continue
+                                    for candidate in other_circle:
+                                        if not candidate.get("Empty") and is_high_quality(candidate, circle):
+                                            other_circle.remove(candidate)
+                                            new_circle.append(candidate)
+                                            candidate_found = True
+                                            # Break out if we've filled the missing slots.
+                                            if len(new_circle) == TRADE_CIRCLE_SIZE:
+                                                break
+                                    if len(new_circle) == TRADE_CIRCLE_SIZE:
+                                        break
+                                # If we still did not fill the circle, default back to the original circle.
+                                if len(new_circle) < TRADE_CIRCLE_SIZE:
+                                    new_circle = circle
                         else:
                             new_circle = circle
 
