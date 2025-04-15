@@ -621,6 +621,8 @@ def main():
                 with st.expander("Resource Mismatches"):
                     st.markdown(
                         """
+                        In this section, we check for existing complete trade circles to see if they have the correct available combinations of resources.
+ 
                         ### Understanding Peace Mode Levels
                     
                         - **Peace Mode Level A:**  
@@ -823,41 +825,45 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                             mismatch_war.append(rec)
                     
                     # Convert each list into a DataFrame and apply age filters.
-                    st.markdown("**Peace Mode Level A Mismatches:**")
+                    st.markdown(f"**Peace Mode Level A Mismatches: {len(df_peace_a)}**")
                     df_peace_a = pd.DataFrame(mismatch_peace_a).reset_index(drop=True)
                     # Filter to include only nations under 1000 days old.
                     df_peace_a = df_peace_a[df_peace_a['Days Old'] < 1000]
                     if not df_peace_a.empty:
                         styled_peace_a = df_peace_a.style.applymap(highlight_none, subset=['Duplicate Resources'])
+                        df = df.sort_values(by='Ruler Name').reset_index(drop=True)
                         st.dataframe(styled_peace_a, use_container_width=True)
                     else:
                         st.info("No mismatches found for Peace Mode Level A (nations under 1000 days old).")
                     
-                    st.markdown("**Peace Mode Level B Mismatches:**")
+                    st.markdown(f"**Peace Mode Level B Mismatches: {len(df_peace_b)}**")
                     df_peace_b = pd.DataFrame(mismatch_peace_b).reset_index(drop=True)
                     # Filter to include only nations 1000-2000 days old.
                     df_peace_b = df_peace_b[(df_peace_b['Days Old'] >= 1000) & (df_peace_b['Days Old'] < 2000)]
                     if not df_peace_b.empty:
                         styled_peace_b = df_peace_b.style.applymap(highlight_none, subset=['Duplicate Resources'])
+                        df = df.sort_values(by='Ruler Name').reset_index(drop=True)
                         st.dataframe(styled_peace_b, use_container_width=True)
                     else:
                         st.info("No mismatches found for Peace Mode Level B (nations 1000-2000 days old).")
                     
-                    st.markdown("**Peace Mode Level C Mismatches:**")
+                    st.markdown(f"**Peace Mode Level C Mismatches: {len(df_peace_c)}**")
                     df_peace_c = pd.DataFrame(mismatch_peace_c).reset_index(drop=True)
                     # Filter to include only nations over 2000 days old.
                     df_peace_c = df_peace_c[df_peace_c['Days Old'] >= 2000]
                     if not df_peace_c.empty:
                         styled_peace_c = df_peace_c.style.applymap(highlight_none, subset=['Duplicate Resources'])
+                        df = df.sort_values(by='Ruler Name').reset_index(drop=True)
                         st.dataframe(styled_peace_c, use_container_width=True)
                     else:
                         st.info("No mismatches found for Peace Mode Level C (nations over 2000 days old).")
                     
-                    st.markdown("**War Mode Mismatches:**")
+                    st.markdown(f"**War Mode Mismatches: {len(df_war)}**")
                     df_war = pd.DataFrame(mismatch_war).reset_index(drop=True)
                     # (No age filtering for War Mode; adjust here if needed.)
                     if not df_war.empty:
                         styled_war = df_war.style.applymap(highlight_none, subset=['Duplicate Resources'])
+                        df = df.sort_values(by='Ruler Name').reset_index(drop=True)
                         st.dataframe(styled_war, use_container_width=True)
                     else:
                         st.info("No mismatches found for War Mode.")
