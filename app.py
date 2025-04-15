@@ -990,31 +990,39 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                                 p["Assigned Resource 1+2"] = "No Change"
                             
                             # For those needing new assignments, give each a two-resource slice.
-                            for idx, p in enumerate(invalid_players):
-                                # Define the ideal two-resource slice for this player.
-                                ideal_slice = best_combo[2 * idx: 2 * idx + 2]
-                                # Get the player's current resource pair.
-                                current_str = p.get("Current Resource 1+2", p.get("Resource 1+2", ""))
-                                # Ensure we work with a string
-                                current_str = str(current_str)
-                                current_set = set([r.strip() for r in current_str.split(",") if r.strip()])
-                                ideal_set = set(ideal_slice)
-                                common = current_set.intersection(ideal_set)
-                                # If exactly one of the resources already matches...
-                                if len(common) == 1:
-                                     # Calculate the missing resource in the ideal slice.
-                                     missing = list(ideal_set - common)
-                                     # Build a new assigned pair that preserves the common resource.
-                                     new_assigned = []
-                                     for r in ideal_slice:
-                                         if r in common:
-                                            new_assigned.append(r)
-                                         elif r in missing:
-                                            new_assigned.append(r)
-                                     p["Assigned Resource 1+2"] = new_assigned
+                            for i, p in enumerate(new_circle):
+                                # Ensure we have a current pair in a standard format.
+                                current_raw = p.get("Current Resource 1+2", p.get("Resource 1+2", ""))
+                                current_str = str(current_raw)
+                                # Get a sorted list of the player's current resources.
+                                current_pair_sorted = sorted([x.strip() for x in current_str.split(",") if x.strip()])
+                                
+                                # If the player's current pair is exactly one of the allowed valid combinations, then no change is needed.
+                                if current_pair_sorted in valid_combos:
+                                    p["Assigned Resource 1+2"] = "No Change"
                                 else:
-                                     # Otherwise, assign the ideal slice as determined.
-                                     p["Assigned Resource 1+2"] = ideal_slice
+                                    # Determine the "ideal" two-resource slice for this player.
+                                    ideal_slice = best_combo[2 * i: 2 * i + 2]  # For example, position i gets this slice.
+                                    ideal_set = set(ideal_slice)
+                                    current_set = set(current_pair_sorted)
+                                    common = current_set.intersection(ideal_set)
+                                    # If exactly one resource already matches, preserve that resource and only add the missing one.
+                                    if len(common) == 1:
+                                        # Determine the missing resource
+                                        missing = list(ideal_set - common)
+                                        # Construct an assigned pair: follow the order in ideal_slice while preserving the common one.
+                                        new_assigned = []
+                                        for r in ideal_slice:
+                                            if r in common:
+                                                new_assigned.append(r)
+                                        # Then append the missing resource(s)
+                                        for r in ideal_slice:
+                                            if r not in new_assigned:
+                                                new_assigned.append(r)
+                                        p["Assigned Resource 1+2"] = new_assigned
+                                    else:
+                                        # If there is no partial match (or full mismatch), assign the ideal slice.
+                                        p["Assigned Resource 1+2"] = ideal_slice
                             
                             # Save the full connected resources (the ideal 12-resource combo) in each player's record.
                             connected_str = ", ".join(best_combo)
