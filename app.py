@@ -607,6 +607,8 @@ def main():
                     # Also compute "Empty Slots Count" to verify these players have complete resource sets (should be 0)
                     players_full['Empty Slots Count'] = players_full.apply(lambda row: count_empty_slots(row, resource_cols), axis=1)
                     players_full = players_full.sort_values(by="Ruler Name", key=lambda col: col.str.lower()).reset_index(drop=True)
+                    if "Alliance Status" in players_full.columns:
+                        players_full = players_full[players_full["Alliance Status"] != "Pending"]
                     st.dataframe(players_full[display_cols].reset_index(drop=True), use_container_width=True)
 
                 # -----------------------
@@ -1330,6 +1332,8 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                 # -----------------------
                 if "Alliance" in df.columns:
                     original_df = st.session_state.df.copy()
+                    if "Alliance Status" in original_df.columns:
+                        original_df = original_df[original_df["Alliance Status"] != "Pending"]
                     resource_cols = [f"Connected Resource {i}" for i in range(1, 11)]
                     mask_empty_all = original_df[resource_cols].isnull().any(axis=1) | (
                         original_df[resource_cols].apply(lambda col: col.astype(str).str.strip() == '').any(axis=1)
@@ -1392,9 +1396,9 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                     peacetime_mismatch_percentage = (unique_peacetime_mismatch / total_full * 100) if total_full else 0
                     wartime_mismatch_percentage = (unique_wartime_mismatch / total_full * 100) if total_full else 0
 
-                    st.write(f"**Total Players (Empty + Complete):** {total_players}")
-                    st.write(f"**Players with Empty Trade Slots:** {len(players_empty)} ({empty_percentage:.2f}%)")
-                    st.write(f"**Players in Complete Trade Circle:** {total_full}")
+                    st.write(f"**Total Alliance Members:** {total_players} (Not Including Pending)")
+                    st.write(f"**Members with Empty Trade Slots:** {len(players_empty)} ({empty_percentage:.2f}%)")
+                    st.write(f"**Members in Complete Trade Circle:** {total_full}")
                     
                     # Break down the peacetime mismatches by Peace Mode Level
                     unique_peaceA = df_peace_a['Nation ID'].nunique() if not df_peace_a.empty else 0
