@@ -980,6 +980,7 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                     # -----------------------
                     st.markdown("### Final Recommended Trade Circles")
                     for idx, circle in enumerate(final_circles, start=1):
+                        # Determine the category and choose the corresponding valid combinations list.
                         category = circle[0].get("Trade Circle Category", "Uncategorized")
                         if "Level A" in category:
                             valid_combos = peace_a_combos
@@ -995,8 +996,9 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                         st.markdown(f"--- **Trade Circle #{idx} ({category})** ---")
                         display_data = []
                         for p in circle:
-                            current_pair = p.get("Current Resource 1+2", "")
-                            # Use the updated helper function; if the value is None or not a valid string, it will safely return False.
+                            # Use the explicitly set field "Current Resource 1+2".
+                            current_pair = p.get("Current Resource 1+2", p.get("Resource 1+2", ""))
+                            # Check if the current pair is valid for this level.
                             if valid_combos and is_valid_resource_pair(current_pair, valid_combos):
                                 assign_display = "No Change"
                             else:
@@ -1005,7 +1007,7 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                         
                             display_data.append({
                                 "Ruler Name": p.get("Ruler Name", ""),
-                                "Resource 1+2": current_pair,
+                                "Resource 1+2": current_pair,  # This now displays the current resources.
                                 "Alliance": p.get("Alliance", ""),
                                 "Team": p.get("Team", ""),
                                 "Days Old": p.get("Days Old", ""),
