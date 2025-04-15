@@ -987,12 +987,12 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                 # SUMMARY OVERVIEW SECTION (UI)
                 # -----------------------
                 with st.expander("Summary Overview"):
-                    # Use the alliance filter selection for the heading.
+                    # Determine the heading based on the Alliance filter selection stored in session state.
                     if "selected_alliances" in st.session_state:
                         alliances = st.session_state.selected_alliances
                     else:
                         alliances = []
-                    
+                
                     if not alliances or len(alliances) == 0:
                         heading_alliance = "Alliances"
                     elif len(alliances) == 1:
@@ -1001,25 +1001,28 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                         heading_alliance = ", ".join(alliances)
                     
                     st.subheader(f"General Statistics for {heading_alliance}")
-                    
-                    # Compute total players from the two groups (empty slots + complete)
+
+                    # Total players in either group (empty slots + complete)
                     total_players = len(players_empty) + len(players_full)
                     empty_percentage = (len(players_empty) / total_players * 100) if total_players else 0
+
+                    # For players in complete trade circles, count unique mismatches using consolidated DataFrames.
                     total_full = len(players_full)
-                    
-                    # For the mismatches, use your previously generated DataFrames.
-                    unique_peaceA = df_peace_a['Nation ID'].nunique() if not df_peace_a.empty else 0
-                    unique_peaceB = df_peace_b['Nation ID'].nunique() if not df_peace_b.empty else 0
-                    unique_peaceC = df_peace_c['Nation ID'].nunique() if not df_peace_c.empty else 0
-                    total_peace_mismatch = unique_peaceA + unique_peaceB + unique_peaceC
+                    unique_peacetime_mismatch = peacetime_df['Nation ID'].nunique() if not peacetime_df.empty else 0
                     unique_wartime_mismatch = wartime_df['Nation ID'].nunique() if not wartime_df.empty else 0
-                    
-                    peacetime_mismatch_percentage = (unique_peaceA / total_full * 100) if total_full else 0
+                    peacetime_mismatch_percentage = (unique_peacetime_mismatch / total_full * 100) if total_full else 0
                     wartime_mismatch_percentage = (unique_wartime_mismatch / total_full * 100) if total_full else 0
-                    
+
                     st.write(f"**Total Players (Empty + Complete):** {total_players}")
                     st.write(f"**Players with Empty Trade Slots:** {len(players_empty)} ({empty_percentage:.2f}%)")
                     st.write(f"**Players in Complete Trade Circle:** {total_full}")
+                    
+                    # Break down the peacetime mismatches by Peace Mode Level
+                    unique_peaceA = df_peace_a['Nation ID'].nunique() if not df_peace_a.empty else 0
+                    unique_peaceB = df_peace_b['Nation ID'].nunique() if not df_peace_b.empty else 0
+                    unique_peaceC = df_peace_c['Nation ID'].nunique() if not df_peace_c.empty else 0
+                    
+                    total_peace_mismatch = unique_peaceA + unique_peaceB + unique_peaceC
                     
                     st.markdown("#### Peacetime Mismatches Breakdown by Level")
                     st.write(f"- **Level A** (< 1000 days old): **{unique_peaceA}**")
@@ -1028,7 +1031,7 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                     st.write(f"Total Peacetime Mismatch among Complete Trade Circles: {total_peace_mismatch} ({peacetime_mismatch_percentage:.2f}%)")
                     st.write(f"Wartime Mismatch among Complete Trade Circles: {unique_wartime_mismatch} ({wartime_mismatch_percentage:.2f}%)")
                     st.markdown('---')
-                    
+
                     st.subheader("Action Plan for Alliance Management")
                     action_plan = textwrap.dedent("""\
                     **1. Identify Affected Trade Circles:**
