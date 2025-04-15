@@ -992,9 +992,11 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                             # For those needing new assignments, give each a two-resource slice.
                             for idx, p in enumerate(invalid_players):
                                 # Define the ideal two-resource slice for this player.
-                                ideal_slice = best_combo[2 * idx: 2 * idx + 2]  
-                                # Get the player's current resource pair as a set.
+                                ideal_slice = best_combo[2 * idx: 2 * idx + 2]
+                                # Get the player's current resource pair.
                                 current_str = p.get("Current Resource 1+2", p.get("Resource 1+2", ""))
+                                # Ensure we work with a string
+                                current_str = str(current_str)
                                 current_set = set([r.strip() for r in current_str.split(",") if r.strip()])
                                 ideal_set = set(ideal_slice)
                                 common = current_set.intersection(ideal_set)
