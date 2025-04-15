@@ -1093,9 +1093,9 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                             cell.font = header_font
                             cell.border = thin_border
                     
-                    # Example: you can add extra formatting or additional worksheets here if needed.
-                    writer.save()
-                
+                    # Add any additional formatting or worksheets if needed.
+                    # No need to call writer.save() explicitly within the context.
+                    
                 output.seek(0)
                 excel_data = output.read()
                 # -----------------------
