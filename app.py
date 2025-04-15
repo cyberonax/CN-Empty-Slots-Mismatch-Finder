@@ -888,15 +888,15 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                         height=200
                     )
 
-                # New text area for filtering out players
-                st.markdown("### Filter Out Players")
-                filter_text = st.text_area(
-                    "Enter one value per line to filter out players by matching Ruler Name, Nation Name, or Nation ID:",
-                    height=100
-                )
-
-                # Process the filter input into a set of values for quick lookup.
-                filter_set = set([line.strip() for line in filter_text.splitlines() if line.strip()])
+                    # New text area for filtering out players
+                    st.markdown("### Filter Out Players")
+                    filter_text = st.text_area(
+                        "Enter one value per line to filter out players by matching Ruler Name, Nation Name, or Nation ID:",
+                        height=100
+                    )
+                        
+                    # Process the filter input into a set of values for quick lookup.
+                    filter_set = set([line.strip() for line in filter_text.splitlines() if line.strip()])
 
                     # -----------------------------------------
                     # Helper functions for trade circle formation
