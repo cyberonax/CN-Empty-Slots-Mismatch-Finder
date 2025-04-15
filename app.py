@@ -1126,8 +1126,8 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                     # -----------------------
                     st.markdown("### Final Recommended Trade Circles")
                     for idx, circle in enumerate(final_circles, start=1):
-                        # GUARD: Skip empty circles.
-                        if not circle:
+                        # GUARD: If the circle is empty, skip to the next one.
+                        if not circle or len(circle) == 0:
                             continue
                     
                         category = circle[0].get("Trade Circle Category", "Uncategorized")
@@ -1156,9 +1156,11 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                                 "Trade Circle Category": p.get("Trade Circle Category", "")
                             })
                         df_circle = pd.DataFrame(display_data)
-                        cols_order = ["Ruler Name", "Resource 1+2", "Alliance", "Team", "Days Old",
-                                      "Nation Drill Link", "Activity", "Assign Resource 1+2",
-                                      "Connected Resources", "Trade Circle Category"]
+                        cols_order = [
+                            "Ruler Name", "Resource 1+2", "Alliance", "Team", "Days Old",
+                            "Nation Drill Link", "Activity", "Assign Resource 1+2",
+                            "Connected Resources", "Trade Circle Category"
+                        ]
                         df_circle = df_circle[[col for col in cols_order if col in df_circle.columns]]
                         st.dataframe(df_circle, use_container_width=True)
 
@@ -1220,8 +1222,8 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                 def generate_trade_circle_messages(circles):
                     messages = []
                     for circle in circles:
-                        # GUARD: Skip empty circles.
-                        if not circle:
+                        # GUARD: Skip empty circles to avoid IndexError.
+                        if not circle or len(circle) == 0:
                             continue
                         circle_type = circle[0].get("Trade Circle Category", "Uncategorized")
                         nation_names = [player.get('Ruler Name', '') for player in circle if player.get('Ruler Name')]
