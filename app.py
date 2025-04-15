@@ -1126,7 +1126,7 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                     # -----------------------
                     # DISPLAY THE FINAL RECOMMENDED TRADE CIRCLES
                     # -----------------------
-                    non_empty_final_circles = [circle for circle in final_circles if circle and len(circle) > 0]
+                    final_circles = [circle for circle in final_circles if len(circle) > 0]
                     
                     st.markdown("### Final Recommended Trade Circles")
                     for idx, circle in enumerate(non_empty_final_circles, start=1):
