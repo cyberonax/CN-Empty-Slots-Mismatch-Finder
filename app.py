@@ -548,45 +548,34 @@ def main():
             # TRADE CIRCLE & RESOURCE PROCESSING (automatically triggered)
             # -----------------------
             if "df" in st.session_state:
-                # Instead of using st.session_state.filtered_df, reload the filtered CSV if available
+                # Instead of using st.session_state.filtered_df, reload the filtered CSV if available.
                 if "filtered_csv" in st.session_state:
                     filtered_csv = st.session_state.filtered_csv
-                    # Read the CSV content into a DataFrame
+                    # Read the CSV content into a DataFrame.
                     df_to_use = pd.read_csv(io.StringIO(filtered_csv))
                 else:
                     df_to_use = df
 
-                # Compute "Days Old" for the entire DataFrame (make sure all rows have this column)
+                # Re-calculate the 'Created' and 'Days Old' columns to ensure correct types.
                 if "Created" in df_to_use.columns:
-                    # Set your date format here. Adjust if necessary.
-                    date_format = "%m/%d/%Y %I:%M:%S %p"
-                    # Convert the "Created" column to datetime with the specified format; non-parsable dates become NaT.
+                    date_format = "%m/%d/%Y %I:%M:%S %p"  # Adjust if necessary.
                     df_to_use['Created'] = pd.to_datetime(df_to_use['Created'], format=date_format, errors='coerce')
                     current_date = datetime.now()
                     df_to_use['Days Old'] = (current_date - df_to_use['Created']).dt.days
 
-                # Assume that the resource columns are named "Connected Resource 1" to "Connected Resource 10"
+                # Continue with processing:
                 resource_cols = [f"Connected Resource {i}" for i in range(1, 11)]
-                # Identify players with at least one blank in any resource column
                 mask_empty = df_to_use[resource_cols].isnull().any(axis=1) | (
                     df_to_use[resource_cols].apply(lambda col: col.astype(str).str.strip() == '').any(axis=1)
                 )
                 players_empty = df_to_use[mask_empty].copy()
 
-                # Compute "Current Resources" column (for full resource list)
                 players_empty['Current Resources'] = players_empty.apply(lambda row: get_current_resources(row, resource_cols), axis=1)
-                # Now use the CSV's Resource 1 and Resource 2 for the Current Resource 1+2 column
                 players_empty['Current Resource 1+2'] = players_empty.apply(lambda row: get_resource_1_2(row), axis=1)
-                # Compute empty trade slots (each slot covers 2 resources)
                 players_empty['Empty Slots Count'] = players_empty.apply(lambda row: count_empty_slots(row, resource_cols), axis=1)
 
-                # Note: We no longer recalc "Days Old" here because it has already been computed for all rows in df_to_use.
-
-                # Filter out players who are inactive based on the "Activity" column.
-                # Only include players whose Activity is NOT "Active Three Weeks Ago" or "Active More Than Three Weeks Ago"
                 players_empty = players_empty[~players_empty['Activity'].isin(["Active Three Weeks Ago", "Active More Than Three Weeks Ago"])]
 
-                # ---- New Filter: Exclude players with Alliance Status "Pending" ----
                 if "Alliance Status" in players_empty.columns:
                     players_empty = players_empty[players_empty["Alliance Status"] != "Pending"]
 
@@ -598,6 +587,10 @@ def main():
                                     'Current Resources', 'Current Resource 1+2',
                                     'Empty Slots Count', 'Activity', 'Days Old']
                     st.dataframe(players_empty[display_cols].reset_index(drop=True), use_container_width=True)
+
+                # ---- New Filter: Exclude players with Alliance Status "Pending" ----
+                if "Alliance Status" in players_empty.columns:
+                    players_empty = players_empty[players_empty["Alliance Status"] != "Pending"]
                 
                 # -----------------------
                 # PLAYERS WITH COMPLETE TRADE CIRCLES
