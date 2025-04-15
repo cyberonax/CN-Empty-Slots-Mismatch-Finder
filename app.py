@@ -527,6 +527,14 @@ def main():
                     if "Resource 1" in filtered_df.columns and "Resource 2" in filtered_df.columns:
                         filtered_df = filtered_df.copy()
                         filtered_df['Current Resource 1+2'] = filtered_df.apply(lambda row: get_resource_1_2(row), axis=1)
+
+                    if "Created" in filtered_df.columns:
+                        # Adjust date_format as needed based on your data
+                        date_format = "%m/%d/%Y %I:%M:%S %p"  
+                        filtered_df['Created'] = pd.to_datetime(filtered_df['Created'], format=date_format, errors='coerce')
+                        current_date = datetime.now()
+                        filtered_df['Days Old'] = (current_date - filtered_df['Created']).dt.days
+
                     st.dataframe(filtered_df, use_container_width=True)
                     # Save the filtered DataFrame and CSV content to session state for later use.
                     st.session_state.filtered_df = filtered_df
