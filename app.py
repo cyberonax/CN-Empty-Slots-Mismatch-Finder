@@ -948,21 +948,18 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                             new_circle = circle  # If not enough, leave circle as is.
                         # If after filling we have exactly TRADE_CIRCLE_SIZE players, accept the circle.
                         if len(new_circle) == TRADE_CIRCLE_SIZE:
-                            # Run the matching algorithm (using your existing find_best_match_circle function)
-                            # For simplicity, we use the union of current "Resource 1+2" values from non-empty members.
+                            # Run the matching algorithm (using your existing find_best_match function)
                             current_resources = []
                             for p in new_circle:
                                 if p.get("Resource 1+2"):
                                     current_resources.extend([r.strip() for r in p.get("Resource 1+2").split(",") if r.strip()])
                             current_resources_sorted = sorted(set(current_resources))
-                            # Call the pre‐defined find_best_match (assumed defined in Resource Mismatches section)
                             best_combo, missing_res, extra_res, score = find_best_match(current_resources_sorted, peace_a_combos + peace_b_combos + peace_c_combos + war_combos)
-                            # In this update, we assign the best_combo to every member (even if it matches their current value)
-                            for p in new_circle:
-                                p["Assigned Resource 1+2"] = best_combo
-                                # Also, for display consistency, set a field for current resource 1+2 if not already present.
-                                if "Current Resource 1+2" not in p:
-                                    p["Current Resource 1+2"] = p.get("Resource 1+2", "")
+                            
+                            # Assign only 2 resources per player from best_combo
+                            for j, p in enumerate(new_circle):
+                                p["Assigned Resource 1+2"] = best_combo[2*j:2*j+2]
+                            
                             # Save the trade circle with a descriptive category.
                             if level == "A":
                                 p_cat = "Peace Mode Level A"
