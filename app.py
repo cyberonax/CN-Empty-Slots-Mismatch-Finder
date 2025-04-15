@@ -982,11 +982,9 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                                 continue
 
                             # Check if this player should be filtered out:
-                            # We filter if any of the fields (Ruler Name, Nation Name, or Nation ID) appear in the filter_set.
-                            # In this snippet, assume that Nation ID is not always present in the pasted text.
+                            # We filter if any of the fields (Ruler Name, Nation Name) appear in the filter_set.
                             ruler_name = fields[0]
                             nation_name = fields[2] if len(fields) > 2 else ""
-                            nation_id = fields[?]  # Adjust the index if Nation ID exists in the pasted data. For example, if it’s the 8th column, use fields[7].
                             # For now, we assume only Ruler Name and Nation Name are provided.
                             if ruler_name in filter_set or nation_name in filter_set:
                                 continue
