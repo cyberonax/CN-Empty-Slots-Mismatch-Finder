@@ -1225,7 +1225,7 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                         summary_data = {
                             "Total Alliance Members": [total_alliance],
                             "Rulers in Trade Circles": [total_matched],
-                            "Rulers not in Trade Circles": [total_unmatched]
+                            "Rulers not in Trade Circles": [total_unmatched],
                             "% Not in Trade Circles": [percentage_total_unmatched]
                         }
                         summary_df = pd.DataFrame(summary_data)
