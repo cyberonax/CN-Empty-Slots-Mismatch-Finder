@@ -979,6 +979,7 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                     free_pool_all = [
                         p for p in free_pool_all 
                         if eligible(p) and (p.get("Alliance") in st.session_state.selected_alliances)
+                    ]
                 
                     # Helper: filter free pool by desired level.
                     def filter_by_level(pool, level):
