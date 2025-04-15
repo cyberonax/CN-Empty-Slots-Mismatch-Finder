@@ -984,36 +984,6 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                         st.info("Paste trade circle data in the text box above to process.")
 
                 # -----------------------
-                # EXPORT/WRITE EXCEL FILE FOR DOWNLOAD WITH ADDITIONAL WORKSHEETS
-                # -----------------------
-                sheets = {}  # Ensure sheets is initialized
-                
-                # Build trade circle export entries based on final_circles
-                trade_circle_entries = []
-                for circle in final_circles:
-                    circle_type = circle[0].get("Trade Circle Category", "Uncategorized")
-                    trade_circle_id = ".".join([str(p.get('Nation ID', '')) for p in circle if p.get('Nation ID')])
-                    for player in circle:
-                        trade_circle_entries.append({
-                            "Category": f"{circle_type} Recommended Trade Circle",
-                            "Circle Type": circle_type,
-                            "Trade Circle ID": trade_circle_id,
-                            "Nation ID": player.get('Nation ID', ''),
-                            "Ruler Name": player.get('Ruler Name', ''),
-                            "Nation Name": player.get('Nation Name', ''),
-                            "Team": player.get('Team', ''),
-                            "Current Resources": player.get('Current Resources', ''),
-                            "Current Resource 1+2": get_resource_1_2(player),
-                            "Activity": player.get('Activity', ''),
-                            "Days Old": player.get('Days Old', ''),
-                            "Assigned Resources": ", ".join(player.get('Assigned Resource 1+2', [])) if player.get('Assigned Resource 1+2') else "None"
-                        })
-                
-                if trade_circle_entries:
-                    trade_circle_df = pd.DataFrame(trade_circle_entries)
-                    sheets["Trade Circles"] = add_nation_drill_url(trade_circle_df)
-
-                # -----------------------
                 # SUMMARY OVERVIEW SECTION (UI)
                 # -----------------------
                 with st.expander("Summary Overview"):
@@ -1079,6 +1049,36 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                     - Log each notification with details for follow-up.
                     """)
                     st.markdown(action_plan)
+
+                # -----------------------
+                # EXPORT/WRITE EXCEL FILE FOR DOWNLOAD WITH ADDITIONAL WORKSHEETS
+                # -----------------------
+                sheets = {}  # Ensure sheets is initialized
+                
+                # Build trade circle export entries based on final_circles
+                trade_circle_entries = []
+                for circle in final_circles:
+                    circle_type = circle[0].get("Trade Circle Category", "Uncategorized")
+                    trade_circle_id = ".".join([str(p.get('Nation ID', '')) for p in circle if p.get('Nation ID')])
+                    for player in circle:
+                        trade_circle_entries.append({
+                            "Category": f"{circle_type} Recommended Trade Circle",
+                            "Circle Type": circle_type,
+                            "Trade Circle ID": trade_circle_id,
+                            "Nation ID": player.get('Nation ID', ''),
+                            "Ruler Name": player.get('Ruler Name', ''),
+                            "Nation Name": player.get('Nation Name', ''),
+                            "Team": player.get('Team', ''),
+                            "Current Resources": player.get('Current Resources', ''),
+                            "Current Resource 1+2": get_resource_1_2(player),
+                            "Activity": player.get('Activity', ''),
+                            "Days Old": player.get('Days Old', ''),
+                            "Assigned Resources": ", ".join(player.get('Assigned Resource 1+2', [])) if player.get('Assigned Resource 1+2') else "None"
+                        })
+                
+                if trade_circle_entries:
+                    trade_circle_df = pd.DataFrame(trade_circle_entries)
+                    sheets["Trade Circles"] = add_nation_drill_url(trade_circle_df)
                     
                 # -----------------------
                 # GENERATE MESSAGE TEMPLATES FOR TRADE CIRCLES FROM final_circles
