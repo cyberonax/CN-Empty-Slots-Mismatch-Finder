@@ -1013,11 +1013,11 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                     sheets["Trade Circles"] = add_nation_drill_url(trade_circle_df)
                 
                 # -----------------------
-                # GENERATE MESSAGE TEMPLATES FOR TRADE CIRCLES
+                # GENERATE MESSAGE TEMPLATES FOR TRADE CIRCLES FROM final_circles
                 # -----------------------
-                def generate_trade_circle_messages(final_circles):
+                def generate_trade_circle_messages(circles):
                     messages = []
-                    for circle in final_circles:
+                    for circle in circles:
                         circle_type = circle[0].get("Trade Circle Category", "Uncategorized")
                         nation_names = [player.get('Ruler Name', '') for player in circle if player.get('Ruler Name')]
                         for player in circle:
@@ -1092,111 +1092,12 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                         for cell in ws[1]:
                             cell.font = header_font
                             cell.border = thin_border
-                        
-                        # Create separate worksheets for each Peacetime Mismatch Level using the same formatting as your consolidated sheet.
-                        if not df_peace_a.empty:
-                            ws_pa = workbook.create_sheet("Peacetime Mismatch Level A")
-                            pa_df = add_nation_drill_url(df_peace_a.copy())
-                            for r in dataframe_to_rows(pa_df, index=False, header=True):
-                                ws_pa.append(r)
-                            format_header(ws_pa)
-                        
-                        if not df_peace_b.empty:
-                            ws_pb = workbook.create_sheet("Peacetime Mismatch Level B")
-                            pb_df = add_nation_drill_url(df_peace_b.copy())
-                            for r in dataframe_to_rows(pb_df, index=False, header=True):
-                                ws_pb.append(r)
-                            format_header(ws_pb)
-                        
-                        if not df_peace_c.empty:
-                            ws_pc = workbook.create_sheet("Peacetime Mismatch Level C")
-                            pc_df = add_nation_drill_url(df_peace_c.copy())
-                            for r in dataframe_to_rows(pc_df, index=False, header=True):
-                                ws_pc.append(r)
-                            format_header(ws_pc)
-                        
-                        # Add Summary Overview worksheet.
-                        summary_ws = workbook.create_sheet("Summary Overview")
-                        summary_text = (
-                            f"Total Players (Empty + Complete): {total_players}\n"
-                            f"Players with Empty Trade Slots: {len(players_empty)} ({empty_percentage:.2f}%)\n"
-                            f"Players in Complete Trade Circle: {total_full}\n\n"
-                            f"Peacetime Mismatch Breakdown:\n"
-                            f"    Level A (< 1000 days): {unique_peaceA}\n"
-                            f"    Level B (1000-2000 days): {unique_peaceB}\n"
-                            f"    Level C (>= 2000 days): {unique_peaceC}\n"
-                            f"    Total Peacetime Mismatch: {total_peace_mismatch} ({peacetime_mismatch_percentage:.2f}%)\n"
-                            f"Wartime Mismatch among Complete Trade Circles: {unique_wartime_mismatch} ({wartime_mismatch_percentage:.2f}%)"
-                        )
-                        summary_ws["A1"] = summary_text
-                        summary_ws.column_dimensions["A"].width = 100
-                        summary_ws["A1"].alignment = Alignment(wrapText=True)
-                        
-                        # Add Message Templates worksheet.
-                        messages_ws = workbook.create_sheet("Message Templates")
-                        messages = []
-                        # Generate messages for Peacetime mismatches (using consolidated peacetime_df if desired).
-                        if not peacetime_df.empty:
-                            for idx, row in peacetime_df.iterrows():
-                                extra = row["Duplicate Resources"]
-                                msg = (
-                                    f"To The Ruler: {row['Ruler Name']}, your Trade Circle currently has mismatched/duplicate resource(s) "
-                                    f"{extra} which must be exchanged to match the ideal combination ({row['Valid Combination']}). "
-                                    f"Missing: {row['Missing Resources']}; Extra: {row['Extra Resources']}. -Lord of Growth."
-                                )
-                                messages.append({"Message Type": "Peacetime Resource Mismatch", "Message": msg})
-                        if not wartime_df.empty:
-                            for idx, row in wartime_df.iterrows():
-                                extra = row["Duplicate Resources"]
-                                msg = (
-                                    f"To The Ruler: {row['Ruler Name']}, your Trade Circle currently has mismatched/duplicate resource(s) "
-                                    f"{extra} which must be exchanged to match the ideal combination ({row['Valid Combination']}). "
-                                    f"Missing: {row['Missing Resources']}; Extra: {row['Extra Resources']}. -Lord of Growth."
-                                )
-                                messages.append({"Message Type": "Wartime Resource Mismatch", "Message": msg})
-                        
-                        # Trade circle messages: include partner info.
-                        def generate_trade_circle_messages(circles, circle_type):
-                            for circle in circles:
-                                nation_names = [player.get('Ruler Name', '') for player in circle]
-                                for player in circle:
-                                    partners = [name for name in nation_names if name != player.get('Ruler Name', '')]
-                                    msg = (
-                                        f"To The Ruler: {player.get('Ruler Name', '')}, please join a Trade Circle with partners: "
-                                        f"{', '.join(partners)}. Your assigned resource pair is "
-                                        f"{', '.join(player.get('Assigned Resources', [])) if player.get('Assigned Resources') else 'None'}. -Lord of Growth."
-                                    )
-                                    messages.append({"Message Type": f"{circle_type} Trade Circle", "Message": msg})
-                        if trade_circles_peace:
-                            generate_trade_circle_messages(trade_circles_peace, "Peacetime")
-                        if trade_circles_war:
-                            generate_trade_circle_messages(trade_circles_war, "Wartime")
-                        
-                        messages_df = pd.DataFrame(messages)
-                        for r in dataframe_to_rows(messages_df, index=False, header=True):
-                            messages_ws.append(r)
-                        messages_ws.column_dimensions["A"].width = 30
-                        messages_ws.column_dimensions["B"].width = 150
-                        
-                        # --- Reorder worksheets: Move individual Peacetime Mismatch Level sheets to follow the consolidated "Peacetime Mismatch" sheet ---
-                        sheets_list = workbook._sheets  # Retrieve current sheet order.
-                        p_mismatch_index = None
-                        for i, sheet in enumerate(sheets_list):
-                            if sheet.title == "Peacetime Mismatch":
-                                p_mismatch_index = i
-                                break
-                        if p_mismatch_index is not None:
-                            extra_titles = ["Peacetime Mismatch Level A", "Peacetime Mismatch Level B", "Peacetime Mismatch Level C"]
-                            extra_sheets = [sheet for sheet in sheets_list if sheet.title in extra_titles]
-                            sheets_list = [sheet for sheet in sheets_list if sheet.title not in extra_titles]
-                            insertion_index = p_mismatch_index + 1
-                            sheets_list[insertion_index:insertion_index] = extra_sheets
-                            workbook._sheets = sheets_list
-                        
-                    output.seek(0)
-                    excel_data = output.read()
-                else:
-                    excel_data = None
+                    
+                    # Example: you can add extra formatting or additional worksheets here if needed.
+                    writer.save()
+                
+                output.seek(0)
+                excel_data = output.read()
                 # -----------------------
                 # DOWNLOAD ALL DATA EXCEL (positioned at the bottom of the page)
                 # -----------------------
