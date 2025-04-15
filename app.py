@@ -79,6 +79,19 @@ def count_empty_slots(row, resource_cols):
     """Count blank resource cells and determine trade slots (each slot covers 2 resources)."""
     count = sum(1 for x in row[resource_cols] if pd.isnull(x) or str(x).strip() == '')
     return count // 2
+    
+def is_valid_resource_pair(current_pair_str, valid_combos):
+    """
+    Check if the given current resource pair string (e.g., 'A, B')
+    is one of the valid combinations (each valid combo is expected to be a sorted list of two resources).
+    """
+    # Convert the player's current pair string into a sorted list of resources.
+    current_pair = sorted([r.strip() for r in current_pair_str.split(",") if r.strip()])
+    # Loop over each valid combo (assumed to be a list of resources, sorted already).
+    for combo in valid_combos:
+        if current_pair == combo:
+            return True
+    return False
 
 # -----------------------
 # IMPROVED TRADE CIRCLE FORMATION LOGIC
@@ -962,20 +975,53 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                             final_circles.append(new_circle)
                         else:
                             st.warning("A pasted circle could not be completed to 6 members with eligible partners for level " + level)
-                
+
                     # -----------------------
                     # DISPLAY THE FINAL RECOMMENDED TRADE CIRCLES
                     # -----------------------
                     st.markdown("### Final Recommended Trade Circles")
                     for idx, circle in enumerate(final_circles, start=1):
-                        st.markdown(f"--- **Trade Circle #{idx} ({circle[0].get('Trade Circle Category', 'Uncategorized')})** ---")
-                        df_circle = pd.DataFrame(circle)
-                        # Ensure both current and new assigned Resource 1+2 columns exist.
-                        if "Current Resource 1+2" not in df_circle.columns:
-                            df_circle["Current Resource 1+2"] = df_circle["Resource 1+2"]
-                        if "Assigned Resource 1+2" not in df_circle.columns:
-                            df_circle["Assigned Resource 1+2"] = ""
-                        cols_order = ["Nation ID", "Ruler Name", "Nation Name", "Team", "Current Resource 1+2", "Assigned Resource 1+2", "Trade Circle Category", "Days Old", "Nation Drill Link", "Activity"]
+                        # Determine the category and choose the corresponding valid combinations list.
+                        category = circle[0].get("Trade Circle Category", "Uncategorized")
+                        if "Level A" in category:
+                            valid_combos = peace_a_combos   # defined earlier in your code
+                        elif "Level B" in category:
+                            valid_combos = peace_b_combos
+                        elif "Level C" in category:
+                            valid_combos = peace_c_combos
+                        elif "War" in category:
+                            valid_combos = war_combos
+                        else:
+                            valid_combos = []
+                        
+                        st.markdown(f"--- **Trade Circle #{idx} ({category})** ---")
+                        display_data = []
+                        for p in circle:
+                            current_pair = p.get("Current Resource 1+2", "")
+                            # Check if the current pair is valid for this level.
+                            if valid_combos and is_valid_resource_pair(current_pair, valid_combos):
+                                assign_display = "No Change"
+                            else:
+                                # Otherwise, join the assigned resource pair (if available) into a string.
+                                assigned = p.get("Assigned Resource 1+2", [])
+                                assign_display = ", ".join(assigned) if assigned else ""
+                        
+                            display_data.append({
+                                "Ruler Name": p.get("Ruler Name", ""),
+                                "Resource 1+2": current_pair,
+                                "Alliance": p.get("Alliance", ""),
+                                "Team": p.get("Team", ""),
+                                "Days Old": p.get("Days Old", ""),
+                                "Nation Drill Link": p.get("Nation Drill Link", ""),
+                                "Activity": p.get("Activity", ""),
+                                "Assign Resource 1+2": assign_display,
+                                "Trade Circle Category": category
+                            })
+                        
+                        df_circle = pd.DataFrame(display_data)
+                        # Order columns as required.
+                        cols_order = ["Ruler Name", "Resource 1+2", "Alliance", "Team", "Days Old",
+                                      "Nation Drill Link", "Activity", "Assign Resource 1+2", "Trade Circle Category"]
                         df_circle = df_circle[[col for col in cols_order if col in df_circle.columns]]
                         st.dataframe(df_circle, use_container_width=True)
 
