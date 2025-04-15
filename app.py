@@ -1120,15 +1120,16 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                                 final_circles.append(new_circle)
                         else:
                             st.warning("A pasted circle could not be completed to 6 members with eligible partners for level " + level)
-                
+
                     # -----------------------
                     # DISPLAY THE FINAL RECOMMENDED TRADE CIRCLES
                     # -----------------------
                     st.markdown("### Final Recommended Trade Circles")
                     for idx, circle in enumerate(final_circles, start=1):
+                        # GUARD: Skip empty circles.
                         if not circle:
                             continue
-
+                    
                         category = circle[0].get("Trade Circle Category", "Uncategorized")
                         st.markdown(f"--- **Trade Circle #{idx} ({category})** ---")
                         display_data = []
@@ -1218,7 +1219,10 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                 # -----------------------
                 def generate_trade_circle_messages(circles):
                     messages = []
-                    for circle in final_circles:
+                    for circle in circles:
+                        # GUARD: Skip empty circles.
+                        if not circle:
+                            continue
                         circle_type = circle[0].get("Trade Circle Category", "Uncategorized")
                         nation_names = [player.get('Ruler Name', '') for player in circle if player.get('Ruler Name')]
                         for player in circle:
