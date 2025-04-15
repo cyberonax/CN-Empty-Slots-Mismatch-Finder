@@ -1058,7 +1058,6 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                         st.markdown(f"--- **Trade Circle #{idx} ({category})** ---")
                         display_data = []
                         for p in circle:
-                            # Use the preset field "Current Resource 1+2" for the current pair.
                             current_pair = p.get("Current Resource 1+2", p.get("Resource 1+2", ""))
                             assigned = p.get("Assigned Resource 1+2", "")
                             if assigned == "No Change":
@@ -1067,8 +1066,6 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                                 assign_display = ", ".join(assigned)
                             else:
                                 assign_display = assigned
-                    
-                            # Use the field "Connected Resources" for full 12-resource combination.
                             connected_resources = p.get("Connected Resources", "")
                         
                             display_data.append({
@@ -1085,7 +1082,6 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                             })
                         
                         df_circle = pd.DataFrame(display_data)
-                        # Define the order of columns.
                         cols_order = ["Ruler Name", "Resource 1+2", "Alliance", "Team", "Days Old",
                                       "Nation Drill Link", "Activity", "Assign Resource 1+2",
                                       "Connected Resources", "Trade Circle Category"]
