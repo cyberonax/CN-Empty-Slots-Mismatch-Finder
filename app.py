@@ -1012,7 +1012,74 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                 if trade_circle_entries:
                     trade_circle_df = pd.DataFrame(trade_circle_entries)
                     sheets["Trade Circles"] = add_nation_drill_url(trade_circle_df)
-                
+
+                # -----------------------
+                # SUMMARY OVERVIEW SECTION (UI)
+                # -----------------------
+                with st.expander("Summary Overview"):
+                    # Use the alliance filter selection for the heading.
+                    if "selected_alliances" in st.session_state:
+                        alliances = st.session_state.selected_alliances
+                    else:
+                        alliances = []
+                    
+                    if not alliances or len(alliances) == 0:
+                        heading_alliance = "Alliances"
+                    elif len(alliances) == 1:
+                        heading_alliance = alliances[0]
+                    else:
+                        heading_alliance = ", ".join(alliances)
+                    
+                    st.subheader(f"General Statistics for {heading_alliance}")
+                    
+                    # Compute total players from the two groups (empty slots + complete)
+                    total_players = len(players_empty) + len(players_full)
+                    empty_percentage = (len(players_empty) / total_players * 100) if total_players else 0
+                    total_full = len(players_full)
+                    
+                    # For the mismatches, use your previously generated DataFrames.
+                    unique_peaceA = df_peace_a['Nation ID'].nunique() if not df_peace_a.empty else 0
+                    unique_peaceB = df_peace_b['Nation ID'].nunique() if not df_peace_b.empty else 0
+                    unique_peaceC = df_peace_c['Nation ID'].nunique() if not df_peace_c.empty else 0
+                    total_peace_mismatch = unique_peaceA + unique_peaceB + unique_peaceC
+                    unique_wartime_mismatch = wartime_df['Nation ID'].nunique() if not wartime_df.empty else 0
+                    
+                    peacetime_mismatch_percentage = (unique_peaceA / total_full * 100) if total_full else 0
+                    wartime_mismatch_percentage = (unique_wartime_mismatch / total_full * 100) if total_full else 0
+                    
+                    st.write(f"**Total Players (Empty + Complete):** {total_players}")
+                    st.write(f"**Players with Empty Trade Slots:** {len(players_empty)} ({empty_percentage:.2f}%)")
+                    st.write(f"**Players in Complete Trade Circle:** {total_full}")
+                    
+                    st.markdown("#### Peacetime Mismatches Breakdown by Level")
+                    st.write(f"- **Level A** (< 1000 days old): **{unique_peaceA}**")
+                    st.write(f"- **Level B** (1000 to 2000 days old): **{unique_peaceB}**")
+                    st.write(f"- **Level C** (>= 2000 days old): **{unique_peaceC}**")
+                    st.write(f"Total Peacetime Mismatch among Complete Trade Circles: {total_peace_mismatch} ({peacetime_mismatch_percentage:.2f}%)")
+                    st.write(f"Wartime Mismatch among Complete Trade Circles: {unique_wartime_mismatch} ({wartime_mismatch_percentage:.2f}%)")
+                    st.markdown('---')
+                    
+                    st.subheader("Action Plan for Alliance Management")
+                    action_plan = textwrap.dedent("""\
+                    **1. Identify Affected Trade Circles:**
+                    - Review the **Peacetime Resource Mismatches** and **Wartime Resource Mismatches** reports.
+                    - For each entry, note the following:
+                      - **Player Identification:** Nation Name, Nation ID, Ruler Name.
+                      - **Resources:** The extra resources (listed under *Extra Resources*) and the missing resources (listed under *Missing Resources*).
+    
+                    **2. Notify Affected Players:**
+                    - For each player with a peacetime mismatch, send a message:
+                      - *"To The Ruler: [Ruler Name], your Trade Circle currently has mismatched/duplicate resource(s) [Extra Resources] which must be exchanged for the missing resource(s) [Missing Resources] to meet peacetime trade requirements. Please can you either change your resources or get in contact with your trade partners. -Lord of Growth."*
+                    - For each player with a wartime mismatch, send a similar message.
+    
+                    **3. Reconfigure Incomplete Trade Circles:**
+                    - Review the **Players with Empty Trade Slots** report and arrange a meeting for any player not in a full trade circle.
+    
+                    **4. Document and Follow-Up:**
+                    - Log each notification with details for follow-up.
+                    """)
+                    st.markdown(action_plan)
+                    
                 # -----------------------
                 # GENERATE MESSAGE TEMPLATES FOR TRADE CIRCLES FROM final_circles
                 # -----------------------
