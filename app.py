@@ -887,19 +887,22 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                         "Empty slots are denoted by a line that starts with an 'x' or has an empty Ruler Name. Separate Trade Circle blocks with an empty line. Using a spreadsheet is highly recommended.",
                         height=200
                     )
-                
+
+                # New text area for filtering out players
+                st.markdown("### Filter Out Players")
+                filter_text = st.text_area(
+                    "Enter one value per line to filter out players by matching Ruler Name, Nation Name, or Nation ID:",
+                    height=100
+                )
+
+                # Process the filter input into a set of values for quick lookup.
+                filter_set = set([line.strip() for line in filter_text.splitlines() if line.strip()])
+
                     # -----------------------------------------
                     # Helper functions for trade circle formation
                     # -----------------------------------------
                     def determine_player_level(player):
                         """Determine a player's level based on Days Old."""
-                        try:
-                            d = float(player.get("Days Old", 0))
-                        except Exception as e:
-                            st.warning(f"Error converting 'Days Old' for player {player.get('Ruler Name')}: {e}")
-                            return None
-                        
-                        st.write(f"Debug: Player {player.get('Ruler Name')}, Days Old = {d}")
 
                         try:
                             d = float(player.get("Days Old", 0))
@@ -977,6 +980,17 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                             # Expect at least 7 fields; if not, skip the line.
                             if len(fields) < 7:
                                 continue
+
+                            # Check if this player should be filtered out:
+                            # We filter if any of the fields (Ruler Name, Nation Name, or Nation ID) appear in the filter_set.
+                            # In this snippet, assume that Nation ID is not always present in the pasted text.
+                            ruler_name = fields[0]
+                            nation_name = fields[2] if len(fields) > 2 else ""
+                            nation_id = fields[?]  # Adjust the index if Nation ID exists in the pasted data. For example, if it’s the 8th column, use fields[7].
+                            # For now, we assume only Ruler Name and Nation Name are provided.
+                            if ruler_name in filter_set or nation_name in filter_set:
+                                continue
+
                             # If first field is empty or 'x', treat it as an empty slot.
                             if not fields[0] or fields[0].lower() == "x":
                                 circle.append({
