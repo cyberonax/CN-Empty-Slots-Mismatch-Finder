@@ -558,8 +558,9 @@ def main():
 
                 if "Created" in df_to_use.columns:
                     # Use errors='coerce' to convert any non-parsable dates to NaT
-                    df_to_use['Created'] = pd.to_datetime(df_to_use['Created'], errors='coerce')
-                    current_date = pd.to_datetime("now")
+                    date_format = "%m/%d/%Y %I:%M:%S %p"
+                    df_to_use['Created'] = pd.to_datetime(df_to_use['Created'], format=date_format, errors='coerce')
+                    current_date = datetime.now()
                     df_to_use['Days Old'] = (current_date - df_to_use['Created']).dt.days
 
                 # Assume that the resource columns are named "Connected Resource 1" to "Connected Resource 10"
