@@ -993,8 +993,7 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                     # Define a helper function to evaluate candidate quality.
                     def is_high_quality(candidate, circle):
                         """
-                        This is a simple placeholder that returns True if the candidate's resource pair
-                        is disjoint from the resources already in the circle.
+                        Returns True if the candidate's resource pair is disjoint from the resources already in the circle.
                         Adjust the logic as needed.
                         """
                         current_str = candidate.get("Resource 1+2", "")
@@ -1003,16 +1002,14 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                         for p in circle:
                             cur = p.get("Resource 1+2", "")
                             circle_resources.update([r.strip() for r in str(cur).split(",") if r.strip()])
-                        if set(candidate_pair).isdisjoint(circle_resources):
-                            return True
-                        return False
+                        return set(candidate_pair).isdisjoint(circle_resources)
                 
                     final_circles = []  # This will hold complete circles of size TRADE_CIRCLE_SIZE.
                     for circle in valid_circles:
                         level = circle[0].get("Trade Circle Level")
                         current_members = [p for p in circle if not p.get("Empty")]
                         missing_slots = TRADE_CIRCLE_SIZE - len(current_members)
-                
+                        
                         # Get and sort the eligible free pool candidates based on the level.
                         eligible_free = filter_by_level(free_pool_all, level)
                         if level in ["A", "B"]:
