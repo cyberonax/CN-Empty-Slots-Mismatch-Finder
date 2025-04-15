@@ -1147,19 +1147,20 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                     # -----------------------------------------
                     # Display the Final Recommended Trade Circles
                     # -----------------------------------------
+                    # Ensure we remove any empty circles from final_circles
+                    final_circles = [circle for circle in final_circles if circle]
+                    
                     st.markdown("### Final Recommended Trade Circles")
                     for idx, circle in enumerate(final_circles, start=1):
                         if not circle:
                             st.warning(f"Trade Circle #{idx} is empty and will be skipped.")
                             continue
-                        # Safely get the circle type from the first player.
-                        circle_type = next(iter(circle), {}).get("Trade Circle Category", "Uncategorized")
+                        circle_type = circle[0].get("Trade Circle Category", "Uncategorized")
                         st.markdown(f"--- **Trade Circle #{idx} ({circle_type})** ---")
                         display_data = []
                         for p in circle:
                             current_pair = p.get("Resource 1+2", "")
-                            # Robust handling for Assigned Resource 1+2:
-                            assigned = p.get("Assigned Resource 1+2")
+                            assigned = p.get("Assigned Resource 1+2", "")
                             if assigned:
                                 if isinstance(assigned, list):
                                     assign_display = ", ".join([str(x) for x in assigned])
