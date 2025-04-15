@@ -884,7 +884,7 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                     trade_circle_text = st.text_area(
                         "Enter Trade Circle data below. Each line should contain the following tab-separated fields:\n"
                         "Ruler Name | Resource 1+2 | Alliance | Team | Days Old | Nation Drill Link | Activity\n\n"
-                        "Empty slots are denoted by a line that starts with an 'x' or has an empty Ruler Name. Separate Trade Circle blocks with an empty line.",
+                        "Empty slots are denoted by a line that starts with an 'x' or has an empty Ruler Name. Separate Trade Circle blocks with an empty line. Using a spreadsheet is highly recommended.",
                         height=200
                     )
                 
@@ -893,6 +893,14 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                     # -----------------------------------------
                     def determine_player_level(player):
                         """Determine a player's level based on Days Old."""
+                        try:
+                            d = float(player.get("Days Old", 0))
+                        except Exception as e:
+                            st.warning(f"Error converting 'Days Old' for player {player.get('Ruler Name')}: {e}")
+                            return None
+                        
+                        st.write(f"Debug: Player {player.get('Ruler Name')}, Days Old = {d}")
+
                         try:
                             d = float(player.get("Days Old", 0))
                         except:
