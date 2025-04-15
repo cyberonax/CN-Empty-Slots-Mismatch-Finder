@@ -967,9 +967,9 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                         # -----------------------
                         # DISPLAY ANY LEFTOVER FREE-ROAMING PLAYERS
                         # -----------------------
-                        if free_players and len(free_players) > 0:
+                        if free_pool_all and len(free_pool_all) > 0:
                             st.markdown("### Players Remaining Without a Full Trade Circle")
-                            df_leftover = pd.DataFrame(free_players)
+                            df_leftover = pd.DataFrame(free_pool_all)
                             # Ensure that 'Current Resource 1+2' is present. If not, default it from 'Resource 1+2'
                             if "Current Resource 1+2" not in df_leftover.columns:
                                 df_leftover["Current Resource 1+2"] = df_leftover.get("Resource 1+2", "")
@@ -979,6 +979,7 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                             st.dataframe(df_leftover, use_container_width=True)
                         else:
                             st.info("No leftover free players available.")
+
 
                 # -----------------------
                 # EXPORT/WRITE EXCEL FILE FOR DOWNLOAD WITH ADDITIONAL WORKSHEETS
