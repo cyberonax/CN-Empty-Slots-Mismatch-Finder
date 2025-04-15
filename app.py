@@ -824,7 +824,7 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                     # Filter to include only nations under 1000 days old.
                     df_peace_a = df_peace_a[df_peace_a['Days Old'] < 1000]
                     if not df_peace_a.empty:
-                        df_peace_a = df_peace_a.sort_values(by='Ruler Name').reset_index(drop=True)
+                        df_peace_a = df_peace_a.sort_values(by='Ruler Name', key=lambda col: col.str.lower()).reset_index(drop=True)
                         styled_peace_a = df_peace_a.style.applymap(highlight_none, subset=['Duplicate Resources'])
                         st.markdown(f"**Peace Mode Level A Mismatches: {len(df_peace_a)}**")
                         st.dataframe(styled_peace_a, use_container_width=True)
@@ -836,7 +836,7 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                     # Filter to include only nations 1000-2000 days old.
                     df_peace_b = df_peace_b[(df_peace_b['Days Old'] >= 1000) & (df_peace_b['Days Old'] < 2000)]
                     if not df_peace_b.empty:
-                        df_peace_b = df_peace_b.sort_values(by='Ruler Name').reset_index(drop=True)
+                        df_peace_b = df_peace_b.sort_values(by='Ruler Name', key=lambda col: col.str.lower()).reset_index(drop=True)
                         styled_peace_b = df_peace_b.style.applymap(highlight_none, subset=['Duplicate Resources'])
                         st.markdown(f"**Peace Mode Level B Mismatches: {len(df_peace_b)}**")
                         st.dataframe(styled_peace_b, use_container_width=True)
@@ -848,7 +848,7 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                     # Filter to include only nations over 2000 days old.
                     df_peace_c = df_peace_c[df_peace_c['Days Old'] >= 2000]
                     if not df_peace_c.empty:
-                        df_peace_c = df_peace_c.sort_values(by='Ruler Name').reset_index(drop=True)
+                        df_peace_c = df_peace_c.sort_values(by='Ruler Name', key=lambda col: col.str.lower()).reset_index(drop=True)
                         styled_peace_c = df_peace_c.style.applymap(highlight_none, subset=['Duplicate Resources'])
                         st.markdown(f"**Peace Mode Level C Mismatches: {len(df_peace_c)}**")
                         st.dataframe(styled_peace_c, use_container_width=True)
@@ -859,7 +859,7 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                     df_war = pd.DataFrame(mismatch_war)
                     # No age filtering for War Mode.
                     if not df_war.empty:
-                        df_war = df_war.sort_values(by='Ruler Name').reset_index(drop=True)
+                        df_war = df_war.sort_values(by='Ruler Name', key=lambda col: col.str.lower()).reset_index(drop=True)
                         styled_war = df_war.style.applymap(highlight_none, subset=['Duplicate Resources'])
                         st.markdown(f"**War Mode Mismatches: {len(df_war)}**")
                         st.dataframe(styled_war, use_container_width=True)
