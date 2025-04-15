@@ -85,9 +85,11 @@ def is_valid_resource_pair(current_pair_str, valid_combos):
     Check if the given current resource pair string (e.g., 'A, B')
     is one of the valid combinations (each valid combo is expected to be a sorted list of two resources).
     """
-    # Convert the player's current pair string into a sorted list of resources.
+    # If current_pair_str is None or empty, return False immediately.
+    if not current_pair_str or not isinstance(current_pair_str, str):
+        return False
+    
     current_pair = sorted([r.strip() for r in current_pair_str.split(",") if r.strip()])
-    # Loop over each valid combo (assumed to be a list of resources, sorted already).
     for combo in valid_combos:
         if current_pair == combo:
             return True
@@ -981,10 +983,9 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                     # -----------------------
                     st.markdown("### Final Recommended Trade Circles")
                     for idx, circle in enumerate(final_circles, start=1):
-                        # Determine the category and choose the corresponding valid combinations list.
                         category = circle[0].get("Trade Circle Category", "Uncategorized")
                         if "Level A" in category:
-                            valid_combos = peace_a_combos   # defined earlier in your code
+                            valid_combos = peace_a_combos
                         elif "Level B" in category:
                             valid_combos = peace_b_combos
                         elif "Level C" in category:
@@ -998,11 +999,10 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                         display_data = []
                         for p in circle:
                             current_pair = p.get("Current Resource 1+2", "")
-                            # Check if the current pair is valid for this level.
+                            # Use the updated helper function; if the value is None or not a valid string, it will safely return False.
                             if valid_combos and is_valid_resource_pair(current_pair, valid_combos):
                                 assign_display = "No Change"
                             else:
-                                # Otherwise, join the assigned resource pair (if available) into a string.
                                 assigned = p.get("Assigned Resource 1+2", [])
                                 assign_display = ", ".join(assigned) if assigned else ""
                         
@@ -1019,7 +1019,6 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                             })
                         
                         df_circle = pd.DataFrame(display_data)
-                        # Order columns as required.
                         cols_order = ["Ruler Name", "Resource 1+2", "Alliance", "Team", "Days Old",
                                       "Nation Drill Link", "Activity", "Assign Resource 1+2", "Trade Circle Category"]
                         df_circle = df_circle[[col for col in cols_order if col in df_circle.columns]]
