@@ -704,7 +704,24 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                         missing = valid_set - nation_set
                         extra = nation_set - valid_set
                         return missing, extra
-                
+
+                    def compare_resources(nation_resources, valid_combo):
+                        nation_count = Counter(nation_resources)
+                        valid_count = Counter(valid_combo)
+                        missing = []
+                        extra = []
+                        
+                        # For every resource that should be there, check if the nation has fewer than expected.
+                        for resource, qty in valid_count.items():
+                            if nation_count[resource] < qty:
+                                missing.extend([resource] * (qty - nation_count[resource]))
+                        
+                        # For every resource the nation has extra copies of, note that.
+                        for resource, qty in nation_count.items():
+                            if nation_count[resource] > valid_count[resource]:
+                                extra.extend([resource] * (qty - valid_count[resource]))
+                        return missing, extra
+
                     # Helper: find the best matching valid combination that minimizes total mismatches.
                     def find_best_match(nation_resources, valid_combinations):
                         best_combo = None
