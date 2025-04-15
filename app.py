@@ -825,49 +825,53 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                             mismatch_war.append(rec)
                     
                     # Convert each list into a DataFrame and apply age filters.
-                    st.markdown(f"**Peace Mode Level A Mismatches: {len(df_peace_a)}**")
-                    df_peace_a = pd.DataFrame(mismatch_peace_a).reset_index(drop=True)
+                    # Peace Mode Level A
+                    df_peace_a = pd.DataFrame(mismatch_peace_a)
                     # Filter to include only nations under 1000 days old.
                     df_peace_a = df_peace_a[df_peace_a['Days Old'] < 1000]
                     if not df_peace_a.empty:
+                        df_peace_a = df_peace_a.sort_values(by='Ruler Name').reset_index(drop=True)
                         styled_peace_a = df_peace_a.style.applymap(highlight_none, subset=['Duplicate Resources'])
-                        df = df.sort_values(by='Ruler Name').reset_index(drop=True)
+                        st.markdown(f"**Peace Mode Level A Mismatches: {len(df_peace_a)}**")
                         st.dataframe(styled_peace_a, use_container_width=True)
                     else:
                         st.info("No mismatches found for Peace Mode Level A (nations under 1000 days old).")
-                    
-                    st.markdown(f"**Peace Mode Level B Mismatches: {len(df_peace_b)}**")
-                    df_peace_b = pd.DataFrame(mismatch_peace_b).reset_index(drop=True)
+
+                    # Peace Mode Level B
+                    df_peace_b = pd.DataFrame(mismatch_peace_b)
                     # Filter to include only nations 1000-2000 days old.
                     df_peace_b = df_peace_b[(df_peace_b['Days Old'] >= 1000) & (df_peace_b['Days Old'] < 2000)]
                     if not df_peace_b.empty:
+                        df_peace_b = df_peace_b.sort_values(by='Ruler Name').reset_index(drop=True)
                         styled_peace_b = df_peace_b.style.applymap(highlight_none, subset=['Duplicate Resources'])
-                        df = df.sort_values(by='Ruler Name').reset_index(drop=True)
+                        st.markdown(f"**Peace Mode Level B Mismatches: {len(df_peace_b)}**")
                         st.dataframe(styled_peace_b, use_container_width=True)
                     else:
                         st.info("No mismatches found for Peace Mode Level B (nations 1000-2000 days old).")
-                    
-                    st.markdown(f"**Peace Mode Level C Mismatches: {len(df_peace_c)}**")
-                    df_peace_c = pd.DataFrame(mismatch_peace_c).reset_index(drop=True)
+
+                    # Peace Mode Level C
+                    df_peace_c = pd.DataFrame(mismatch_peace_c)
                     # Filter to include only nations over 2000 days old.
                     df_peace_c = df_peace_c[df_peace_c['Days Old'] >= 2000]
                     if not df_peace_c.empty:
+                        df_peace_c = df_peace_c.sort_values(by='Ruler Name').reset_index(drop=True)
                         styled_peace_c = df_peace_c.style.applymap(highlight_none, subset=['Duplicate Resources'])
-                        df = df.sort_values(by='Ruler Name').reset_index(drop=True)
+                        st.markdown(f"**Peace Mode Level C Mismatches: {len(df_peace_c)}**")
                         st.dataframe(styled_peace_c, use_container_width=True)
                     else:
                         st.info("No mismatches found for Peace Mode Level C (nations over 2000 days old).")
-                    
-                    st.markdown(f"**War Mode Mismatches: {len(df_war)}**")
-                    df_war = pd.DataFrame(mismatch_war).reset_index(drop=True)
-                    # (No age filtering for War Mode; adjust here if needed.)
+
+                    # War Mode
+                    df_war = pd.DataFrame(mismatch_war)
+                    # No age filtering for War Mode.
                     if not df_war.empty:
+                        df_war = df_war.sort_values(by='Ruler Name').reset_index(drop=True)
                         styled_war = df_war.style.applymap(highlight_none, subset=['Duplicate Resources'])
-                        df = df.sort_values(by='Ruler Name').reset_index(drop=True)
+                        st.markdown(f"**War Mode Mismatches: {len(df_war)}**")
                         st.dataframe(styled_war, use_container_width=True)
                     else:
                         st.info("No mismatches found for War Mode.")
-                    
+
                     # --- Consolidate mismatch DataFrames for later use (summary, Excel export) ---
                     # Consolidate only the filtered Peace Mode DataFrames.
                     if not (df_peace_a.empty and df_peace_b.empty and df_peace_c.empty):
