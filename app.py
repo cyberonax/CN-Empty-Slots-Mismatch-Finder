@@ -991,7 +991,28 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                             
                             # For those needing new assignments, give each a two-resource slice.
                             for idx, p in enumerate(invalid_players):
-                                p["Assigned Resource 1+2"] = best_combo[2 * idx: 2 * idx + 2]
+                                # Define the ideal two-resource slice for this player.
+                                ideal_slice = best_combo[2 * idx: 2 * idx + 2]  
+                                # Get the player's current resource pair as a set.
+                                current_str = p.get("Current Resource 1+2", p.get("Resource 1+2", ""))
+                                current_set = set([r.strip() for r in current_str.split(",") if r.strip()])
+                                ideal_set = set(ideal_slice)
+                                common = current_set.intersection(ideal_set)
+                                # If exactly one of the resources already matches...
+                                if len(common) == 1:
+                                     # Calculate the missing resource in the ideal slice.
+                                     missing = list(ideal_set - common)
+                                     # Build a new assigned pair that preserves the common resource.
+                                     new_assigned = []
+                                     for r in ideal_slice:
+                                         if r in common:
+                                            new_assigned.append(r)
+                                         elif r in missing:
+                                            new_assigned.append(r)
+                                     p["Assigned Resource 1+2"] = new_assigned
+                                else:
+                                     # Otherwise, assign the ideal slice as determined.
+                                     p["Assigned Resource 1+2"] = ideal_slice
                             
                             # Save the full connected resources (the ideal 12-resource combo) in each player's record.
                             connected_str = ", ".join(best_combo)
