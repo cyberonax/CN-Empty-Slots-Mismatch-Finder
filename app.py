@@ -588,6 +588,7 @@ def main():
                     display_cols = ['Nation ID', 'Ruler Name', 'Nation Name', 'Team',
                                     'Current Resources', 'Current Resource 1+2',
                                     'Empty Slots Count', 'Activity', 'Days Old']
+                    players_empty = players_empty.sort_values(by="Ruler Name", key=lambda col: col.str.lower()).reset_index(drop=True)
                     st.dataframe(players_empty[display_cols].reset_index(drop=True), use_container_width=True)
 
                 # ---- New Filter: Exclude players with Alliance Status "Pending" ----
@@ -605,10 +606,7 @@ def main():
                     players_full['Current Resource 1+2'] = players_full.apply(lambda row: get_resource_1_2(row), axis=1)
                     # Also compute "Empty Slots Count" to verify these players have complete resource sets (should be 0)
                     players_full['Empty Slots Count'] = players_full.apply(lambda row: count_empty_slots(row, resource_cols), axis=1)
-                    # Process "Created" and "Days Old"
-                    #players_full['Created'] = pd.to_datetime(players_full['Created'], format=date_format, errors='coerce')
-                    #players_full['Days Old'] = (current_date - players_full['Created']).dt.days
-
+                    players_full = players_full.sort_values(by="Ruler Name", key=lambda col: col.str.lower()).reset_index(drop=True)
                     st.dataframe(players_full[display_cols].reset_index(drop=True), use_container_width=True)
 
                 # -----------------------
