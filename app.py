@@ -1044,7 +1044,7 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                                     new_circle = circle
                         else:
                             new_circle = circle
-                
+
                         # ---- Global Optimization Assignment for a Complete Circle ----
                         if len(new_circle) == TRADE_CIRCLE_SIZE:
                             # Compute the union of all current resources from the circle.
@@ -1053,7 +1053,7 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                                 current_str = p.get("Resource 1+2", "")
                                 current_resources.extend([r.strip() for r in str(current_str).split(",") if r.strip()])
                             current_resources_sorted = sorted(set(current_resources))
-                
+                        
                             # Choose the valid combos list according to the circle's level.
                             if level == "A":
                                 valid_combos_list = peace_a_combos
@@ -1065,15 +1065,15 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                                 valid_combos_list = war_combos
                             else:
                                 valid_combos_list = []
-                
-                            # Compute the best_combo using your existing matching function.
+                        
+                            # Compute the best_combo using your matching function.
                             best_combo, missing_res, extra_res, score = find_best_match(current_resources_sorted, valid_combos_list)
                             if not best_combo or len(best_combo) != 12:
                                 st.error("Could not determine a valid full resource combination for the circle.")
                             else:
                                 # Create the six ideal slices from best_combo.
                                 ideal_slices = [best_combo[2*i:2*i+2] for i in range(TRADE_CIRCLE_SIZE)]
-                                
+                        
                                 # Build the cost matrix comparing each player's current pair to each ideal slice.
                                 cost_matrix = []
                                 for p in new_circle:
@@ -1086,10 +1086,10 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                                         cost = 2 - len(common)
                                         row.append(cost)
                                     cost_matrix.append(row)
-                                
+                        
                                 cost_matrix = np.array(cost_matrix)
                                 row_ind, col_ind = linear_sum_assignment(cost_matrix)
-                                
+                        
                                 # Now assign each player the slice corresponding to the optimal assignment.
                                 for player_idx, slice_idx in zip(row_ind, col_ind):
                                     assigned_cost = cost_matrix[player_idx, slice_idx]
@@ -1097,12 +1097,12 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                                         new_circle[player_idx]["Assigned Resource 1+2"] = "No Change"
                                     else:
                                         new_circle[player_idx]["Assigned Resource 1+2"] = ideal_slices[slice_idx]
-                                
+                        
                                 # Save the full ideal resource combination (Connected Resources) in each player's record.
                                 connected_str = ", ".join(best_combo)
                                 for p in new_circle:
                                     p["Connected Resources"] = connected_str
-                                
+                        
                                 # Assign the circle category label.
                                 if level == "A":
                                     p_cat = "Peace Mode Level A"
@@ -1116,22 +1116,22 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                                     p_cat = "Uncategorized"
                                 for p in new_circle:
                                     p["Trade Circle Category"] = p_cat
-                                
-                                final_circles.append(new_circle)
+                        
+                                # ****PLACE THIS HERE****: Only append new_circle if it is non‑empty.
+                                if new_circle and len(new_circle) == TRADE_CIRCLE_SIZE:
+                                    final_circles.append(new_circle)
                         else:
                             st.warning("A pasted circle could not be completed to 6 members with eligible partners for level " + level)
 
                     # -----------------------
                     # DISPLAY THE FINAL RECOMMENDED TRADE CIRCLES
                     # -----------------------
-                    st.markdown("### Final Recommended Trade Circles")
-                    for idx, circle in enumerate(final_circles, start=1):
-                        # GUARD: If the circle is empty, skip to the next one.
-                        if not circle or len(circle) == 0:
-                            continue
+                    non_empty_final_circles = [circle for circle in final_circles if circle and len(circle) > 0]
                     
-                        category = circle[0].get("Trade Circle Category", "Uncategorized")
-                        st.markdown(f"--- **Trade Circle #{idx} ({category})** ---")
+                    st.markdown("### Final Recommended Trade Circles")
+                    for idx, circle in enumerate(non_empty_final_circles, start=1):
+                        circle_type = circle[0].get("Trade Circle Category", "Uncategorized")
+                        st.markdown(f"--- **Trade Circle #{idx} ({circle_type})** ---")
                         display_data = []
                         for p in circle:
                             current_pair = p.get("Resource 1+2", "")
@@ -1220,11 +1220,10 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                 # GENERATE MESSAGE TEMPLATES FOR TRADE CIRCLES FROM final_circles
                 # -----------------------
                 def generate_trade_circle_messages(circles):
+                    # First, filter out any empty circles.
+                    non_empty_circles = [circle for circle in circles if circle]
                     messages = []
-                    for circle in circles:
-                        # GUARD: Skip empty circles to avoid IndexError.
-                        if not circle or len(circle) == 0:
-                            continue
+                    for circle in non_empty_circles:
                         circle_type = circle[0].get("Trade Circle Category", "Uncategorized")
                         nation_names = [player.get('Ruler Name', '') for player in circle if player.get('Ruler Name')]
                         for player in circle:
