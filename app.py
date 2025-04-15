@@ -948,27 +948,59 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                             new_circle = circle  # If not enough, leave circle as is.
                         # If after filling we have exactly TRADE_CIRCLE_SIZE players, accept the circle.
                         if len(new_circle) == TRADE_CIRCLE_SIZE:
-                            # Run the matching algorithm (using your existing find_best_match function)
+                            # Collect current resource strings for all non-empty entries.
                             current_resources = []
                             for p in new_circle:
                                 if p.get("Resource 1+2"):
                                     current_resources.extend([r.strip() for r in p.get("Resource 1+2").split(",") if r.strip()])
                             current_resources_sorted = sorted(set(current_resources))
-                            best_combo, missing_res, extra_res, score = find_best_match(current_resources_sorted, peace_a_combos + peace_b_combos + peace_c_combos + war_combos)
                             
-                            # Assign only 2 resources per player from best_combo
-                            for j, p in enumerate(new_circle):
-                                p["Assigned Resource 1+2"] = best_combo[2*j:2*j+2]
+                            # Run your matching algorithm to choose the best full combination.
+                            best_combo, missing_res, extra_res, score = find_best_match(
+                                current_resources_sorted,
+                                peace_a_combos + peace_b_combos + peace_c_combos + war_combos
+                            )
                             
-                            # Save the trade circle with a descriptive category.
+                            # Determine valid combinations list for this level (assumed available as valid_combos).
+                            # You should have this variable already from before.
+                            
+                            # Split players into valid (keeping current pair) and invalid groups.
+                            valid_players = []
+                            invalid_players = []
+                            for p in new_circle:
+                                if "Current Resource 1+2" not in p:
+                                    p["Current Resource 1+2"] = p.get("Resource 1+2", "")
+                                curr = p.get("Current Resource 1+2", "")
+                                if valid_combos and is_valid_resource_pair(curr, valid_combos):
+                                    valid_players.append(p)
+                                else:
+                                    invalid_players.append(p)
+                            
+                            # For players with valid current pairs, mark as "No Change".
+                            for p in valid_players:
+                                p["Assigned Resource 1+2"] = "No Change"
+                            
+                            # For those needing new assignments, give each a two-resource slice.
+                            for idx, p in enumerate(invalid_players):
+                                p["Assigned Resource 1+2"] = best_combo[2 * idx: 2 * idx + 2]
+                            
+                            # Save the full connected resources (the ideal 12-resource combo) in each player's record.
+                            connected_str = ", ".join(best_combo)
+                            for p in new_circle:
+                                p["Connected Resources"] = connected_str
+                            
+                            # Set the category label for the circle.
                             if level == "A":
                                 p_cat = "Peace Mode Level A"
                             elif level == "B":
                                 p_cat = "Peace Mode Level B"
                             elif level == "C":
                                 p_cat = "Peace Mode Level C"
+                            elif level == "War":
+                                p_cat = "War Mode"
                             else:
                                 p_cat = "Uncategorized"
+                            
                             for p in new_circle:
                                 p["Trade Circle Category"] = p_cat
                             final_circles.append(new_circle)
@@ -980,7 +1012,7 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                     # -----------------------
                     st.markdown("### Final Recommended Trade Circles")
                     for idx, circle in enumerate(final_circles, start=1):
-                        # Determine the category and the corresponding valid combinations list.
+                        # Determine the category and set valid_combos accordingly.
                         category = circle[0].get("Trade Circle Category", "Uncategorized")
                         if "Level A" in category:
                             valid_combos = peace_a_combos
@@ -996,7 +1028,7 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                         st.markdown(f"--- **Trade Circle #{idx} ({category})** ---")
                         display_data = []
                         for p in circle:
-                            # Always show the player's current resource pair from the assigned field.
+                            # Use the preset field "Current Resource 1+2" for the current pair.
                             current_pair = p.get("Current Resource 1+2", p.get("Resource 1+2", ""))
                             assigned = p.get("Assigned Resource 1+2", "")
                             if assigned == "No Change":
@@ -1005,7 +1037,10 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                                 assign_display = ", ".join(assigned)
                             else:
                                 assign_display = assigned
-                                
+                    
+                            # Use the field "Connected Resources" for full 12-resource combination.
+                            connected_resources = p.get("Connected Resources", "")
+                        
                             display_data.append({
                                 "Ruler Name": p.get("Ruler Name", ""),
                                 "Resource 1+2": current_pair,
@@ -1015,12 +1050,15 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                                 "Nation Drill Link": p.get("Nation Drill Link", ""),
                                 "Activity": p.get("Activity", ""),
                                 "Assign Resource 1+2": assign_display,
+                                "Connected Resources": connected_resources,
                                 "Trade Circle Category": category
                             })
                         
                         df_circle = pd.DataFrame(display_data)
+                        # Define the order of columns.
                         cols_order = ["Ruler Name", "Resource 1+2", "Alliance", "Team", "Days Old",
-                                      "Nation Drill Link", "Activity", "Assign Resource 1+2", "Trade Circle Category"]
+                                      "Nation Drill Link", "Activity", "Assign Resource 1+2",
+                                      "Connected Resources", "Trade Circle Category"]
                         df_circle = df_circle[[col for col in cols_order if col in df_circle.columns]]
                         st.dataframe(df_circle, use_container_width=True)
 
