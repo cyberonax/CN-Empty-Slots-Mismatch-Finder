@@ -967,19 +967,24 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                         # -----------------------
                         # DISPLAY ANY LEFTOVER FREE-ROAMING PLAYERS
                         # -----------------------
+                        # Ensure free_pool_all is defined
+                        free_pool_all = []
+                        if "filtered_df" in st.session_state:
+                            free_pool_all = st.session_state.filtered_df.to_dict("records")
+                        free_pool_all = [p for p in free_pool_all if eligible(p)]
+                        
+                        # ... Later, when displaying leftover free-roaming players:
                         if free_pool_all and len(free_pool_all) > 0:
                             st.markdown("### Players Remaining Without a Full Trade Circle")
                             df_leftover = pd.DataFrame(free_pool_all)
                             # Ensure that 'Current Resource 1+2' is present. If not, default it from 'Resource 1+2'
                             if "Current Resource 1+2" not in df_leftover.columns:
                                 df_leftover["Current Resource 1+2"] = df_leftover.get("Resource 1+2", "")
-                            # You may also choose to display only a subset of columns
                             display_cols = ["Nation ID", "Ruler Name", "Nation Name", "Team", "Current Resource 1+2", "Days Old", "Activity"]
                             df_leftover = df_leftover[[col for col in display_cols if col in df_leftover.columns]]
                             st.dataframe(df_leftover, use_container_width=True)
                         else:
                             st.info("No leftover free players available.")
-
 
                 # -----------------------
                 # EXPORT/WRITE EXCEL FILE FOR DOWNLOAD WITH ADDITIONAL WORKSHEETS
