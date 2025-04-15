@@ -878,9 +878,10 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                         def find_best_match_circle(circle):
                             current_resources = []
                             for p in circle:
-                                if not p["Empty"] and p["Resource 1+2"]:
+                                # Use .get() so that missing keys default to False (for "Empty") or to None for "Resource 1+2"
+                                if not p.get("Empty", False) and p.get("Resource 1+2", None):
                                     # Expect resources separated by commas:
-                                    resources = [r.strip() for r in p["Resource 1+2"].split(",") if r.strip()]
+                                    resources = [r.strip() for r in p.get("Resource 1+2", "").split(",") if r.strip()]
                                     current_resources.extend(resources)
                             current_resources_sorted = sorted(set(current_resources))
                             # Use the union of all valid combinations from peace and war modes.
