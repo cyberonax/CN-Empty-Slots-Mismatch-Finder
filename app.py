@@ -11,6 +11,8 @@ import textwrap  # For dedenting multi-line strings
 from openpyxl.utils.dataframe import dataframe_to_rows
 from openpyxl.styles import Font, Border, Side
 import warnings
+import numpy as np
+from scipy.optimize import linear_sum_assignment
 
 # -----------------------
 # CONFIGURATION & CONSTANTS
@@ -946,100 +948,65 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                             new_circle = current_members + fill
                         else:
                             new_circle = circle  # If not enough, leave circle as is.
-                        # If after filling we have exactly TRADE_CIRCLE_SIZE players, accept the circle.
-                        if len(new_circle) == TRADE_CIRCLE_SIZE:
-                            # Collect current resource strings for all non-empty entries.
-                            current_resources = []
-                            for p in new_circle:
-                                if p.get("Resource 1+2"):
-                                    current_resources.extend([r.strip() for r in p.get("Resource 1+2").split(",") if r.strip()])
-                            current_resources_sorted = sorted(set(current_resources))
-                            
-                            # Run your matching algorithm to choose the best full combination.
-                            best_combo, missing_res, extra_res, score = find_best_match(
-                                current_resources_sorted,
-                                peace_a_combos + peace_b_combos + peace_c_combos + war_combos
-                            )
-                            
-                            # **Define valid_combos based on the level before using it.**
-                            if level == "A":
-                                valid_combos = peace_a_combos
-                            elif level == "B":
-                                valid_combos = peace_b_combos
-                            elif level == "C":
-                                valid_combos = peace_c_combos
-                            elif level == "War":
-                                valid_combos = war_combos
+
+                        # ---- Global Optimization Assignment for a Complete Circle ----
+                        # Assume new_circle is a list of 6 player dictionaries and best_combo is already computed (a list of 12 resources).
+                        
+                        # Create the six ideal slices from best_combo.
+                        ideal_slices = [best_combo[2*i:2*i+2] for i in range(TRADE_CIRCLE_SIZE)]
+                        
+                        # Build the cost matrix.
+                        cost_matrix = []
+                        players_current_pairs = []
+                        for p in new_circle:
+                            # Use the original current resource pair from the dedicated field.
+                            current_str = p.get("Resource 1+2", "")
+                            current_pair = sorted([r.strip() for r in str(current_str).split(",") if r.strip()])
+                            players_current_pairs.append(current_pair)
+                            row = []
+                            for slice_candidate in ideal_slices:
+                                # Sort the slice candidate for consistency.
+                                ideal_sorted = sorted(slice_candidate)
+                                common = set(current_pair).intersection(set(ideal_sorted))
+                                cost = 2 - len(common)  # Lower cost means more overlap.
+                                row.append(cost)
+                            cost_matrix.append(row)
+                        
+                        # Convert the cost matrix to a numpy array.
+                        cost_matrix = np.array(cost_matrix)
+                        
+                        # Solve the assignment problem using the Hungarian algorithm.
+                        row_ind, col_ind = linear_sum_assignment(cost_matrix)
+                        
+                        # Now assign each player the slice corresponding to the optimal assignment.
+                        for player_idx, slice_idx in zip(row_ind, col_ind):
+                            assigned_cost = cost_matrix[player_idx, slice_idx]
+                            if assigned_cost == 0:
+                                new_circle[player_idx]["Assigned Resource 1+2"] = "No Change"
                             else:
-                                valid_combos = []
-                            
-                            # Split players into valid (keeping current pair) and invalid groups.
-                            valid_players = []
-                            invalid_players = []
-                            for p in new_circle:
-                                if "Current Resource 1+2" not in p:
-                                    p["Current Resource 1+2"] = p.get("Resource 1+2", "")
-                                curr = p.get("Current Resource 1+2", "")
-                                if valid_combos and is_valid_resource_pair(curr, valid_combos):
-                                    valid_players.append(p)
-                                else:
-                                    invalid_players.append(p)
-                            
-                            # For players with valid current pairs, mark as "No Change".
-                            for p in valid_players:
-                                p["Assigned Resource 1+2"] = "No Change"
-                            
-                            # For those needing new assignments, give each a two-resource slice.
-                            for i, p in enumerate(new_circle):
-                                # Read the original resource pair from the player's record.
-                                current_str = p.get("Resource 1+2", "")
-                                # Standardize the value.
-                                current_str = str(current_str)
-                                current_pair_sorted = sorted([x.strip() for x in current_str.split(",") if x.strip()])
-                                
-                                # If the player's current pair (sorted) is exactly one of the allowed valid combinations, no change is needed.
-                                if current_pair_sorted in valid_combos:
-                                    p["Assigned Resource 1+2"] = "No Change"
-                                else:
-                                    # Determine the ideal two-resource slice for this player.
-                                    ideal_slice = best_combo[2 * i: 2 * i + 2]
-                                    ideal_set = set(ideal_slice)
-                                    current_set = set(current_pair_sorted)
-                                    common = current_set.intersection(ideal_set)
-                                    if len(common) == 1:
-                                        # Preserve the common resource and fill in the missing one.
-                                        missing = list(ideal_set - common)
-                                        new_assigned = []
-                                        # Follow the order in ideal_slice.
-                                        for r in ideal_slice:
-                                            if r in common:
-                                                new_assigned.append(r)
-                                            elif r in missing:
-                                                new_assigned.append(r)
-                                        p["Assigned Resource 1+2"] = new_assigned
-                                    else:
-                                        p["Assigned Resource 1+2"] = ideal_slice
-                            
-                            # Save the full connected resources (the ideal 12-resource combo) in each player's record.
-                            connected_str = ", ".join(best_combo)
-                            for p in new_circle:
-                                p["Connected Resources"] = connected_str
-                            
-                            # Set the category label for the circle.
-                            if level == "A":
-                                p_cat = "Peace Mode Level A"
-                            elif level == "B":
-                                p_cat = "Peace Mode Level B"
-                            elif level == "C":
-                                p_cat = "Peace Mode Level C"
-                            elif level == "War":
-                                p_cat = "War Mode"
-                            else:
-                                p_cat = "Uncategorized"
-                            
-                            for p in new_circle:
-                                p["Trade Circle Category"] = p_cat
-                            final_circles.append(new_circle)
+                                new_circle[player_idx]["Assigned Resource 1+2"] = ideal_slices[slice_idx]
+                        
+                        # Save the full ideal resource combination (connected resources) in each player's record.
+                        connected_str = ", ".join(best_combo)
+                        for p in new_circle:
+                            p["Connected Resources"] = connected_str
+                        
+                        # Optionally, assign the circle category as before.
+                        if level == "A":
+                            p_cat = "Peace Mode Level A"
+                        elif level == "B":
+                            p_cat = "Peace Mode Level B"
+                        elif level == "C":
+                            p_cat = "Peace Mode Level C"
+                        elif level == "War":
+                            p_cat = "War Mode"
+                        else:
+                            p_cat = "Uncategorized"
+                        for p in new_circle:
+                            p["Trade Circle Category"] = p_cat
+                        
+                        # Finally, add new_circle to your list of final circles.
+                        final_circles.append(new_circle)
                         else:
                             st.warning("A pasted circle could not be completed to 6 members with eligible partners for level " + level)
 
