@@ -848,21 +848,36 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                     # Skip circles that are inconsistent (i.e. non-empty entries have mixed levels)
                     valid_circles = []
                     for circle in pasted_circles:
+                        # Separate out non-empty entries
                         non_empty = [p for p in circle if not p["Empty"]]
                         if not non_empty:
                             continue
-                        levels = set(determine_player_level(p) for p in non_empty)
-                        if len(levels) != 1:
-                            st.warning("A pasted circle contains inconsistent levels; skipping this circle.")
+                    
+                        # Build groups of players by their determined level.
+                        level_groups = {}
+                        for player in non_empty:
+                            lvl = determine_player_level(player)
+                            if not lvl:
+                                continue
+                            level_groups.setdefault(lvl, []).append(player)
+                    
+                        # If there are no groups (or an unexpected error) skip this pasted circle.
+                        if not level_groups:
+                            st.warning("A pasted circle contains no valid player levels; skipping this circle.")
                             continue
-                        else:
-                            level = levels.pop()  # e.g., "A"
-                            # Filter circle to keep only players that match the determined level.
-                            circle = [p for p in circle if p["Empty"] or determine_player_level(p) == level]
-                            # Save level designation
-                            for p in circle:
-                                p["Trade Circle Level"] = level
-                            valid_circles.append(circle)
+                    
+                        # For each level group, create a new circle.
+                        for lvl, group in level_groups.items():
+                            # Optionally, include the empty entries
+                            # If you want empty slots to contribute to each circle, add them:
+                            for player in circle:
+                                if player["Empty"]:
+                                    group.append(player)
+                            # Mark all players in the group with the same level.
+                            for p in group:
+                                p["Trade Circle Level"] = lvl
+                            # Add this newly formed circle to your list of valid circles.
+                            valid_circles.append(group)
                     
                     # Now, for each valid pasted circle, fill empty slots using free players from the same level.
                     # Free players: from players_empty (or filtered_df) that are eligible and meet the level condition.
