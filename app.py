@@ -963,16 +963,22 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                         cols_order = ["Nation ID", "Ruler Name", "Nation Name", "Team", "Current Resource 1+2", "Assigned Resource 1+2", "Trade Circle Category", "Days Old", "Nation Drill Link", "Activity"]
                         df_circle = df_circle[[col for col in cols_order if col in df_circle.columns]]
                         st.dataframe(df_circle, use_container_width=True)
-                
+
                         # -----------------------
                         # DISPLAY ANY LEFTOVER FREE-ROAMING PLAYERS
                         # -----------------------
-                        if free_players:
+                        if free_players and len(free_players) > 0:
                             st.markdown("### Players Remaining Without a Full Trade Circle")
                             df_leftover = pd.DataFrame(free_players)
+                            # Ensure that 'Current Resource 1+2' is present. If not, default it from 'Resource 1+2'
+                            if "Current Resource 1+2" not in df_leftover.columns:
+                                df_leftover["Current Resource 1+2"] = df_leftover.get("Resource 1+2", "")
+                            # You may also choose to display only a subset of columns
+                            display_cols = ["Nation ID", "Ruler Name", "Nation Name", "Team", "Current Resource 1+2", "Days Old", "Activity"]
+                            df_leftover = df_leftover[[col for col in display_cols if col in df_leftover.columns]]
                             st.dataframe(df_leftover, use_container_width=True)
-                    else:
-                        st.info("Paste trade circle data in the text box above to process.")
+                        else:
+                            st.info("No leftover free players available.")
 
                 # -----------------------
                 # EXPORT/WRITE EXCEL FILE FOR DOWNLOAD WITH ADDITIONAL WORKSHEETS
