@@ -980,7 +980,7 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                     # -----------------------
                     st.markdown("### Final Recommended Trade Circles")
                     for idx, circle in enumerate(final_circles, start=1):
-                        # Determine the category and choose the corresponding valid combinations list.
+                        # Determine the category and the corresponding valid combinations list.
                         category = circle[0].get("Trade Circle Category", "Uncategorized")
                         if "Level A" in category:
                             valid_combos = peace_a_combos
@@ -996,18 +996,19 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                         st.markdown(f"--- **Trade Circle #{idx} ({category})** ---")
                         display_data = []
                         for p in circle:
-                            # Use the explicitly set field "Current Resource 1+2".
+                            # Always show the player's current resource pair from the assigned field.
                             current_pair = p.get("Current Resource 1+2", p.get("Resource 1+2", ""))
-                            # Check if the current pair is valid for this level.
-                            if valid_combos and is_valid_resource_pair(current_pair, valid_combos):
+                            assigned = p.get("Assigned Resource 1+2", "")
+                            if assigned == "No Change":
                                 assign_display = "No Change"
+                            elif isinstance(assigned, list):
+                                assign_display = ", ".join(assigned)
                             else:
-                                assigned = p.get("Assigned Resource 1+2", [])
-                                assign_display = ", ".join(assigned) if assigned else ""
-                        
+                                assign_display = assigned
+                                
                             display_data.append({
                                 "Ruler Name": p.get("Ruler Name", ""),
-                                "Resource 1+2": current_pair,  # This now displays the current resources.
+                                "Resource 1+2": current_pair,
                                 "Alliance": p.get("Alliance", ""),
                                 "Team": p.get("Team", ""),
                                 "Days Old": p.get("Days Old", ""),
