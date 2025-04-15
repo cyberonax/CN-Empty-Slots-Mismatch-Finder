@@ -265,24 +265,109 @@ def form_trade_circles(players, recommended_resources, circle_size=TRADE_CIRCLE_
     else:
         leftover = []
     
-    # --- Step 4: Compile complete circles and leftovers ---
+    # --- Step 4: Compile Complete Circles and Merge Incomplete Groups ---
     complete_circles = []
-    incomplete_players = []
+    incomplete_by_level = {}  # Dictionary to group incomplete players by level
+    
+    # First, add any circles that already have exactly TRADE_CIRCLE_SIZE players.
     for circle in circles.values():
-        if circle and len(circle) == circle_size:
+        if circle and len(circle) == TRADE_CIRCLE_SIZE:
             complete_circles.append(circle)
-        elif circle and len(circle) != circle_size:
-            incomplete_players.extend(circle)
+        elif circle and len(circle) < TRADE_CIRCLE_SIZE:
+            # Group players from incomplete circles by level.
+            level = circle[0].get("Trade Circle Level")
+            if level:
+                incomplete_by_level.setdefault(level, []).extend(circle)
+            else:
+                # If level not set, simply accumulate these players.
+                incomplete_by_level.setdefault("Uncategorized", []).extend(circle)
+    
+    # Now, for each level, try to merge the incomplete players into full circles.
+    merged_incomplete = []
+    for level, players in incomplete_by_level.items():
+        # (Optionally, sort the players by a quality measure such as Days Old or Activity)
+        players = sorted(players, key=lambda p: p.get("Days Old", 0), reverse=True)
+        # Group players in sets of TRADE_CIRCLE_SIZE.
+        num_full_groups = len(players) // TRADE_CIRCLE_SIZE
+        for i in range(num_full_groups):
+            group = players[i*TRADE_CIRCLE_SIZE:(i+1)*TRADE_CIRCLE_SIZE]
+            # It’s a good idea to re-run your assignment (global optimization) on this new merged group.
+            # For example, you might re-run the global assignment block here.
+            # --- Global Optimization Assignment for merged group ---
+            # Compute the union of current resources from all players in the group.
+            current_resources = []
+            for p in group:
+                current_str = p.get("Resource 1+2", "")
+                current_resources.extend([r.strip() for r in str(current_str).split(",") if r.strip()])
+            current_resources_sorted = sorted(set(current_resources))
             
-    # If there are still enough leftover players among themselves to form a full circle, group them.
-    if incomplete_players and len(incomplete_players) >= circle_size:
-        extra_groups = [incomplete_players[i:i+circle_size] for i in range(0, len(incomplete_players), circle_size)
-                        if len(incomplete_players[i:i+circle_size]) == circle_size]
-        complete_circles.extend(extra_groups)
-        remainder = incomplete_players[len(extra_groups)*circle_size:]
-    else:
-        remainder = incomplete_players
-
+            # Choose the appropriate valid combos list based on the level.
+            if level == "A":
+                valid_combos_list = peace_a_combos
+            elif level == "B":
+                valid_combos_list = peace_b_combos
+            elif level == "C":
+                valid_combos_list = peace_c_combos
+            elif level == "War":
+                valid_combos_list = war_combos
+            else:
+                valid_combos_list = []
+            
+            # Compute best_combo using your matching function.
+            best_combo, missing_res, extra_res, score = find_best_match(current_resources_sorted, valid_combos_list)
+            if best_combo and len(best_combo) == 12:
+                ideal_slices = [best_combo[2*i:2*i+2] for i in range(TRADE_CIRCLE_SIZE)]
+                cost_matrix = []
+                for p in group:
+                    current_str = p.get("Resource 1+2", "")
+                    current_pair = sorted([r.strip() for r in str(current_str).split(",") if r.strip()])
+                    row = []
+                    for slice_candidate in ideal_slices:
+                        ideal_sorted = sorted(slice_candidate)
+                        common = set(current_pair).intersection(set(ideal_sorted))
+                        cost = 2 - len(common)
+                        row.append(cost)
+                    cost_matrix.append(row)
+                cost_matrix = np.array(cost_matrix)
+                row_ind, col_ind = linear_sum_assignment(cost_matrix)
+                for player_idx, slice_idx in zip(row_ind, col_ind):
+                    assigned_cost = cost_matrix[player_idx, slice_idx]
+                    if assigned_cost == 0:
+                        group[player_idx]["Assigned Resource 1+2"] = "No Change"
+                    else:
+                        group[player_idx]["Assigned Resource 1+2"] = ideal_slices[slice_idx]
+                connected_str = ", ".join(best_combo)
+                for p in group:
+                    p["Connected Resources"] = connected_str
+                # Set circle category
+                if level == "A":
+                    p_cat = "Peace Mode Level A"
+                elif level == "B":
+                    p_cat = "Peace Mode Level B"
+                elif level == "C":
+                    p_cat = "Peace Mode Level C"
+                elif level == "War":
+                    p_cat = "War Mode"
+                else:
+                    p_cat = "Uncategorized"
+                for p in group:
+                    p["Trade Circle Category"] = p_cat
+                merged_incomplete.append(group)
+            else:
+                # If best_combo could not be computed, add the group as-is.
+                merged_incomplete.append(group)
+    
+    # Add the newly merged groups to complete_circles.
+    complete_circles.extend(merged_incomplete)
+    
+    # Also, if there are any incomplete players left that could not form a full circle, collect them as remainder.
+    remainder = []
+    for level, players in incomplete_by_level.items():
+        num_full_groups = len(players) // TRADE_CIRCLE_SIZE
+        leftover = players[num_full_groups*TRADE_CIRCLE_SIZE:]
+        remainder.extend(leftover)
+    
+    # Return the full list of complete circles and any remainder.
     return complete_circles, remainder
 
 def display_trade_circle_df(circle, condition):
