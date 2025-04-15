@@ -1080,14 +1080,15 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                         
                             display_data.append({
                                 "Ruler Name": p.get("Ruler Name", ""),
-                                "Resource 1+2": current_pair,
+                                "Resource 1+2": current_str,  # shows the current pair
                                 "Alliance": p.get("Alliance", ""),
                                 "Team": p.get("Team", ""),
                                 "Days Old": p.get("Days Old", ""),
                                 "Nation Drill Link": p.get("Nation Drill Link", ""),
                                 "Activity": p.get("Activity", ""),
-                                "Assign Resource 1+2": assign_display,
-                                "Connected Resources": connected_resources,
+                                "Assign Resource 1+2": (p["Assigned Resource 1+2"] if isinstance(p["Assigned Resource 1+2"], str)
+                                                         else ", ".join(p["Assigned Resource 1+2"])),
+                                "Connected Resources": p.get("Connected Resources", ""),
                                 "Trade Circle Category": category
                             })
                         
