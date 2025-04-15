@@ -557,10 +557,13 @@ def main():
                     df_to_use = df
 
                 if "Created" in df_to_use.columns:
-                    # Use errors='coerce' to convert any non-parsable dates to NaT
+                    # Define your expected date format
                     date_format = "%m/%d/%Y %I:%M:%S %p"
+                    # Convert the 'Created' column to datetime, coercing errors to NaT
                     df_to_use['Created'] = pd.to_datetime(df_to_use['Created'], format=date_format, errors='coerce')
+                    # Use datetime.now() to get the current datetime
                     current_date = datetime.now()
+                    # Compute the 'Days Old' column for the entire DataFrame
                     df_to_use['Days Old'] = (current_date - df_to_use['Created']).dt.days
 
                 # Assume that the resource columns are named "Connected Resource 1" to "Connected Resource 10"
@@ -577,11 +580,12 @@ def main():
                 players_empty['Current Resource 1+2'] = players_empty.apply(lambda row: get_resource_1_2(row), axis=1)
                 # Compute empty trade slots (each slot covers 2 resources)
                 players_empty['Empty Slots Count'] = players_empty.apply(lambda row: count_empty_slots(row, resource_cols), axis=1)
-                # Convert "Created" to datetime and compute age in days (optional, still displayed)
-                #date_format = "%m/%d/%Y %I:%M:%S %p"  # Adjust if necessary
-                #players_empty['Created'] = pd.to_datetime(players_empty['Created'], format=date_format, errors='coerce')
-                #current_date = pd.to_datetime("now")
-                #players_empty['Days Old'] = (current_date - players_empty['Created']).dt.days
+                # The "Days Old" column is already computed in df_to_use, so no need to recalculate here.
+                # (Remove or keep commented out the redundant conversion code below.)
+                # date_format = "%m/%d/%Y %I:%M:%S %p"  # Adjust if necessary
+                # players_empty['Created'] = pd.to_datetime(players_empty['Created'], format=date_format, errors='coerce')
+                # current_date = pd.to_datetime("now")
+                # players_empty['Days Old'] = (current_date - players_empty['Created']).dt.days
 
                 # Filter out players who are inactive based on the "Activity" column.
                 # Only include players whose Activity is NOT "Active Three Weeks Ago" or "Active More Than Three Weeks Ago"
