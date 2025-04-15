@@ -991,37 +991,33 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                             
                             # For those needing new assignments, give each a two-resource slice.
                             for i, p in enumerate(new_circle):
-                                # Ensure we have a current pair in a standard format.
-                                current_raw = p.get("Current Resource 1+2", p.get("Resource 1+2", ""))
-                                current_str = str(current_raw)
-                                # Get a sorted list of the player's current resources.
+                                # Read the original resource pair from the player's record.
+                                current_str = p.get("Resource 1+2", "")
+                                # Standardize the value.
+                                current_str = str(current_str)
                                 current_pair_sorted = sorted([x.strip() for x in current_str.split(",") if x.strip()])
                                 
-                                # If the player's current pair is exactly one of the allowed valid combinations, then no change is needed.
+                                # If the player's current pair (sorted) is exactly one of the allowed valid combinations, no change is needed.
                                 if current_pair_sorted in valid_combos:
                                     p["Assigned Resource 1+2"] = "No Change"
                                 else:
-                                    # Determine the "ideal" two-resource slice for this player.
-                                    ideal_slice = best_combo[2 * i: 2 * i + 2]  # For example, position i gets this slice.
+                                    # Determine the ideal two-resource slice for this player.
+                                    ideal_slice = best_combo[2 * i: 2 * i + 2]
                                     ideal_set = set(ideal_slice)
                                     current_set = set(current_pair_sorted)
                                     common = current_set.intersection(ideal_set)
-                                    # If exactly one resource already matches, preserve that resource and only add the missing one.
                                     if len(common) == 1:
-                                        # Determine the missing resource
+                                        # Preserve the common resource and fill in the missing one.
                                         missing = list(ideal_set - common)
-                                        # Construct an assigned pair: follow the order in ideal_slice while preserving the common one.
                                         new_assigned = []
+                                        # Follow the order in ideal_slice.
                                         for r in ideal_slice:
                                             if r in common:
                                                 new_assigned.append(r)
-                                        # Then append the missing resource(s)
-                                        for r in ideal_slice:
-                                            if r not in new_assigned:
+                                            elif r in missing:
                                                 new_assigned.append(r)
                                         p["Assigned Resource 1+2"] = new_assigned
                                     else:
-                                        # If there is no partial match (or full mismatch), assign the ideal slice.
                                         p["Assigned Resource 1+2"] = ideal_slice
                             
                             # Save the full connected resources (the ideal 12-resource combo) in each player's record.
@@ -1052,7 +1048,7 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                     # -----------------------
                     st.markdown("### Final Recommended Trade Circles")
                     for idx, circle in enumerate(final_circles, start=1):
-                        # Determine the category and set valid_combos accordingly.
+                        # Determine the category and set valid_combos accordingly (as before)
                         category = circle[0].get("Trade Circle Category", "Uncategorized")
                         if "Level A" in category:
                             valid_combos = peace_a_combos
@@ -1068,7 +1064,8 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                         st.markdown(f"--- **Trade Circle #{idx} ({category})** ---")
                         display_data = []
                         for p in circle:
-                            current_pair = p.get("Current Resource 1+2", p.get("Resource 1+2", ""))
+                            # Use the original pasted value for current resources.
+                            current_pair = p.get("Resource 1+2", "")
                             assigned = p.get("Assigned Resource 1+2", "")
                             if assigned == "No Change":
                                 assign_display = "No Change"
@@ -1080,15 +1077,14 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                         
                             display_data.append({
                                 "Ruler Name": p.get("Ruler Name", ""),
-                                "Resource 1+2": current_str,  # shows the current pair
+                                "Resource 1+2": current_pair,
                                 "Alliance": p.get("Alliance", ""),
                                 "Team": p.get("Team", ""),
                                 "Days Old": p.get("Days Old", ""),
                                 "Nation Drill Link": p.get("Nation Drill Link", ""),
                                 "Activity": p.get("Activity", ""),
-                                "Assign Resource 1+2": (p["Assigned Resource 1+2"] if isinstance(p["Assigned Resource 1+2"], str)
-                                                         else ", ".join(p["Assigned Resource 1+2"])),
-                                "Connected Resources": p.get("Connected Resources", ""),
+                                "Assign Resource 1+2": assign_display,
+                                "Connected Resources": connected_resources,
                                 "Trade Circle Category": category
                             })
                         
