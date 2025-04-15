@@ -536,7 +536,7 @@ def main():
                         filtered_df['Days Old'] = (current_date - filtered_df['Created']).dt.days
 
                     # Sort by "Ruler Name" and reset index
-                    filtered_df = filtered_df.sort_values(by="Ruler Name").reset_index(drop=True)
+                    filtered_df = filtered_df.sort_values(by="Ruler Name", key=lambda col: col.str.lower()).reset_index(drop=True)
 
                     st.dataframe(filtered_df, use_container_width=True)
                     # Save the filtered DataFrame and CSV content to session state for later use.
