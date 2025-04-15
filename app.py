@@ -1203,14 +1203,15 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                         st.dataframe(df_leftover, use_container_width=True)
                     else:
                         st.info("No leftover free players available.")
-                
+
                     # -----------------------------------------
                     # Summarize Trade Circle Coverage in the Alliance
                     # -----------------------------------------
                     if "filtered_df" in st.session_state:
                         alliance_df = st.session_state.filtered_df.copy()
+                        # Get a set of all ruler names from the alliance (complete nation profiles)
                         alliance_rulers = set(alliance_df["Ruler Name"].dropna().unique())
-                        # Extract ruler names from all final circles.
+                        # Extract ruler names from all final circles (rulers that have been matched)
                         matched_rulers = set()
                         for circle in final_circles:
                             for p in circle:
@@ -1219,6 +1220,7 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                         total_alliance = len(alliance_rulers)
                         total_matched = len(matched_rulers)
                         total_unmatched = total_alliance - total_matched
+                    
                         summary_data = {
                             "Total Alliance Members": [total_alliance],
                             "Rulers in Trade Circles": [total_matched],
@@ -1227,6 +1229,24 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                         summary_df = pd.DataFrame(summary_data)
                         st.markdown("### Trade Circle Coverage Summary")
                         st.dataframe(summary_df, use_container_width=True)
+                    
+                        # -----------------------------------------
+                        # Table of Complete Nation Profiles for Unmatched Rulers
+                        # -----------------------------------------
+                        unmatched_rulers = alliance_rulers - matched_rulers
+                        # Filter the alliance DataFrame to include only those unmatched rulers.
+                        unmatched_df = alliance_df[alliance_df["Ruler Name"].isin(unmatched_rulers)].copy()
+                        
+                        # (Optional) Define an ordered list of columns that represent the complete nation profile.
+                        # Adjust these columns as appropriate for your data.
+                        profile_cols = ["Nation ID", "Ruler Name", "Nation Name", "Alliance", "Team", 
+                                        "Current Resources", "Resource 1", "Resource 2", "Days Old", "Activity"]
+                        
+                        # If some columns are missing from your DataFrame, filter accordingly.
+                        profile_cols = [col for col in profile_cols if col in unmatched_df.columns]
+                        
+                        st.markdown("### Unmatched Rulers - Complete Nation Profiles")
+                        st.dataframe(unmatched_df[profile_cols], use_container_width=True)
 
                 # -----------------------
                 # EXPORT/WRITE EXCEL FILE FOR DOWNLOAD WITH ADDITIONAL WORKSHEETS
