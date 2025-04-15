@@ -1152,18 +1152,21 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                         if not circle:
                             st.warning(f"Trade Circle #{idx} is empty and will be skipped.")
                             continue
+                        # Safely get the circle type from the first player.
                         circle_type = next(iter(circle), {}).get("Trade Circle Category", "Uncategorized")
                         st.markdown(f"--- **Trade Circle #{idx} ({circle_type})** ---")
                         display_data = []
                         for p in circle:
                             current_pair = p.get("Resource 1+2", "")
-                            assigned = p.get("Assigned Resource 1+2", "")
-                            if assigned == "No Change":
-                                assign_display = "No Change"
-                            elif isinstance(assigned, list):
-                                assign_display = ", ".join(assigned)
+                            # Robust handling for Assigned Resource 1+2:
+                            assigned = p.get("Assigned Resource 1+2")
+                            if assigned:
+                                if isinstance(assigned, list):
+                                    assign_display = ", ".join([str(x) for x in assigned])
+                                else:
+                                    assign_display = str(assigned)
                             else:
-                                assign_display = assigned
+                                assign_display = "None"
                             connected_resources = p.get("Connected Resources", "")
                             display_data.append({
                                 "Ruler Name": p.get("Ruler Name", ""),
