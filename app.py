@@ -961,8 +961,17 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                                 peace_a_combos + peace_b_combos + peace_c_combos + war_combos
                             )
                             
-                            # Determine valid combinations list for this level (assumed available as valid_combos).
-                            # You should have this variable already from before.
+                            # **Define valid_combos based on the level before using it.**
+                            if level == "A":
+                                valid_combos = peace_a_combos
+                            elif level == "B":
+                                valid_combos = peace_b_combos
+                            elif level == "C":
+                                valid_combos = peace_c_combos
+                            elif level == "War":
+                                valid_combos = war_combos
+                            else:
+                                valid_combos = []
                             
                             # Split players into valid (keeping current pair) and invalid groups.
                             valid_players = []
