@@ -1249,6 +1249,8 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                     # -----------------------------------------
                     if "filtered_df" in st.session_state:
                         alliance_df = st.session_state.filtered_df.copy()
+                        if "Alliance Status" in alliance_df.columns:
+                            alliance_df = alliance_df[alliance_df["Alliance Status"] != "Pending"]
                         # Get a set of all ruler names from the alliance (complete nation profiles)
                         alliance_rulers = set(alliance_df["Ruler Name"].dropna().unique())
                         # Extract ruler names from all final circles (rulers that have been matched)
