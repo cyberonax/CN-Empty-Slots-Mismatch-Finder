@@ -982,7 +982,6 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                             pasted_circles.append(circle)
                 
                     # Group pasted circles by player level.
-                    # Each circle is split into level groups according to non‑empty players.
                     valid_circles = []
                     for circle in pasted_circles:
                         non_empty = [p for p in circle if not p["Empty"]]
@@ -1016,7 +1015,6 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                         free_pool_all = st.session_state.filtered_df.to_dict("records")
                     else:
                         free_pool_all = []
-                    # Ensure only eligible free players are considered
                     free_pool_all = [p for p in free_pool_all if eligible(p)]
                 
                     # -----------------------------------------
@@ -1057,7 +1055,6 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                                                 break
                                     if len(new_circle) == TRADE_CIRCLE_SIZE:
                                         break
-                                # If circle still remains incomplete, revert to the original pasted circle.
                                 if len(new_circle) < TRADE_CIRCLE_SIZE:
                                     new_circle = circle
                         else:
@@ -1125,17 +1122,24 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                                 for p in new_circle:
                                     p["Trade Circle Category"] = p_cat
                 
-                                # Append only complete circles.
                                 if new_circle and len(new_circle) == TRADE_CIRCLE_SIZE:
                                     final_circles.append(new_circle)
                         else:
                             st.warning("A pasted circle could not be completed to 6 members with eligible partners for level " + level)
+                
+                    # ---------------------------------------------------
+                    # Filter out any empty circles to prevent index errors
+                    # ---------------------------------------------------
+                    final_circles = [circle for circle in final_circles if circle]
                 
                     # -----------------------------------------
                     # Display the Final Recommended Trade Circles
                     # -----------------------------------------
                     st.markdown("### Final Recommended Trade Circles")
                     for idx, circle in enumerate(final_circles, start=1):
+                        # Guard: ensure circle is not empty
+                        if not circle:
+                            continue
                         circle_type = circle[0].get("Trade Circle Category", "Uncategorized")
                         st.markdown(f"--- **Trade Circle #{idx} ({circle_type})** ---")
                         display_data = []
