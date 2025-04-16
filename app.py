@@ -805,8 +805,8 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
 
                     # For players in complete trade circles, count unique mismatches using consolidated DataFrames.
                     total_full = len(players_full)
-                    unique_peacetime_mismatch = peacetime_df['Nation ID'].nunique() if not peacetime_df.empty else 0
-                    unique_wartime_mismatch = wartime_df['Nation ID'].nunique() if not wartime_df.empty else 0
+                    unique_peacetime_mismatch = peacetime_df['Ruler Name'].nunique() if not peacetime_df.empty else 0
+                    unique_wartime_mismatch = wartime_df['Ruler Name'].nunique() if not wartime_df.empty else 0
                     peacetime_mismatch_percentage = (unique_peacetime_mismatch / total_full * 100) if total_full else 0
                     wartime_mismatch_percentage = (unique_wartime_mismatch / total_full * 100) if total_full else 0
 
