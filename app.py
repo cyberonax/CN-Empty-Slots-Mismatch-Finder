@@ -963,7 +963,7 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                     if "Alliance Status" in original_df.columns:
                         original_df = original_df[original_df["Alliance Status"] != "Pending"]
                     # Filter out rows where "Alliance" is exactly "None"
-                    original_df = original_df[original_df["Alliance"] != "None"]
+                    original_df = original_df[original_df["Alliance"].notna() & (original_df["Alliance"] != "None")]
                     resource_cols = [f"Connected Resource {i}" for i in range(1, 11)]
                     mask_empty_all = original_df[resource_cols].isnull().any(axis=1) | (
                         original_df[resource_cols].apply(lambda col: col.astype(str).str.strip() == '').any(axis=1)
