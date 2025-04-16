@@ -67,7 +67,17 @@ def count_empty_slots(row, resource_cols):
     """Count blank resource cells and determine trade slots (each slot covers 2 resources)."""
     count = sum(1 for x in row[resource_cols] if pd.isnull(x) or str(x).strip() == '')
     return count // 2
-    
+
+def get_peace_level(days_old):
+    """Return 'A' if <1000 days, 'B' if 1000–1999 days, 'C' otherwise."""
+    if days_old is None:
+        return None
+    if days_old < 1000:
+        return "A"
+    if days_old < 2000:
+        return "B"
+    return "C"
+
 def is_valid_resource_pair(current_pair_str, valid_combos):
     """
     Check if the given current resource pair string (e.g., 'A, B')
@@ -701,9 +711,9 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                             pasted_circles.append(circle)
 
                     # --- Sort Circles by Number of Empty Slots (fewer empties come first) ---
-                    def count_empty_slots(circle):
+                    def circle_empty_slots(circle):
                         return sum(1 for p in circle if p.get("Empty"))
-                    pasted_circles = sorted(pasted_circles, key=count_empty_slots)
+                    pasted_circles = sorted(pasted_circles, key=circle_empty_slots)
 
                     # --- Build a Pool of Eligible (Non-Empty) Players from All Circles ---
                     pool = []
