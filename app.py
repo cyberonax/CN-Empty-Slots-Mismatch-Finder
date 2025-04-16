@@ -590,79 +590,64 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                     wartime_df = df_war.copy()
 
                 # -----------------------
-                # RECOMMENDED TRADE CIRCLES (UPDATED SECTION)
+                # RECOMMENDED TRADE CIRCLES SECTION (UPDATED)
                 # -----------------------
                 with st.expander("Recommended Trade Circles"):
                     st.markdown("### Paste Trade Circle Data")
                     trade_circle_text = st.text_area(
                         "Enter Trade Circle data below. Each line should contain the following tab-separated fields:\n"
                         "Ruler Name | Resource 1+2 | Alliance | Team | Days Old | Nation Drill Link | Activity\n\n"
-                        "Empty slots are denoted by a line that starts with an 'x' or has an empty Ruler Name. Separate Trade Circle blocks with an empty line. Using a spreadsheet is highly recommended.",
+                        "Empty slots (lines starting with an 'x' or with an empty Ruler Name) are omitted. "
+                        "Separate Trade Circle blocks with an empty line.",
                         height=200
                     )
 
                     st.markdown("### Filter Out Players")
-                    filter_text = st.text_area(
-                        "Enter one value per line to filter out players by matching Ruler Name, Nation Name, or Nation ID:",
-                        height=100
-                    )
-                    # Create a set of lowercased exclusion strings for quick lookup.
+                    st.markdown("Enter one value per line to filter out players by matching **Ruler Name** or **Nation Name**:")
+                    filter_text = st.text_area("", height=100)
+                    # Build a lowercase set of exclusion values (only using Ruler Name and Nation Name)
                     filter_set = set(line.strip().lower() for line in filter_text.splitlines() if line.strip())
 
-                    # Determine the majority team (for eligible players) using the filtered DataFrame.
-                    if "filtered_df" in st.session_state:
-                        df_filtered = st.session_state.filtered_df.copy()
-                        if st.session_state.selected_alliances:
-                            df_filtered = df_filtered[df_filtered["Alliance"].isin(st.session_state.selected_alliances)]
-                        if not df_filtered.empty and "Team" in df_filtered.columns:
-                            majority_team = df_filtered["Team"].mode()[0]
-                        else:
-                            majority_team = None
-                    else:
-                        majority_team = None
+                    # --- Calculate Majority Team for Each Selected Alliance ---
+                    # (Assumes st.session_state.selected_alliances and st.session_state.filtered_df already exist.)
+                    majority_team_by_alliance = {}
+                    if "selected_alliances" in st.session_state and "filtered_df" in st.session_state:
+                        filtered_df = st.session_state.filtered_df
+                        for alliance in st.session_state.selected_alliances:
+                            df_alliance = filtered_df[filtered_df["Alliance"] == alliance]
+                            if not df_alliance.empty:
+                                majority_team_by_alliance[alliance] = df_alliance['Team'].mode()[0]
 
-                    # ----------------------------------------------------------------
-                    # Helper Functions Specific to Trade Circle Formation in This Section
-                    # ----------------------------------------------------------------
-                    def determine_player_level(player):
-                        """Assign a level based on Days Old."""
-                        try:
-                            d = float(player.get("Days Old", 0))
-                        except Exception:
-                            return None
-                        if d < 1000:
-                            return "A"
-                        elif d < 2000:
-                            return "B"
-                        else:
-                            return "C"
-
-                    def eligible(player):
+                    # --- Define refined eligibility check ---
+                    def refined_eligible(player):
                         """
-                        Determines if a pasted/free player is eligible:
-                        - Activity score must be less than 14.
-                        - Alliance must be in the selected alliances.
-                        - Team must equal the majority team (calculated above).
+                        A player is eligible if:
+                          - Their Alliance is in the selected alliances.
+                          - Their Activity score is less than 14.
+                          - Their Team matches the majority team (from the filtered data) for their alliance.
+                          - Neither their Ruler Name nor Nation Name appears in the exclusion list.
                         """
+                        if player.get("Alliance") not in st.session_state.selected_alliances:
+                            return False
                         try:
-                            act = float(player.get("Activity", 0))
-                        except Exception:
-                            act = 99
-                        return (act < 14 and
-                                (player.get("Alliance") in st.session_state.selected_alliances) and
-                                (player.get("Team") == majority_team))
-
-                    def passes_exclusion(player):
-                        """Return False if any identifier matches an exclusion term."""
-                        for key in ["Ruler Name", "Nation Name", "Nation ID"]:
-                            val = str(player.get(key, "")).lower()
-                            if val in filter_set:
-                                return False
+                            activity = float(player.get("Activity", 99))
+                        except:
+                            activity = 99
+                        if activity >= 14:
+                            return False
+                        alliance = player.get("Alliance")
+                        if alliance in majority_team_by_alliance and player.get("Team") != majority_team_by_alliance[alliance]:
+                            return False
+                        lookup_fields = []
+                        if player.get("Ruler Name"):
+                            lookup_fields.append(player.get("Ruler Name").lower())
+                        if player.get("Nation Name"):
+                            lookup_fields.append(player.get("Nation Name").lower())
+                        if any(val in filter_set for val in lookup_fields):
+                            return False
                         return True
 
-                    # ----------------------------------------------------------------
-                    # Parsing the Pasted Trade Circle Data into Blocks and Records
-                    # ----------------------------------------------------------------
+                    # --- Parse the Pasted Trade Circle Text into Blocks ---
                     blocks = []
                     current_block = []
                     for line in trade_circle_text.splitlines():
@@ -676,16 +661,14 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                     if current_block:
                         blocks.append(current_block)
 
+                    # --- Build the Initial List of Trade Circle Blocks ---
                     pasted_circles = []
                     for block in blocks:
                         circle = []
                         for line in block:
                             fields = [f.strip() for f in line.split("\t")]
-                            # Skip if not enough fields.
                             if len(fields) < 7:
-                                continue
-
-                            # Check for an empty slot (or an 'x' indicator).
+                                continue  # Skip lines not meeting minimum fields.
                             if not fields[0] or fields[0].lower() == "x":
                                 circle.append({
                                     "Ruler Name": None,
@@ -700,7 +683,7 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                             else:
                                 try:
                                     days_old = float(fields[4])
-                                except Exception:
+                                except:
                                     days_old = None
                                 player = {
                                     "Ruler Name": fields[0],
@@ -712,278 +695,173 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                                     "Activity": fields[6],
                                     "Empty": False
                                 }
-                                # Only add players that are eligible and not excluded.
-                                if eligible(player) and passes_exclusion(player):
+                                if refined_eligible(player):
                                     circle.append(player)
                         if circle:
                             pasted_circles.append(circle)
 
-                    # ----------------------------------------------------------------
-                    # Separate Pasted Circles: Complete (6 non-empty and matching level/alliance) vs Incomplete
-                    # ----------------------------------------------------------------
-                    complete_existing = []    # Pasted circles that already have 6 eligible players.
-                    incomplete_pasted = []    # Circles needing additional players.
+                    # --- Sort Circles by Number of Empty Slots (fewer empties come first) ---
+                    def count_empty_slots(circle):
+                        return sum(1 for p in circle if p.get("Empty"))
+                    pasted_circles = sorted(pasted_circles, key=count_empty_slots)
+
+                    # --- Build a Pool of Eligible (Non-Empty) Players from All Circles ---
+                    pool = []
                     for circle in pasted_circles:
-                        non_empty = [p for p in circle if not p["Empty"]]
-                        if len(non_empty) == TRADE_CIRCLE_SIZE:
-                            # Verify that all non-empty players have the same level and alliance.
-                            levels = {determine_player_level(p) for p in non_empty}
-                            alliances = {p.get("Alliance") for p in non_empty}
-                            if len(levels) == 1 and len(alliances) == 1:
-                                complete_existing.append(circle)
-                            else:
-                                incomplete_pasted.append(circle)
-                        else:
-                            incomplete_pasted.append(circle)
+                        for player in circle:
+                            if not player.get("Empty") and refined_eligible(player):
+                                # Annotate with Peace Mode level based on Days Old.
+                                player["Peace Level"] = get_peace_level(player.get("Days Old"))
+                                pool.append(player)
 
-                    # For incomplete circles, we group them by level.
-                    valid_circles = []
-                    for circle in incomplete_pasted:
-                        non_empty = [p for p in circle if not p["Empty"]]
-                        if not non_empty:
-                            continue
-                        level_groups = {}
-                        for p in non_empty:
-                            lvl = determine_player_level(p)
-                            if lvl:
-                                level_groups.setdefault(lvl, []).append(p)
-                        if not level_groups:
-                            st.warning("A pasted circle contains no valid player levels; skipping this circle.")
-                            continue
-                        # For each level group, re-add the empty slots from the original circle.
-                        for lvl, group in level_groups.items():
+                    # --- Categorize Players by Peace Mode Level ---
+                    pool_A = [p for p in pool if p.get("Peace Level") == "A"]
+                    pool_B = [p for p in pool if p.get("Peace Level") == "B"]
+                    pool_C = [p for p in pool if p.get("Peace Level") == "C"]
+
+                    st.markdown("#### Players by Peace Mode Level")
+                    st.markdown("**Level A (< 1000 days):**")
+                    st.dataframe(pd.DataFrame(pool_A))
+                    st.markdown("**Level B (1000 to 2000 days):**")
+                    st.dataframe(pd.DataFrame(pool_B))
+                    st.markdown("**Level C (>= 2000 days):**")
+                    st.dataframe(pd.DataFrame(pool_C))
+
+                    # --- Form New (Complete) Trade Circles for Peace Mode ---
+                    peace_circles = []       # This will hold complete Peace Mode circles (6 players each).
+                    assigned_players = set()  # Track players (by Ruler Name) already assigned in Peace Mode.
+
+                    def get_valid_combos_for_level(level):
+                        """Return the valid resource combinations for the given Peace Mode level."""
+                        if level == "A":
+                            return peace_a_combos
+                        elif level == "B":
+                            return peace_b_combos
+                        elif level == "C":
+                            return peace_c_combos
+                        else:
+                            return []
+
+                    for circle in pasted_circles:
+                        non_empty = [p for p in circle if not p.get("Empty")]
+                        empty_slots = TRADE_CIRCLE_SIZE - len(non_empty)
+                        if empty_slots <= 0:
+                            peace_circles.append(circle)
                             for p in circle:
-                                if p["Empty"]:
-                                    group.append(p)
-                            for p in group:
-                                p["Trade Circle Level"] = lvl
-                            valid_circles.append(group)
-
-                    # Sort valid (incomplete) circles by count of non-empty players (nearly complete circles come first)
-                    valid_circles.sort(key=lambda c: len([p for p in c if not p.get("Empty")]), reverse=True)
-
-                    # ----------------------------------------------------------------
-                    # Build the Free Pool from Filtered Nation Data (for filling incomplete circles)
-                    # ----------------------------------------------------------------
-                    if "filtered_df" in st.session_state:
-                        free_pool_all = st.session_state.filtered_df.to_dict("records")
-                        free_pool_all = [p for p in free_pool_all if eligible(p) and passes_exclusion(p)]
-                    else:
-                        free_pool_all = []
-
-                    def filter_by_level(pool, level):
-                        """Return players from the pool matching the given level."""
-                        return [p for p in pool if determine_player_level(p) == level]
-
-                    def sort_free_pool(pool, level):
-                        """Sort free pool candidates; levels A and B ascending by Days Old, level C descending."""
-                        try:
-                            if level in ["A", "B"]:
-                                pool.sort(key=lambda p: float(p.get("Days Old", 9999)))
-                            elif level == "C":
-                                pool.sort(key=lambda p: float(p.get("Days Old", 0)), reverse=True)
-                        except Exception:
-                            pass
-                        return pool
-
-                    # ----------------------------------------------------------------
-                    # Merge Incomplete Circles with the Free Pool
-                    # ----------------------------------------------------------------
-                    new_completed = []   # Newly completed circles from merging.
-                    for circle in valid_circles:
-                        level = circle[0].get("Trade Circle Level")
-                        current_members = [p for p in circle if not p.get("Empty")]
-                        missing_slots = TRADE_CIRCLE_SIZE - len(current_members)
-                        new_circle = list(current_members)  # Start with the existing non-empty members.
-
-                        # Get free pool candidates of the same level.
-                        eligible_free = filter_by_level(free_pool_all, level)
-                        eligible_free = sort_free_pool(eligible_free, level)
-                        if missing_slots > 0 and len(eligible_free) >= missing_slots:
-                            fill = eligible_free[:missing_slots]
-                            for p in fill:
-                                free_pool_all.remove(p)
-                                p["Pasted"] = False
-                                p["Trade Circle Level"] = level
-                            new_circle.extend(fill)
+                                if not p.get("Empty"):
+                                    assigned_players.add(p.get("Ruler Name"))
                         else:
-                            # Fallback: attempt to borrow from already formed new circles if possible.
-                            for other_circle in new_completed:
-                                if other_circle == circle:
-                                    continue
-                                for candidate in other_circle.copy():
-                                    # Candidate is acceptable if his resource pair does not conflict with current ones.
-                                    def is_high_quality(candidate, circle):
-                                        current_str = candidate.get("Resource 1+2", "")
-                                        candidate_pair = sorted([r.strip() for r in current_str.split(",") if r.strip()])
-                                        circle_resources = set()
-                                        for cp in circle:
-                                            res = cp.get("Resource 1+2", "")
-                                            circle_resources.update([r.strip() for r in res.split(",") if r.strip()])
-                                        return set(candidate_pair).isdisjoint(circle_resources)
-                                    if not candidate.get("Empty") and is_high_quality(candidate, new_circle):
-                                        other_circle.remove(candidate)
-                                        new_circle.append(candidate)
-                                        if len(new_circle) == TRADE_CIRCLE_SIZE:
-                                            break
-                                if len(new_circle) == TRADE_CIRCLE_SIZE:
-                                    break
-                        # Global Resource Assignment for complete circles.
-                        if len(new_circle) == TRADE_CIRCLE_SIZE:
-                            # Merge current resource pairs.
-                            current_resources = []
-                            for p in new_circle:
-                                rpair = p.get("Resource 1+2", "")
-                                current_resources.extend([r.strip() for r in rpair.split(",") if r.strip()])
-                            current_resources_sorted = sorted(set(current_resources))
-                            # Choose valid combos list based on level.
-                            if level == "A":
-                                valid_combos_list = peace_a_combos
-                            elif level == "B":
-                                valid_combos_list = peace_b_combos
-                            elif level == "C":
-                                valid_combos_list = peace_c_combos
+                            if not non_empty:
+                                continue
+                            level_counts = Counter(get_peace_level(p.get("Days Old")) for p in non_empty)
+                            majority_level = level_counts.most_common(1)[0][0]
+                            valid_combos = get_valid_combos_for_level(majority_level)
+                            # First, try candidates from the same Peace Level.
+                            if majority_level == "A":
+                                candidate_pool = [p for p in pool_A if p.get("Ruler Name") not in assigned_players]
+                            elif majority_level == "B":
+                                candidate_pool = [p for p in pool_B if p.get("Ruler Name") not in assigned_players]
+                            elif majority_level == "C":
+                                candidate_pool = [p for p in pool_C if p.get("Ruler Name") not in assigned_players]
                             else:
-                                valid_combos_list = []
-                            best_combo, missing_res, extra_res, score = find_best_match(current_resources_sorted, valid_combos_list)
-                            if best_combo and len(best_combo) == 12:
-                                # Partition the best_combo into 6 resource pair "slices".
-                                ideal_slices = [best_combo[2 * i:2 * i + 2] for i in range(TRADE_CIRCLE_SIZE)]
-                                cost_matrix = []
-                                for p in new_circle:
-                                    current_str = p.get("Resource 1+2", "")
-                                    current_pair = sorted([r.strip() for r in current_str.split(",") if r.strip()])
-                                    row = []
-                                    for slice_candidate in ideal_slices:
-                                        ideal_sorted = sorted(slice_candidate)
-                                        common = set(current_pair).intersection(set(ideal_sorted))
-                                        row.append(2 - len(common))
-                                    cost_matrix.append(row)
-                                cost_matrix = np.array(cost_matrix)
-                                row_ind, col_ind = linear_sum_assignment(cost_matrix)
-                                for player_idx, slice_idx in zip(row_ind, col_ind):
-                                    assigned_cost = cost_matrix[player_idx, slice_idx]
-                                    if assigned_cost == 0:
-                                        new_circle[player_idx]["Assigned Resource 1+2"] = "No Change"
-                                    else:
-                                        new_circle[player_idx]["Assigned Resource 1+2"] = ideal_slices[slice_idx]
-                                connected_str = ", ".join(best_combo)
-                                for p in new_circle:
-                                    p["Connected Resources"] = connected_str
-                                    # Set a category label based on level.
-                                    if level == "A":
-                                        p["Trade Circle Category"] = "Peace Mode Level A"
-                                    elif level == "B":
-                                        p["Trade Circle Category"] = "Peace Mode Level B"
-                                    elif level == "C":
-                                        p["Trade Circle Category"] = "Peace Mode Level C"
-                                    else:
-                                        p["Trade Circle Category"] = "Uncategorized"
-                                new_completed.append(new_circle)
-                        else:
-                            st.warning("A pasted circle could not be completed to 6 eligible members for level " + str(level))
+                                candidate_pool = [p for p in pool if p.get("Ruler Name") not in assigned_players]
 
-                    # Final completed circles: preserve those pasted as complete and add new completed circles.
-                    final_circles = complete_existing + new_completed
-                    # Sort final circles by completeness (those with the most eligible players first)
-                    final_circles.sort(key=lambda c: len([p for p in c if not p.get("Empty")]), reverse=True)
+                            def candidate_score(player):
+                                res = sorted([r.strip() for r in (player.get("Resource 1+2") or "").split(",") if r.strip()])
+                                _, _, _, score = find_best_match(res, valid_combos)
+                                return score
 
-                    # ----------------------------------------------------------------
-                    # Display Final Recommended Trade Circles
-                    # ----------------------------------------------------------------
-                    st.markdown("### Final Recommended Trade Circles")
-                    for idx, circle in enumerate(final_circles, start=1):
-                        if not circle:
-                            st.warning(f"Trade Circle #{idx} is empty and will be skipped.")
-                            continue
-                        circle_type = circle[0].get("Trade Circle Category", "Uncategorized")
-                        st.markdown(f"--- **Trade Circle #{idx} ({circle_type})** ---")
-                        display_data = []
-                        for p in circle:
-                            current_pair = p.get("Resource 1+2", "")
-                            assigned = p.get("Assigned Resource 1+2", "")
-                            if assigned:
-                                if isinstance(assigned, list):
-                                    assign_display = ", ".join([str(x) for x in assigned])
-                                else:
-                                    assign_display = str(assigned)
-                            else:
-                                assign_display = "None"
-                            connected_resources = p.get("Connected Resources", "")
-                            display_data.append({
-                                "Ruler Name": p.get("Ruler Name", ""),
-                                "Resource 1+2": p.get("Resource 1+2", ""),
-                                "Alliance": p.get("Alliance", ""),
-                                "Team": p.get("Team", ""),
-                                "Days Old": p.get("Days Old", ""),
-                                "Nation Drill Link": p.get("Nation Drill Link", ""),
-                                "Activity": p.get("Activity", ""),
-                                "Assigned Resource 1+2": assign_display,
-                                "Connected Resources": connected_resources,
-                                "Trade Circle Category": p.get("Trade Circle Category", "")
-                            })
-                        df_circle = pd.DataFrame(display_data)
-                        cols_order = ["Ruler Name", "Resource 1+2", "Alliance", "Team", "Days Old",
-                                      "Nation Drill Link", "Activity", "Assigned Resource 1+2",
-                                      "Connected Resources", "Trade Circle Category"]
-                        df_circle = df_circle[[col for col in cols_order if col in df_circle.columns]]
-                        st.dataframe(df_circle, use_container_width=True)
+                            candidate_pool = sorted(candidate_pool, key=candidate_score)
+                            while empty_slots > 0 and candidate_pool:
+                                candidate = candidate_pool.pop(0)
+                                circle.append(candidate)
+                                assigned_players.add(candidate.get("Ruler Name"))
+                                empty_slots -= 1
+                            # If still incomplete, fill from the overall candidate pool.
+                            if empty_slots > 0:
+                                overall_candidates = sorted(
+                                    [p for p in pool if p.get("Ruler Name") not in assigned_players],
+                                    key=candidate_score
+                                )
+                                while empty_slots > 0 and overall_candidates:
+                                    candidate = overall_candidates.pop(0)
+                                    circle.append(candidate)
+                                    assigned_players.add(candidate.get("Ruler Name"))
+                                    empty_slots -= 1
+                            if len([p for p in circle if not p.get("Empty")]) == TRADE_CIRCLE_SIZE:
+                                peace_circles.append(circle)
 
-                    # ----------------------------------------------------------------
-                    # Display Free Pool as "Players Remaining Without a Full Trade Circle"
-                    # ----------------------------------------------------------------
-                    st.markdown("### Players Remaining Without a Full Trade Circle")
-                    if free_pool_all and len(free_pool_all) > 0:
-                        df_leftover = pd.DataFrame(free_pool_all)
-                        if "Current Resource 1+2" not in df_leftover.columns:
-                            df_leftover["Current Resource 1+2"] = df_leftover.get("Resource 1+2", "")
-                        display_cols = ["Nation ID", "Ruler Name", "Nation Name", "Team", "Current Resource 1+2", "Days Old", "Activity"]
-                        df_leftover = df_leftover[[col for col in display_cols if col in df_leftover.columns]]
-                        st.dataframe(df_leftover, use_container_width=True)
+                    # --- Assign Resource 1+2 for Peace Mode Circles Using the Hungarian Algorithm ---
+                    def assign_resources(circle, valid_combos):
+                        players = [p for p in circle if not p.get("Empty")]
+                        n = len(players)
+                        cost_matrix = np.zeros((n, n))
+                        for i, player in enumerate(players):
+                            res = sorted([r.strip() for r in (player.get("Resource 1+2") or "").split(",") if r.strip()])
+                            for j, combo in enumerate(valid_combos[:n]):  # restrict to first n valid combos
+                                _, _, _, score = find_best_match(res, [combo])
+                                cost_matrix[i, j] = score
+                        row_ind, col_ind = linear_sum_assignment(cost_matrix)
+                        for i, j in zip(row_ind, col_ind):
+                            players[i]["Assigned Resource 1+2"] = valid_combos[j]
+                        return circle
+
+                    for circle in peace_circles:
+                        non_empty = [p for p in circle if not p.get("Empty")]
+                        level_counts = Counter(get_peace_level(p.get("Days Old")) for p in non_empty)
+                        majority_level = level_counts.most_common(1)[0][0]
+                        valid_combos = get_valid_combos_for_level(majority_level)
+                        assign_resources(circle, valid_combos)
+
+                    # --- Display Peace Mode Trade Circles ---
+                    st.markdown("### New Recommended Trade Circles (Peace Mode)")
+                    for idx, circle in enumerate(peace_circles, start=1):
+                        st.markdown(f"**Trade Circle {idx}:**")
+                        display_trade_circle_df(circle, "Peace Mode")
+
+                    # -----------------------
+                    # WAR MODE MATCHING (Independent of Peace Mode)
+                    # -----------------------
+                    st.markdown("### War Mode Trade Circles")
+                    # For War Mode, use the full candidate pool independently.
+                    war_pool = pool.copy()
+                    war_circles = []
+                    # Greedy grouping into circles of TRADE_CIRCLE_SIZE.
+                    war_pool_sorted = sorted(war_pool, key=lambda p: p.get("Ruler Name", "").lower())
+                    while len(war_pool_sorted) >= TRADE_CIRCLE_SIZE:
+                        circle = war_pool_sorted[:TRADE_CIRCLE_SIZE]
+                        war_circles.append(circle)
+                        war_pool_sorted = war_pool_sorted[TRADE_CIRCLE_SIZE:]
+                    
+                    # Apply Hungarian Algorithm for resource assignment using war valid combinations.
+                    for circle in war_circles:
+                        assign_resources(circle, war_combos)
+                    
+                    st.markdown("#### War Mode Trade Circles")
+                    for idx, circle in enumerate(war_circles, start=1):
+                        st.markdown(f"**War Trade Circle {idx}:**")
+                        display_trade_circle_df(circle, "War Mode")
+                    
+                    st.markdown("### Nations Remaining Without a Full War Trade Circle")
+                    if war_pool_sorted:
+                        st.dataframe(pd.DataFrame(war_pool_sorted))
                     else:
-                        st.info("No leftover free players available.")
+                        st.info("All eligible players have been grouped into War Mode Trade Circles.")
 
-                    # ----------------------------------------------------------------
-                    # Trade Circle Coverage Summary
-                    # ----------------------------------------------------------------
-                    if "filtered_df" in st.session_state:
-                        alliance_df = st.session_state.filtered_df.copy()
-                        if "Alliance Status" in alliance_df.columns:
-                            alliance_df = alliance_df[alliance_df["Alliance Status"] != "Pending"]
-                        alliance_rulers = set(alliance_df["Ruler Name"].dropna().unique())
-                        matched_rulers = set()
-                        for circle in final_circles:
-                            for p in circle:
-                                if p.get("Ruler Name"):
-                                    matched_rulers.add(p.get("Ruler Name"))
-                        total_alliance = len(alliance_rulers)
-                        total_matched = len(matched_rulers)
-                        total_unmatched = total_alliance - total_matched
-                        percentage_total_unmatched = round((total_unmatched / total_alliance) * 100, 2) if total_alliance else 0
+                    # -----------------------
+                    # Final Combined Circles for Export/Reporting
+                    # -----------------------
+                    # Now, final_circles is a simple summation of Peace Mode and War Mode circles.
+                    final_circles = peace_circles + war_circles
 
-                        summary_data = {
-                            "Total Alliance Members": [total_alliance],
-                            "Rulers in Trade Circles": [total_matched],
-                            "Rulers not in Trade Circles": [total_unmatched],
-                            "% Not in Trade Circles": [percentage_total_unmatched]
-                        }
-                        summary_df = pd.DataFrame(summary_data)
-                        st.markdown("### Trade Circle Coverage Summary")
-                        st.dataframe(summary_df, use_container_width=True)
+                    st.markdown("### Combined Trade Circles Summary")
+                    st.write(f"Total Trade Circles: {len(final_circles)}")
 
-                        # Table for unmatched (free) nations
-                        unmatched_rulers = alliance_rulers - matched_rulers
-                        unmatched_df = alliance_df[alliance_df["Ruler Name"].isin(unmatched_rulers)].copy()
-                        profile_cols = ["Ruler Name", "Current Resource 1+2", "Alliance", "Team", "Days Old", "Nation Drill Link", "Activity"]
-                        profile_cols = [col for col in profile_cols if col in unmatched_df.columns]
-                        st.markdown("### Unmatched Rulers - Complete Nation Profiles")
-                        st.dataframe(unmatched_df[profile_cols], use_container_width=True)
 
                 # -----------------------
                 # EXPORT/WRITE EXCEL FILE FOR DOWNLOAD WITH ADDITIONAL WORKSHEETS
                 # -----------------------
                 sheets = {}  # Ensure sheets is initialized
-                final_circles = combined_peace_circles + filled_war_circles
 
                 # Build trade circle export entries based on final_circles
                 trade_circle_entries = []
