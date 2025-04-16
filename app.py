@@ -210,8 +210,10 @@ def main():
             # FILTERING UI SECTION
             # -----------------------
             with st.expander("Filter Data"):
+                # Always define filtered_df to ensure it's available later.
+                filtered_df = df.copy() if not df.empty else pd.DataFrame()
+
                 if not df.empty:
-                    filtered_df = df.copy()
                     column_options = list(df.columns)
                     default_index = column_options.index("Alliance") if "Alliance" in column_options else 0
                     selected_column = st.selectbox("Select column to filter", column_options, index=default_index, key="filter_select")
@@ -222,38 +224,34 @@ def main():
                         selected_alliances = st.multiselect("Select Alliance(s) to filter", alliances, default=default_alliances, key="alliance_filter")
                         st.session_state.selected_alliances = selected_alliances  # Save the selection
                         if selected_alliances:
-                            filtered_df = df[df["Alliance"].isin(selected_alliances)]
-                        else:
-                            filtered_df = df.copy()
+                            filtered_df = filtered_df[filtered_df["Alliance"].isin(selected_alliances)]
                     else:
                         search_text = st.text_input("Filter by text (separate words by comma)", value="Freehold of the Wolves", key="filter_text")
                         if search_text:
-                            # Support multiple filters separated by comma
                             filters = [f.strip() for f in search_text.split(",") if f.strip()]
                             pattern = "|".join(filters)
-                            filtered_df = df[df[selected_column].astype(str).str.contains(pattern, case=False, na=False)]
+                            filtered_df = filtered_df[filtered_df[selected_column].astype(str).str.contains(pattern, case=False, na=False)]
                         else:
                             st.info("Enter text to filter the data.")
-                            filtered_df = df.copy()
-                            
+                    
                     st.write(f"Showing results where **{selected_column}** is filtered:")
-                    # Use the filtered table's own "Resource 1" and "Resource 2" columns for current resource display
+
+                    # Compute current resource display from "Resource 1" and "Resource 2"
                     if "Resource 1" in filtered_df.columns and "Resource 2" in filtered_df.columns:
-                        filtered_df = filtered_df.copy()
                         filtered_df['Current Resource 1+2'] = filtered_df.apply(lambda row: get_resource_1_2(row), axis=1)
 
+                    # Convert the "Created" column and calculate "Days Old", if the column exists.
                     if "Created" in filtered_df.columns:
-                        # Adjust date_format as needed based on your data
-                        date_format = "%m/%d/%Y %I:%M:%S %p"  
+                        date_format = "%m/%d/%Y %I:%M:%S %p"
                         filtered_df['Created'] = pd.to_datetime(filtered_df['Created'], format=date_format, errors='coerce')
                         current_date = datetime.now()
                         filtered_df['Days Old'] = (current_date - filtered_df['Created']).dt.days
 
-                    # Sort by "Ruler Name" and reset index
+                    # Sort by "Ruler Name" (ignoring case) and reset index.
                     filtered_df = filtered_df.sort_values(by="Ruler Name", key=lambda col: col.str.lower()).reset_index(drop=True)
-
                     st.dataframe(filtered_df, use_container_width=True)
-                    # Save the filtered DataFrame and CSV content to session state for later use.
+
+                    # Save the filtered DataFrame and CSV content into session state.
                     st.session_state.filtered_df = filtered_df
                     csv_content = filtered_df.to_csv(index=False)
                     st.session_state.filtered_csv = csv_content
