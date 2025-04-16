@@ -211,6 +211,7 @@ def main():
             # -----------------------
             with st.expander("Filter Data"):
                 if not df.empty:
+                    filtered_df = df.copy()
                     column_options = list(df.columns)
                     default_index = column_options.index("Alliance") if "Alliance" in column_options else 0
                     selected_column = st.selectbox("Select column to filter", column_options, index=default_index, key="filter_select")
