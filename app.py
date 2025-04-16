@@ -609,7 +609,7 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                         "Enter Trade Circle data below. Each line should contain the following tab-separated fields:\n"
                         "Ruler Name | Resource 1+2 | Alliance | Team | Days Old | Nation Drill Link | Activity\n\n"
                         "Empty slots (lines starting with an 'x' or with an empty Ruler Name) are omitted. "
-                        "Separate Trade Circle blocks with an empty line.",
+                        "Separate Trade Circle blocks with an empty line. Using a spreadsheet for correct formatting is recommended.",
                         height=200
                     )
 
@@ -628,6 +628,17 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                             df_alliance = filtered_df[filtered_df["Alliance"] == alliance]
                             if not df_alliance.empty:
                                 majority_team_by_alliance[alliance] = df_alliance['Team'].mode()[0]
+
+                    # Get the set of Ruler Names that survived the "Filter Data" step
+                    if "filtered_df" in st.session_state:
+                        filtered_rulers = set(
+                            st.session_state.filtered_df["Ruler Name"]
+                            .dropna()
+                            .str.lower()
+                            .tolist()
+                        )
+                    else:
+                        filtered_rulers = set()
 
                     # --- Define refined eligibility check ---
                     def refined_eligible(player):
@@ -655,6 +666,9 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                         if player.get("Nation Name"):
                             lookup_fields.append(player.get("Nation Name").lower())
                         if any(val in filter_set for val in lookup_fields):
+                            return False
+                        name = (player.get("Ruler Name") or "").lower()
+                        if name not in filtered_rulers:
                             return False
                         return True
 
