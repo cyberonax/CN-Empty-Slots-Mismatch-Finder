@@ -815,9 +815,9 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                     st.write(f"**Members in Complete Trade Circle:** {total_full}")
                     
                     # Break down the peacetime mismatches by Peace Mode Level
-                    unique_peaceA = df_peace_a['Nation ID'].nunique() if not df_peace_a.empty else 0
-                    unique_peaceB = df_peace_b['Nation ID'].nunique() if not df_peace_b.empty else 0
-                    unique_peaceC = df_peace_c['Nation ID'].nunique() if not df_peace_c.empty else 0
+                    unique_peaceA = df_peace_a['Ruler Name'].nunique() if not df_peace_a.empty else 0
+                    unique_peaceB = df_peace_b['Ruler Name'].nunique() if not df_peace_b.empty else 0
+                    unique_peaceC = df_peace_c['Ruler Name'].nunique() if not df_peace_c.empty else 0
                     
                     total_peace_mismatch = unique_peaceA + unique_peaceB + unique_peaceC
                     
