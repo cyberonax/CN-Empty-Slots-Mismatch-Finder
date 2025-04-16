@@ -777,7 +777,7 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                     with st.expander("Comparative Alliance Stats"):
                         st.dataframe(comp_stats_df.style.format({"Empty Trade Slot (%)": "{:.2f}%"}), use_container_width=True)
                 
-                    sheets["Comparative Alliance Stats"] = comp_stats_df.copy()
+                    #sheets["Comparative Alliance Stats"] = comp_stats_df.copy()
 
                 # -----------------------
                 # SUMMARY OVERVIEW SECTION (UI)
