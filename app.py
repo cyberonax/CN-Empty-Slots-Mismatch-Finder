@@ -982,9 +982,9 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                         comp_stats.append({
                             "Alliance": alliance,
                             "Total Alliance Members": total_players,
+                            "Players in Complete Trade Circle": full_players,
                             "Players with Empty Trade Slots": empty_players,
                             "Empty Trade Slot (%)": empty_percentage,
-                            "Players in Complete Trade Circle": full_players,
                         })
                     
                     comp_stats_df = pd.DataFrame(comp_stats)
