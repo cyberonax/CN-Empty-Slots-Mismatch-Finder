@@ -210,7 +210,7 @@ def main():
             # FILTERING UI SECTION
             # -----------------------
             with st.expander("Filter Data"):
-                # Always define filtered_df to ensure it's available later.
+                # Always define filtered_df so it exists no matter what.
                 filtered_df = df.copy() if not df.empty else pd.DataFrame()
 
                 if not df.empty:
@@ -240,24 +240,26 @@ def main():
                     if "Resource 1" in filtered_df.columns and "Resource 2" in filtered_df.columns:
                         filtered_df['Current Resource 1+2'] = filtered_df.apply(lambda row: get_resource_1_2(row), axis=1)
 
-                    # Convert the "Created" column and calculate "Days Old", if the column exists.
+                    # Convert the "Created" column and calculate "Days Old", if it exists.
                     if "Created" in filtered_df.columns:
                         date_format = "%m/%d/%Y %I:%M:%S %p"
                         filtered_df['Created'] = pd.to_datetime(filtered_df['Created'], format=date_format, errors='coerce')
                         current_date = datetime.now()
                         filtered_df['Days Old'] = (current_date - filtered_df['Created']).dt.days
 
-                    # Sort by "Ruler Name" (ignoring case) and reset index.
+                    # Sort by "Ruler Name" and reset the index.
                     filtered_df = filtered_df.sort_values(by="Ruler Name", key=lambda col: col.str.lower()).reset_index(drop=True)
                     st.dataframe(filtered_df, use_container_width=True)
-
-                    # Save the filtered DataFrame and CSV content into session state.
-                    st.session_state.filtered_df = filtered_df
-                    csv_content = filtered_df.to_csv(index=False)
-                    st.session_state.filtered_csv = csv_content
-                    st.download_button("Download Filtered CSV", csv_content, file_name="filtered_nation_stats.csv", mime="text/csv", key="download_csv")
                 else:
                     st.warning("DataFrame is empty, nothing to filter.")
+
+                # Always store filtered_df in session state, even if it's an empty DataFrame.
+                st.session_state.filtered_df = filtered_df
+
+                # Save CSV for download.
+                csv_content = filtered_df.to_csv(index=False)
+                st.session_state.filtered_csv = csv_content
+                st.download_button("Download Filtered CSV", csv_content, file_name="filtered_nation_stats.csv", mime="text/csv", key="download_csv")
 
             # -----------------------
             # TRADE CIRCLE & RESOURCE PROCESSING (automatically triggered)
