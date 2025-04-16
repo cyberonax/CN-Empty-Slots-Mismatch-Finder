@@ -600,7 +600,9 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                         peacetime_df = pd.DataFrame()
                     wartime_df = df_war.copy()
 
-                from itertools import combinations
+                # -----------------------
+                # RECOMMENDED TRADE CIRCLES SECTION (UPDATED)
+                # -----------------------
 
                 # --- Utility: parse pasted blocks into raw level‑tagged lists ---
                 raw = st.text_area(
@@ -814,14 +816,6 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                         "Percent Matched": pct
                     })
                 st.dataframe(pd.DataFrame(summary), use_container_width=True)
-
-
-                    # -----------------------
-                    # Final Circles for Export/Reporting
-                    # -----------------------
-                    final_circles = peace_circles
-                    st.markdown("### Total Trade Circles Summary")
-                    st.write(f"Total Trade Circles: {len(final_circles)}")
 
                 # -----------------------
                 # EXPORT/WRITE EXCEL FILE FOR DOWNLOAD WITH ADDITIONAL WORKSHEETS
