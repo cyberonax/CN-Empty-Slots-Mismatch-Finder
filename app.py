@@ -209,12 +209,16 @@ def main():
             # -----------------------
             # FILTERING UI SECTION
             # -----------------------
+            # Get the main DataFrame from session state (or an empty DataFrame if not present)
+            df = st.session_state.get("df", pd.DataFrame())
+            # Define filtered_df upfront so that it is always available.
+            filtered_df = pd.DataFrame()
+
             with st.expander("Filter Data"):
-                # If there is a valid df in session state, use it; otherwise, define an empty DataFrame.
-                if "df" in st.session_state and not st.session_state.df.empty:
-                    df = st.session_state.df.copy()
+                if not df.empty:
+                    # Initialize filtered_df as a copy of df.
                     filtered_df = df.copy()
-                    
+
                     column_options = list(df.columns)
                     default_index = column_options.index("Alliance") if "Alliance" in column_options else 0
                     selected_column = st.selectbox("Select column to filter", column_options, index=default_index, key="filter_select")
@@ -223,7 +227,7 @@ def main():
                         alliances = sorted(df["Alliance"].dropna().unique())
                         default_alliances = ["Freehold of The Wolves"] if "Freehold of The Wolves" in alliances else alliances
                         selected_alliances = st.multiselect("Select Alliance(s) to filter", alliances, default=default_alliances, key="alliance_filter")
-                        st.session_state.selected_alliances = selected_alliances
+                        st.session_state.selected_alliances = selected_alliances  # Save the selection
                         if selected_alliances:
                             filtered_df = filtered_df[filtered_df["Alliance"].isin(selected_alliances)]
                     else:
@@ -237,29 +241,28 @@ def main():
                     
                     st.write(f"Showing results where **{selected_column}** is filtered:")
 
-                    # Calculate current resources based on "Resource 1" and "Resource 2".
+                    # Calculate current resources using "Resource 1" and "Resource 2" if available.
                     if "Resource 1" in filtered_df.columns and "Resource 2" in filtered_df.columns:
                         filtered_df['Current Resource 1+2'] = filtered_df.apply(lambda row: get_resource_1_2(row), axis=1)
 
-                    # Convert the "Created" column to datetime and compute "Days Old" if the column exists.
+                    # Convert the "Created" column to datetime and calculate "Days Old" if the column exists.
                     if "Created" in filtered_df.columns:
                         date_format = "%m/%d/%Y %I:%M:%S %p"
+                        # This conversion is now guarded by the "in filtered_df.columns" check.
                         filtered_df['Created'] = pd.to_datetime(filtered_df['Created'], format=date_format, errors='coerce')
                         current_date = datetime.now()
                         filtered_df['Days Old'] = (current_date - filtered_df['Created']).dt.days
 
-                    # Sort filtered_df by "Ruler Name" (case-insensitive) and reset index.
+                    # Sort by "Ruler Name" (case-insensitive) and reset the index.
                     filtered_df = filtered_df.sort_values(by="Ruler Name", key=lambda col: col.str.lower()).reset_index(drop=True)
                     st.dataframe(filtered_df, use_container_width=True)
-
                 else:
                     st.warning("DataFrame is empty, nothing to filter.")
-                    filtered_df = pd.DataFrame()
 
-                # Ensure filtered_df is stored in session state for later usage.
+                # Store filtered_df in session state for later use (even if it's empty).
                 st.session_state.filtered_df = filtered_df
 
-                # Also, prepare CSV content for download.
+                # Prepare CSV content for download.
                 csv_content = filtered_df.to_csv(index=False)
                 st.session_state.filtered_csv = csv_content
                 st.download_button("Download Filtered CSV", csv_content, file_name="filtered_nation_stats.csv", mime="text/csv", key="download_csv")
