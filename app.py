@@ -488,9 +488,10 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                         dup_str = ", ".join(sorted(duplicates)) if duplicates else "None"
                         
                         base_info = {
-                            'Nation ID': row['Nation ID'],
                             'Ruler Name': row['Ruler Name'],
-                            'Nation Name': row['Nation Name'],
+                            'Alliance': row['Alliance Status'],
+                            'Alliance Status': row['Alliance'],
+                            'Team': row['Team'],
                             'Current Resources': row['Current Resources'],
                             'Current Resource 1+2': get_resource_1_2(row),
                             'Duplicate Resources': dup_str,
@@ -765,9 +766,9 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                         comp_stats.append({
                             "Alliance": alliance,
                             "Total Alliance Members": total_players,
+                            "Players in Complete Trade Circle": full_players,
                             "Players with Empty Trade Slots": empty_players,
                             "Empty Trade Slot (%)": empty_percentage,
-                            "Players in Complete Trade Circle": full_players,
                         })
                     
                     comp_stats_df = pd.DataFrame(comp_stats)
