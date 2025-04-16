@@ -802,6 +802,7 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                     # Total players in either group (empty slots + complete)
                     total_players = len(players_empty) + len(players_full)
                     empty_percentage = (len(players_empty) / total_players * 100) if total_players else 0
+                    full_percentage = (len(total_players - players_empty) / total_players * 100) if total_players else 0
 
                     # For players in complete trade circles, count unique mismatches using consolidated DataFrames.
                     total_full = len(players_full)
@@ -812,7 +813,7 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
 
                     st.write(f"**Total Alliance Members:** {total_players} (Not Including Pending)")
                     st.write(f"**Members with Empty Trade Slots:** {len(players_empty)} ({empty_percentage:.2f}%)")
-                    st.write(f"**Members in Complete Trade Circle:** {total_full}")
+                    st.write(f"**Members in Complete Trade Circle:** {total_full} ({full_percentage:.2f}%)")
                     
                     # Break down the peacetime mismatches by Peace Mode Level
                     unique_peaceA = df_peace_a['Ruler Name'].nunique() if not df_peace_a.empty else 0
