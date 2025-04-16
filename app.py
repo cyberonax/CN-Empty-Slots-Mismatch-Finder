@@ -602,7 +602,29 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                 # -----------------------
                 # RECOMMENDED TRADE CIRCLES SECTION (UPDATED)
                 # -----------------------
+                # -----------------------
+                # RECOMMENDED TRADE CIRCLES SECTION (UPDATED)
+                # -----------------------
                 with st.expander("Recommended Trade Circles"):
+                    # --- Hungarian assignment helper (must be in scope) ---
+                    def assign_resources(circle, valid_combos):
+                        """
+                        Assigns each player in `circle` one of the first len(circle) combos
+                        from valid_combos to minimize mismatch score via the Hungarian algorithm.
+                        """
+                        players = list(circle)
+                        n = len(players)
+                        cost = np.zeros((n, n))
+                        for i, p in enumerate(players):
+                            current = sorted([r.strip() for r in p["Resource 1+2"].split(",") if r.strip()])
+                            for j, combo in enumerate(valid_combos[:n]):
+                                _, _, _, score = find_best_match(current, [combo])
+                                cost[i, j] = score
+                        rows, cols = linear_sum_assignment(cost)
+                        for i, j in zip(rows, cols):
+                            players[i]["Assigned Resource 1+2"] = valid_combos[j]
+                        return players
+
                     st.markdown("### Paste Trade Circle Data")
                     trade_circle_text = st.text_area(
                         "Enter Trade Circle data below. Each line should contain the following tab-separated fields:\n"
@@ -617,7 +639,7 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                     filter_text = st.text_area("", height=100)
                     filter_set = {line.strip().lower() for line in filter_text.splitlines() if line.strip()}
 
-                    # --- Calculate Majority Team for Each Selected Alliance ---
+                    # --- Majority team per alliance for eligibility ---
                     majority_team_by_alliance = {}
                     if "selected_alliances" in st.session_state and "filtered_df" in st.session_state:
                         for alliance in st.session_state.selected_alliances:
@@ -625,7 +647,6 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                             if not df_all.empty:
                                 majority_team_by_alliance[alliance] = df_all["Team"].mode()[0]
 
-                    # --- Refined eligibility check ---
                     def refined_eligible(p):
                         if p["Alliance"] not in st.session_state.selected_alliances:
                             return False
@@ -641,7 +662,7 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                             return False
                         return True
 
-                    # --- Parse the Pasted Blocks, skipping blank/'x' lines ---
+                    # --- Parse input into blocks, skip blank/x lines ---
                     blocks, current = [], []
                     for L in trade_circle_text.splitlines():
                         if not L.strip():
@@ -667,7 +688,7 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                                 days = float(days_s)
                             except:
                                 days = None
-                            player = {
+                            p = {
                                 "Ruler Name": name,
                                 "Resource 1+2": res12,
                                 "Alliance": alli,
@@ -675,25 +696,26 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                                 "Days Old": days,
                                 "Nation Drill Link": drill,
                                 "Activity": act,
+                                "Peace Level": get_peace_level(days)
                             }
-                            if refined_eligible(player):
-                                player["Peace Level"] = get_peace_level(days)
-                                circle.append(player)
+                            if refined_eligible(p):
+                                circle.append(p)
                         if circle:
                             pasted_circles.append(circle)
 
-                    # --- Build master pool by Peace Level ---
-                    pool = [p for circ in pasted_circles for p in circ]
+                    # --- Build pools ---
+                    pool = [p for c in pasted_circles for p in c]
                     pool_A = [p for p in pool if p["Peace Level"] == "A"]
                     pool_B = [p for p in pool if p["Peace Level"] == "B"]
                     pool_C = [p for p in pool if p["Peace Level"] == "C"]
 
-                    # --- Form Peace Mode circles (no duplicates) ---
-                    peace_circles = []
-                    assigned = set()
+                    # --- Valid combos lookup ---
                     def valid_combos_for(lvl):
                         return {"A": peace_a_combos, "B": peace_b_combos, "C": peace_c_combos}.get(lvl, [])
 
+                    # --- Form Peace Mode circles without duplicates ---
+                    peace_circles = []
+                    assigned = set()
                     for circ in pasted_circles:
                         members = [p for p in circ if p["Ruler Name"] not in assigned]
                         slots = TRADE_CIRCLE_SIZE - len(members)
@@ -701,41 +723,39 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                             sel = members[:TRADE_CIRCLE_SIZE]
                             peace_circles.append(sel)
                             assigned |= {p["Ruler Name"] for p in sel}
-                        else:
-                            if not members:
+                            continue
+                        lvl = Counter(p["Peace Level"] for p in members).most_common(1)[0][0]
+                        combos = valid_combos_for(lvl)
+                        pool_lvl = {"A": pool_A, "B": pool_B, "C": pool_C}[lvl]
+                        def score(p):
+                            res = sorted(r.strip() for r in p["Resource 1+2"].split(",") if r.strip())
+                            return find_best_match(res, combos)[3]
+                        for p in sorted(pool_lvl, key=score):
+                            if slots == 0:
+                                break
+                            if p["Ruler Name"] in assigned:
                                 continue
-                            lvl = Counter(p["Peace Level"] for p in members).most_common(1)[0][0]
-                            combos = valid_combos_for(lvl)
-                            # rank same-level candidates
-                            pool_lvl = {"A": pool_A, "B": pool_B, "C": pool_C}[lvl]
-                            candidates = [p for p in pool_lvl if p["Ruler Name"] not in assigned]
-                            def cscore(p):
-                                res = sorted(r.strip() for r in p["Resource 1+2"].split(","))
-                                return find_best_match(res, combos)[3]
-                            for p in sorted(candidates, key=cscore):
-                                if slots <= 0:
+                            members.append(p)
+                            assigned.add(p["Ruler Name"])
+                            slots -= 1
+                        if slots > 0:
+                            for p in sorted(pool, key=score):
+                                if slots == 0:
                                     break
+                                if p["Ruler Name"] in assigned:
+                                    continue
                                 members.append(p)
                                 assigned.add(p["Ruler Name"])
                                 slots -= 1
-                            # fill from overall if still open
-                            if slots > 0:
-                                others = [p for p in pool if p["Ruler Name"] not in assigned]
-                                for p in sorted(others, key=cscore):
-                                    if slots <= 0:
-                                        break
-                                    members.append(p)
-                                    assigned.add(p["Ruler Name"])
-                                    slots -= 1
-                            if len(members) == TRADE_CIRCLE_SIZE:
-                                peace_circles.append(members)
+                        if len(members) == TRADE_CIRCLE_SIZE:
+                            peace_circles.append(members)
 
-                    # --- Assign resources to each Peace circle ---
+                    # --- Assign resources for each Peace circle ---
                     for circ in peace_circles:
                         lvl = Counter(p["Peace Level"] for p in circ).most_common(1)[0][0]
                         assign_resources(circ, valid_combos_for(lvl))
 
-                    # --- Display Peace circles grouped by Level ---
+                    # --- Display Peace circles by level ---
                     st.markdown("### New Recommended Trade Circles (Peace Mode)")
                     by_lvl = {"A": [], "B": [], "C": []}
                     for circ in peace_circles:
@@ -761,7 +781,7 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                             st.dataframe(dfp, use_container_width=True)
 
                     # -----------------------
-                    # WAR MODE: reuse the same partner groups
+                    # WAR MODE: same circles, different resource sets
                     # -----------------------
                     war_circles = [copy.deepcopy(c) for c in peace_circles]
                     for circ in war_circles:
