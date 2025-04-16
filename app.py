@@ -210,10 +210,11 @@ def main():
             # FILTERING UI SECTION
             # -----------------------
             with st.expander("Filter Data"):
-                # Always define filtered_df so it exists no matter what.
-                filtered_df = df.copy() if not df.empty else pd.DataFrame()
-
-                if not df.empty:
+                # If there is a valid df in session state, use it; otherwise, define an empty DataFrame.
+                if "df" in st.session_state and not st.session_state.df.empty:
+                    df = st.session_state.df.copy()
+                    filtered_df = df.copy()
+                    
                     column_options = list(df.columns)
                     default_index = column_options.index("Alliance") if "Alliance" in column_options else 0
                     selected_column = st.selectbox("Select column to filter", column_options, index=default_index, key="filter_select")
@@ -222,7 +223,7 @@ def main():
                         alliances = sorted(df["Alliance"].dropna().unique())
                         default_alliances = ["Freehold of The Wolves"] if "Freehold of The Wolves" in alliances else alliances
                         selected_alliances = st.multiselect("Select Alliance(s) to filter", alliances, default=default_alliances, key="alliance_filter")
-                        st.session_state.selected_alliances = selected_alliances  # Save the selection
+                        st.session_state.selected_alliances = selected_alliances
                         if selected_alliances:
                             filtered_df = filtered_df[filtered_df["Alliance"].isin(selected_alliances)]
                     else:
@@ -236,27 +237,29 @@ def main():
                     
                     st.write(f"Showing results where **{selected_column}** is filtered:")
 
-                    # Compute current resource display from "Resource 1" and "Resource 2"
+                    # Calculate current resources based on "Resource 1" and "Resource 2".
                     if "Resource 1" in filtered_df.columns and "Resource 2" in filtered_df.columns:
                         filtered_df['Current Resource 1+2'] = filtered_df.apply(lambda row: get_resource_1_2(row), axis=1)
 
-                    # Convert the "Created" column and calculate "Days Old", if it exists.
+                    # Convert the "Created" column to datetime and compute "Days Old" if the column exists.
                     if "Created" in filtered_df.columns:
                         date_format = "%m/%d/%Y %I:%M:%S %p"
                         filtered_df['Created'] = pd.to_datetime(filtered_df['Created'], format=date_format, errors='coerce')
                         current_date = datetime.now()
                         filtered_df['Days Old'] = (current_date - filtered_df['Created']).dt.days
 
-                    # Sort by "Ruler Name" and reset the index.
+                    # Sort filtered_df by "Ruler Name" (case-insensitive) and reset index.
                     filtered_df = filtered_df.sort_values(by="Ruler Name", key=lambda col: col.str.lower()).reset_index(drop=True)
                     st.dataframe(filtered_df, use_container_width=True)
+
                 else:
                     st.warning("DataFrame is empty, nothing to filter.")
+                    filtered_df = pd.DataFrame()
 
-                # Always store filtered_df in session state, even if it's an empty DataFrame.
+                # Ensure filtered_df is stored in session state for later usage.
                 st.session_state.filtered_df = filtered_df
 
-                # Save CSV for download.
+                # Also, prepare CSV content for download.
                 csv_content = filtered_df.to_csv(index=False)
                 st.session_state.filtered_csv = csv_content
                 st.download_button("Download Filtered CSV", csv_content, file_name="filtered_nation_stats.csv", mime="text/csv", key="download_csv")
