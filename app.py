@@ -959,43 +959,91 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                 # SUMMARY OVERVIEW SECTION (UI)
                 # -----------------------
                 with st.expander("Summary Overview"):
+                    import pandas as pd
+                    import textwrap
+
+                    # Ensure variables exist; if not, create empty DataFrames.
+                    if 'players_empty' not in st.session_state:
+                        players_empty = pd.DataFrame()
+                    else:
+                        players_empty = st.session_state.players_empty
+
+                    if 'players_full' not in st.session_state:
+                        players_full = pd.DataFrame()
+                    else:
+                        players_full = st.session_state.players_full
+
+                    if 'peacetime_df' not in st.session_state:
+                        peacetime_df = pd.DataFrame()
+                    else:
+                        peacetime_df = st.session_state.peacetime_df
+
+                    if 'wartime_df' not in st.session_state:
+                        wartime_df = pd.DataFrame()
+                    else:
+                        wartime_df = st.session_state.wartime_df
+
+                    if 'df_peace_a' not in st.session_state:
+                        df_peace_a = pd.DataFrame()
+                    else:
+                        df_peace_a = st.session_state.df_peace_a
+
+                    if 'df_peace_b' not in st.session_state:
+                        df_peace_b = pd.DataFrame()
+                    else:
+                        df_peace_b = st.session_state.df_peace_b
+
+                    if 'df_peace_c' not in st.session_state:
+                        df_peace_c = pd.DataFrame()
+                    else:
+                        df_peace_c = st.session_state.df_peace_c
+
                     # Determine the heading based on the Alliance filter selection stored in session state.
                     if "selected_alliances" in st.session_state:
                         alliances = st.session_state.selected_alliances
                     else:
                         alliances = []
-                
+
                     if not alliances or len(alliances) == 0:
                         heading_alliance = "Alliances"
                     elif len(alliances) == 1:
                         heading_alliance = alliances[0]
                     else:
                         heading_alliance = ", ".join(alliances)
-                    
+
                     st.subheader(f"General Statistics for {heading_alliance}")
 
-                    # Total players in either group (empty slots + complete)
+                    # Total players (empty + complete)
                     total_players = len(players_empty) + len(players_full)
                     empty_percentage = (len(players_empty) / total_players * 100) if total_players else 0
 
-                    # For players in complete trade circles, count unique mismatches using consolidated DataFrames.
+                    # For players in complete trade circles, count mismatches using available DataFrames.
                     total_full = len(players_full)
-                    unique_peacetime_mismatch = peacetime_df['Nation ID'].nunique() if not peacetime_df.empty else 0
-                    unique_wartime_mismatch = wartime_df['Nation ID'].nunique() if not wartime_df.empty else 0
+                    unique_peacetime_mismatch = (
+                        peacetime_df['Nation ID'].nunique() if (not peacetime_df.empty and 'Nation ID' in peacetime_df.columns) else 0
+                    )
+                    unique_wartime_mismatch = (
+                        wartime_df['Nation ID'].nunique() if (not wartime_df.empty and 'Nation ID' in wartime_df.columns) else 0
+                    )
                     peacetime_mismatch_percentage = (unique_peacetime_mismatch / total_full * 100) if total_full else 0
                     wartime_mismatch_percentage = (unique_wartime_mismatch / total_full * 100) if total_full else 0
 
                     st.write(f"**Total Alliance Members:** {total_players} (Not Including Pending)")
                     st.write(f"**Members with Empty Trade Slots:** {len(players_empty)} ({empty_percentage:.2f}%)")
                     st.write(f"**Members in Complete Trade Circle:** {total_full}")
-                    
-                    # Break down the peacetime mismatches by Peace Mode Level
-                    unique_peaceA = df_peace_a['Nation ID'].nunique() if not df_peace_a.empty else 0
-                    unique_peaceB = df_peace_b['Nation ID'].nunique() if not df_peace_b.empty else 0
-                    unique_peaceC = df_peace_c['Nation ID'].nunique() if not df_peace_c.empty else 0
-                    
+
+                    # Break down the peacetime mismatches by Peace Mode Level.
+                    unique_peaceA = (
+                        df_peace_a['Nation ID'].nunique() if (not df_peace_a.empty and 'Nation ID' in df_peace_a.columns) else 0
+                    )
+                    unique_peaceB = (
+                        df_peace_b['Nation ID'].nunique() if (not df_peace_b.empty and 'Nation ID' in df_peace_b.columns) else 0
+                    )
+                    unique_peaceC = (
+                        df_peace_c['Nation ID'].nunique() if (not df_peace_c.empty and 'Nation ID' in df_peace_c.columns) else 0
+                    )
                     total_peace_mismatch = unique_peaceA + unique_peaceB + unique_peaceC
-                    
+
                     st.markdown("#### Peacetime Mismatches Breakdown by Level")
                     st.write(f"- **Level A** (< 1000 days old): **{unique_peaceA}**")
                     st.write(f"- **Level B** (1000 to 2000 days old): **{unique_peaceB}**")
