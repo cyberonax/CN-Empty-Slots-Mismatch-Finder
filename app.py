@@ -739,62 +739,6 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
 
 
                 # -----------------------
-                # EXPORT/WRITE EXCEL FILE FOR DOWNLOAD WITH ADDITIONAL WORKSHEETS
-                # -----------------------
-                sheets = {}  # Ensure sheets is initialized
-
-                # Build trade circle export entries based on final_circles
-                trade_circle_entries = []
-                for circle in final_circles:
-                    circle_type = circle[0].get("Trade Circle Category", "Uncategorized")
-                    trade_circle_id = ".".join([str(p.get('Nation ID', '')) for p in circle if p.get('Nation ID')])
-                    for player in circle:
-                        trade_circle_entries.append({
-                            "Category": f"{circle_type} Recommended Trade Circle",
-                            "Circle Type": circle_type,
-                            "Trade Circle ID": trade_circle_id,
-                            "Nation ID": player.get('Nation ID', ''),
-                            "Ruler Name": player.get('Ruler Name', ''),
-                            "Nation Name": player.get('Nation Name', ''),
-                            "Team": player.get('Team', ''),
-                            "Current Resources": player.get('Current Resources', ''),
-                            "Current Resource 1+2": get_resource_1_2(player),
-                            "Activity": player.get('Activity', ''),
-                            "Days Old": player.get('Days Old', ''),
-                            "Assigned Resources": ", ".join(player.get('Assigned Resource 1+2', [])) if player.get('Assigned Resource 1+2') else "None"
-                        })
-                
-                if trade_circle_entries:
-                    trade_circle_df = pd.DataFrame(trade_circle_entries)
-                    sheets["Trade Circles"] = add_nation_drill_url(trade_circle_df)
-                    
-                # -----------------------
-                # GENERATE MESSAGE TEMPLATES FOR TRADE CIRCLES FROM final_circles
-                # -----------------------
-                def generate_trade_circle_messages(circles):
-                    # First, filter out any empty circles.
-                    non_empty_circles = [circle for circle in circles if circle]
-                    messages = []
-                    for circle in non_empty_circles:
-                        circle_type = circle[0].get("Trade Circle Category", "Uncategorized")
-                        nation_names = [player.get('Ruler Name', '') for player in circle if player.get('Ruler Name')]
-                        for player in circle:
-                            partners = [name for name in nation_names if name != player.get('Ruler Name', '')]
-                            msg = (
-                                f"To The Ruler: {player.get('Ruler Name', '')}, please join a Trade Circle with partners: "
-                                f"{', '.join(partners)}. Your assigned resource pair is "
-                                f"{', '.join(player.get('Assigned Resource 1+2', [])) if player.get('Assigned Resource 1+2') else 'None'}. -Lord of Growth."
-                            )
-                            messages.append({"Message Type": f"{circle_type} Trade Circle", "Message": msg})
-                    return messages
-                
-                message_entries = generate_trade_circle_messages(final_circles)
-                
-                if message_entries:
-                    messages_df = pd.DataFrame(message_entries)
-                    sheets["Message Templates"] = messages_df.copy()
-
-                # -----------------------
                 # COMPARATIVE ALLIANCE STATS (EXAMPLE)
                 # -----------------------
                 if "Alliance" in df.columns:
