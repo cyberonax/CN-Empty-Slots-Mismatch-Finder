@@ -902,7 +902,8 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                 # EXPORT/WRITE EXCEL FILE FOR DOWNLOAD WITH ADDITIONAL WORKSHEETS
                 # -----------------------
                 sheets = {}  # Ensure sheets is initialized
-                
+                final_circles = combined_peace_circles + filled_war_circles
+
                 # Build trade circle export entries based on final_circles
                 trade_circle_entries = []
                 for circle in final_circles:
