@@ -802,7 +802,7 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                     # Total players in either group (empty slots + complete)
                     total_players = len(players_empty) + len(players_full)
                     empty_percentage = (len(players_empty) / total_players * 100) if total_players else 0
-                    full_percentage = (total_players - len(players_empty) / total_players * 100) if total_players else 0
+                    full_percentage = ((total_players - len(players_empty)) / total_players * 100) if total_players else 0
 
                     # For players in complete trade circles, count unique mismatches using consolidated DataFrames.
                     total_full = len(players_full)
