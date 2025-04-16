@@ -849,42 +849,7 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                     """)
                     st.markdown(action_plan)
 
-                # -----------------------
-                # WRITE EXCEL FILE FOR DOWNLOAD
-                # -----------------------
-                output = io.BytesIO()
-                with pd.ExcelWriter(output, engine='openpyxl') as writer:
-                    for sheet_name, df_sheet in sheets.items():
-                        df_sheet.to_excel(writer, sheet_name=sheet_name, index=False)
-                    
-                    workbook = writer.book
-                    from openpyxl.utils.dataframe import dataframe_to_rows
-                    from openpyxl.styles import Font, Border, Side, Alignment
-                    header_font = Font(bold=True)
-                    thin_border = Border(left=Side(style='thin'), right=Side(style='thin'),
-                                         top=Side(style='thin'), bottom=Side(style='thin'))
-                    
-                    def format_header(ws):
-                        for cell in ws[1]:
-                            cell.font = header_font
-                            cell.border = thin_border
-                    
-                    # Add any additional formatting or worksheets if needed.
-                    # No need to call writer.save() explicitly within the context.
-                    
-                output.seek(0)
-                excel_data = output.read()
-                # -----------------------
-                # DOWNLOAD ALL DATA EXCEL (positioned at the bottom of the page)
-                # -----------------------
-                st.markdown("### Download All Processed Data")
-                if excel_data:
-                    st.download_button("Download Summary Report", excel_data, 
-                                       file_name="full_summary_report.xlsx", 
-                                       mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", 
-                                       key="download_report")
-                else:
-                    st.info("No data available for download.")
+
     else:
         st.info("Please enter the correct password to access the functionality.")
 
