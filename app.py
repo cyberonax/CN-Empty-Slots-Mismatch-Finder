@@ -308,7 +308,7 @@ def main():
                 # PLAYERS WITH EMPTY TRADE SLOTS
                 # -----------------------
                 with st.expander("Players with empty trade slots (active recently)"):
-                    display_cols = ['Nation ID', 'Ruler Name', 'Nation Name', 'Team',
+                    display_cols = ['Ruler Name', 'Alliance', 'Alliance Status', 'Team',
                                     'Current Resources', 'Current Resource 1+2',
                                     'Empty Slots Count', 'Activity', 'Days Old']
                     players_empty = players_empty.sort_values(by="Ruler Name", key=lambda col: col.str.lower()).reset_index(drop=True)
