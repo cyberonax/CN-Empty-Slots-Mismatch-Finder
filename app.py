@@ -489,8 +489,8 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                         
                         base_info = {
                             'Ruler Name': row['Ruler Name'],
-                            'Alliance': row['Alliance Status'],
-                            'Alliance Status': row['Alliance'],
+                            'Alliance': row['Alliance'],
+                            'Alliance Status': row['Alliance Status'],
                             'Team': row['Team'],
                             'Current Resources': row['Current Resources'],
                             'Current Resource 1+2': get_resource_1_2(row),
