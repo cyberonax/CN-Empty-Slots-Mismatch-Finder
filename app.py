@@ -631,146 +631,79 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                         "Separate Trade Circle blocks with an empty line. Using a spreadsheet for correct formatting is recommended.",
                         height=200
                     )
-
+                
                     st.markdown("### Filter Out Players")
                     st.markdown("Enter one value per line to filter out players by matching **Ruler Name** or **Nation Name**:")
                     filter_text = st.text_area("", height=100)
                     # Build a lowercase set of exclusion values (only using Ruler Name and Nation Name)
                     filter_set = set(line.strip().lower() for line in filter_text.splitlines() if line.strip())
-
-                    # --- Calculate Majority Team for Each Selected Alliance ---
-                    # (Assumes st.session_state.selected_alliances and st.session_state.filtered_df already exist.)
-                    majority_team_by_alliance = {}
-                    if "selected_alliances" in st.session_state and "filtered_df" in st.session_state:
-                        filtered_df = st.session_state.filtered_df
-                        for alliance in st.session_state.selected_alliances:
-                            df_alliance = filtered_df[filtered_df["Alliance"] == alliance]
-                            if not df_alliance.empty:
-                                majority_team_by_alliance[alliance] = df_alliance['Team'].mode()[0]
-
-                    # Get the set of Ruler Names that survived the "Filter Data" step
-                    if "filtered_df" in st.session_state:
-                        filtered_rulers = set(
-                            st.session_state.filtered_df["Ruler Name"]
-                            .dropna()
-                            .str.lower()
-                            .tolist()
-                        )
-                    else:
-                        filtered_rulers = set()
-
-                    # --- Define refined eligibility check ---
-                    def refined_eligible(player):
-                        """
-                        A player is eligible if:
-                          - Their Alliance is in the selected alliances.
-                          - Their Activity score is less than 14.
-                          - Their Team matches the majority team (from the filtered data) for their alliance.
-                          - Neither their Ruler Name nor Nation Name appears in the exclusion list.
-                        """
-                        if player.get("Alliance") not in st.session_state.selected_alliances:
-                            return False
-                        try:
-                            activity = float(player.get("Activity", 99))
-                        except:
-                            activity = 99
-                        if activity >= 14:
-                            return False
-                        alliance = player.get("Alliance")
-                        if alliance in majority_team_by_alliance and player.get("Team") != majority_team_by_alliance[alliance]:
-                            return False
-                        lookup_fields = []
-                        if player.get("Ruler Name"):
-                            lookup_fields.append(player.get("Ruler Name").lower())
-                        if player.get("Nation Name"):
-                            lookup_fields.append(player.get("Nation Name").lower())
-                        if any(val in filter_set for val in lookup_fields):
-                            return False
-                        name = (player.get("Ruler Name") or "").lower()
-                        if name not in filtered_rulers:
-                            return False
-                        return True
-
-                    # --- Parse the Pasted Trade Circle Text into Blocks ---
-                    blocks = []
-                    current_block = []
+                
+                    # Compute alliance majority Team for additional filtering
+                    selected_alliances = st.session_state.get("selected_alliances", [])
+                    majority_team = None
+                    if selected_alliances and "filtered_df" in st.session_state:
+                        alliance_df = st.session_state.filtered_df[
+                            st.session_state.filtered_df["Alliance"].isin(selected_alliances)
+                        ]
+                        if not alliance_df.empty and "Team" in alliance_df.columns:
+                            majority_team = alliance_df["Team"].mode().iloc[0]
+                
+                    # Parse and filter trade circle data
+                    trade_rows = []
+                    circle_id = 1
                     for line in trade_circle_text.splitlines():
-                        line = line.strip()
-                        if not line:
-                            if current_block:
-                                blocks.append(current_block)
-                                current_block = []
-                        else:
-                            current_block.append(line)
-                    if current_block:
-                        blocks.append(current_block)
-
-                    # --- Build the Initial List of Trade Circle Blocks ---
-                    pasted_circles = []
-                    for block in blocks:
-                        circle = []
-                        for line in block:
-                            fields = [f.strip() for f in line.split("\t")]
-                            if len(fields) < 7:
-                                continue  # Skip lines not meeting minimum fields.
-                            if not fields[0] or fields[0].lower() == "x":
-                                circle.append({
-                                    "Ruler Name": None,
-                                    "Resource 1+2": fields[1] if len(fields) > 1 else None,
-                                    "Alliance": fields[2] if len(fields) > 2 else None,
-                                    "Team": fields[3] if len(fields) > 3 else None,
-                                    "Days Old": None,
-                                    "Nation Drill Link": fields[5] if len(fields) > 5 else None,
-                                    "Activity": fields[6] if len(fields) > 6 else None,
-                                    "Empty": True
-                                })
-                            else:
-                                try:
-                                    days_old = float(fields[4])
-                                except:
-                                    days_old = None
-                                player = {
-                                    "Ruler Name": fields[0],
-                                    "Resource 1+2": fields[1],
-                                    "Alliance": fields[2],
-                                    "Team": fields[3],
-                                    "Days Old": days_old,
-                                    "Nation Drill Link": fields[5],
-                                    "Activity": fields[6],
-                                    "Empty": False
-                                }
-                                if refined_eligible(player):
-                                    circle.append(player)
-                        if circle:
-                            pasted_circles.append(circle)
-
-                    # --- Sort Circles by Number of Empty Slots (fewer empties come first) ---
-                    def circle_empty_slots(circle):
-                        return sum(1 for p in circle if p.get("Empty"))
-                    pasted_circles = sorted(pasted_circles, key=circle_empty_slots)
-
-                    # --- Build a Pool of Eligible (Non-Empty) Players from All Circles ---
-                    pool = []
-                    for circle in pasted_circles:
-                        for player in circle:
-                            if not player.get("Empty") and refined_eligible(player):
-                                # Annotate with Peace Mode level based on Days Old.
-                                player["Peace Level"] = get_peace_level(player.get("Days Old"))
-                                pool.append(player)
-
-                    # --- Categorize Players by Peace Mode Level ---
-                    pool_A = [p for p in pool if p.get("Peace Level") == "A"]
-                    pool_B = [p for p in pool if p.get("Peace Level") == "B"]
-                    pool_C = [p for p in pool if p.get("Peace Level") == "C"]
-
-                    st.markdown("#### Players by Peace Mode Level")
-                    st.markdown("**Level A (< 1000 days):**")
-                    st.dataframe(pd.DataFrame(pool_A))
-                    st.markdown("**Level B (1000 to 2000 days):**")
-                    st.dataframe(pd.DataFrame(pool_B))
-                    st.markdown("**Level C (>= 2000 days):**")
-                    st.dataframe(pd.DataFrame(pool_C))
-
+                        # Blank line separates trade circles
+                        if not line.strip():
+                            circle_id += 1
+                            continue
+                
+                        parts = line.split("\t")
+                        # Skip invalid or placeholder rows
+                        if len(parts) != 7:
+                            continue
+                
+                        ruler, resources, alliance, team, days_old, url, activity = [p.strip() for p in parts]
+                
+                        # Filter out rows starting with 'x' or blank ruler
+                        if ruler.lower().startswith('x') or ruler == "":
+                            continue
+                
+                        # Additional filters:
+                        # - Must be in selected Alliance(s)
+                        if selected_alliances and alliance not in selected_alliances:
+                            continue
+                        # - Must match alliance majority Team
+                        if majority_team and team != majority_team:
+                            continue
+                        # - Must have Activity less than 14
+                        try:
+                            act_val = float(activity)
+                        except ValueError:
+                            act_val = None
+                        if act_val is not None and act_val >= 14:
+                            continue
+                        # - Exclude filtered players
+                        if ruler.lower() in filter_set:
+                            continue
+                
+                        # Build row
+                        trade_rows.append({
+                            "Trade Circle ID": circle_id,
+                            "Ruler Name":      ruler,
+                            "Resources":       resources,
+                            "Alliance":        alliance,
+                            "Team":            team,
+                            "Days Old":        days_old,
+                            "Activity":        activity,
+                            "Nation Drill URL": url
+                        })
+                
+                    # Display results if any
+                    if trade_rows:
+                        trade_df = pd.DataFrame(trade_rows)
+                        st.dataframe(trade_df, use_container_width=True)
+                    else:
+                        st.info("No valid Trade Circle entries found after filtering.")
 
                 # -----------------------
                 # COMPARATIVE ALLIANCE STATS (EXAMPLE)
