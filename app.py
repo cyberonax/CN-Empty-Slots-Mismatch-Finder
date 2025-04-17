@@ -681,6 +681,30 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                     else:
                         st.info("No valid Trade Circle entries found after filtering.")
 
+                # -----------------------
+                # REMAINING ALLIANCE MEMBERS SECTION
+                # -----------------------
+                with st.expander("Remaining Alliance Members"):
+                    used = {r["Ruler Name"] for r in rows}
+                    df_rem = st.session_state.get("filtered_df", pd.DataFrame()).copy()
+                    df_rem["Activity"] = pd.to_numeric(df_rem["Activity"], errors="coerce")
+                    df_rem["Days Old"] = pd.to_numeric(df_rem["Days Old"], errors="coerce")
+                    df_rem = df_rem[~df_rem["Ruler Name"].isin(used)]
+                    if maj:
+                        df_rem = df_rem[df_rem["Team"] == maj]
+                    df_rem = df_rem[df_rem["Activity"] < 14]
+                    if "Alliance Status" in df_rem.columns:
+                        df_rem = df_rem[df_rem["Alliance Status"] != "Pending"]
+                    df_rem = df_rem[
+                        ~df_rem["Ruler Name"].str.lower().isin(filter_set) &
+                        ~df_rem["Nation Name"].str.lower().isin(filter_set)
+                    ]
+                    if df_rem.empty:
+                        st.info("No remaining members after filtering.")
+                    else:
+                        df_rem = df_rem.sort_values("Ruler Name", key=lambda col: col.str.lower()).reset_index(drop=True)
+                        st.dataframe(df_rem[["Ruler Name","Current Resource 1+2","Alliance","Team","Days Old","Activity"]], use_container_width=True)
+
 
                 # -----------------------
                 # COMPARATIVE ALLIANCE STATS (EXAMPLE)
