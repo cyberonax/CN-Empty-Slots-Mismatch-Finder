@@ -9,7 +9,8 @@ from datetime import datetime, timedelta
 from collections import Counter  # Added for duplicate resource counting
 import textwrap  # For dedenting multi-line strings
 from openpyxl.utils.dataframe import dataframe_to_rows
-from openpyxl.styles import Font, Border, Side
+from openpyxl.utils import get_column_letter
+from openpyxl.styles import Font, Border, Side, Alignment
 import warnings
 import numpy as np
 from scipy.optimize import linear_sum_assignment
@@ -776,9 +777,6 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                         df_sheet.to_excel(writer, sheet_name=sheet_name, index=False)
 
                     workbook = writer.book
-                    from openpyxl.utils.dataframe import dataframe_to_rows
-                    from openpyxl.styles import Font, Border, Side, Alignment
-                    from openpyxl.utils import get_column_letter
                     header_font = Font(bold=True)
                     thin_border = Border(left=Side(style='thin'), right=Side(style='thin'),
                                         top=Side(style='thin'), bottom=Side(style='thin'))
