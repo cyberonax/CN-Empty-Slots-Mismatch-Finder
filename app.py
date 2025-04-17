@@ -308,16 +308,29 @@ def main():
                 # PLAYERS WITH EMPTY TRADE SLOTS
                 # -----------------------
                 with st.expander("Players with empty trade slots (active recently)"):
+                    # --- NEW: build the Nation Drill Link ---
+                    # if you already have add_nation_drill_url(), you can use that:
+                    # players_empty = add_nation_drill_url(players_empty)
+                    # or inline:
                     players_empty = players_empty.copy()
                     players_empty['Nation Drill Link'] = (
                         "https://www.cybernations.net/nation_drill_display.asp?Nation_ID="
                         + players_empty['Nation ID'].astype(str)
                     )
-                    display_cols = ['Ruler Name', 'Alliance', 'Alliance Status', 'Team',
-                                    'Current Resources', 'Current Resource 1+2',
-                                    'Empty Slots Count', 'Activity', 'Days Old', 'Nation Drill Link']
+                
+                    # define which columns to show, now including our new link
+                    display_cols = [
+                        'Ruler Name', 'Alliance', 'Alliance Status', 'Team',
+                        'Current Resources', 'Current Resource 1+2',
+                        'Empty Slots Count', 'Activity', 'Days Old',
+                        'Nation Drill Link'
+                    ]
+                
+                    # sort & reset index as before
                     players_empty = players_empty.sort_values(by="Ruler Name", key=lambda col: col.str.lower()).reset_index(drop=True)
-                    st.dataframe(players_empty[display_cols].reset_index(drop=True), use_container_width=True)
+                
+                    # show it!
+                    st.dataframe(players_empty[display_cols].reset_index(drop=True),use_container_width=True)
 
                 # ---- New Filter: Exclude players with Alliance Status "Pending" ----
                 if "Alliance Status" in players_empty.columns:
