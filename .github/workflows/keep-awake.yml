@@ -13,4 +13,4 @@ jobs:
       - name: Ping Streamlit app
         run: |
           # Quietly request your app URL so it counts as activity
-          curl -sSf https://cntradecircle.streamlit.app/ -o /dev/null
+          curl -sSf https://cn-empty-slots-resource-mismatch-finder.streamlit.app/ -o /dev/null
