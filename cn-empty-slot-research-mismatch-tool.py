@@ -781,13 +781,16 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                     thin_border = Border(left=Side(style='thin'), right=Side(style='thin'),
                                         top=Side(style='thin'), bottom=Side(style='thin'))
 
+                    for sheet_name, df_sheet in sheets.items():
+                        # coerce any column that pandas thinks can be numeric
+                        for col in df_sheet.columns:
+                            df_sheet[col] = pd.to_numeric(df_sheet[col], errors='ignore')
+                        df_sheet.to_excel(writer, sheet_name=sheet_name, index=False)
+
                     def format_header(ws):
                         for cell in ws[1]:
                             cell.font = header_font
                             cell.border = thin_border
-                    for ws in workbook.worksheets:
-                        format_header(ws)
-
                     for ws in workbook.worksheets:
                         format_header(ws)
 
@@ -804,8 +807,13 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                             col_letter = get_column_letter(col_cells[0].column)
                             ws.column_dimensions[col_letter].width = adjusted_width
 
-                output.seek(0)
-                excel_data = output.read()
+                    center = Alignment(horizontal='center', vertical='center')
+                    for ws in workbook.worksheets:
+                        for row in ws.iter_rows():
+                            for cell in row:
+                                cell.alignment = center
+                                output.seek(0)
+                                excel_data = output.read()
 
                 # -----------------------
                 # DOWNLOAD ALL DATA EXCEL (positioned at the bottom of the page)
