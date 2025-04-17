@@ -817,7 +817,7 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                 excel_data = output.read()
                 
                 # -----------------------
-                # DOWNLOAD BUTTON
+                # DOWNLOAD ALL DATA EXCEL
                 # -----------------------
                 st.markdown("### Download All Processed Data")
                 if excel_data:
@@ -826,27 +826,6 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                         "Download Summary Report",
                         excel_data,
                         file_name=f"full_summary_report_{date_str}.xlsx",
-                        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                        key="download_report"
-                    )
-                else:
-                    st.info("No data available for download.")
-
-                # -----------------------
-                # DOWNLOAD ALL DATA EXCEL (positioned at the bottom of the page)
-                # -----------------------
-                # build a date string like "20250417"
-                date_str = datetime.now().strftime("%Y-%m-%d")
-
-                # then inject it into your filename
-                file_name = f"full_summary_report_{date_str}.xlsx"
-
-                st.markdown("### Download All Processed Data")
-                if excel_data:
-                    st.download_button(
-                        "Download Summary Report",
-                        excel_data,
-                        file_name=file_name,
                         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                         key="download_report"
                     )
