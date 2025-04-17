@@ -638,22 +638,26 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                     maj = None
                     if sel_all and (df_all := st.session_state.get("filtered_df")) is not None:
                         mode = df_all.query("Alliance in @sel_all")["Team"].mode()
-                        if not mode.empty: maj = mode.iloc[0]
+                        if not mode.empty:
+                            maj = mode.iloc[0]
+
+                    # parse circles
                     rows, cid = [], 1
                     for line in trade_circle_text.splitlines():
                         if not line.strip():
                             cid += 1
                             continue
-                        parts = line.split("\t")
+                        parts = [p.strip() for p in line.split("\t")]
                         if len(parts) != 7:
                             continue
-                        ruler, res, alli, team, days, url, act = [p.strip() for p in parts]
+                        ruler, res, alli, team, days, url, act = parts
                         if not ruler or ruler.lower().startswith("x"):
                             continue
                         if sel_all and alli not in sel_all:
                             continue
                         if maj and team != maj:
                             continue
+                        # numerical casting
                         try:
                             days_val = int(float(days))
                         except:
@@ -668,42 +672,49 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                             continue
                         rows.append({
                             "Trade Circle Number": cid,
-                            "Ruler Name": ruler,
-                            "Resource 1+2": res,
-                            "Alliance": alli,
-                            "Team": team,
-                            "Days Old": days_val,
-                            "Nation Drill Link": url,
-                            "Activity": act_val
+                            "Ruler Name":          ruler,
+                            "Resource 1+2":        res,
+                            "Alliance":            alli,
+                            "Team":                team,
+                            "Days Old":            days_val,
+                            "Nation Drill Link":   url,
+                            "Activity":            act_val
                         })
+
+                    # display trade circles
                     if rows:
-                        st.dataframe(pd.DataFrame(rows), use_container_width=True)
+                        trade_df = pd.DataFrame(rows)
+                        st.dataframe(trade_df, use_container_width=True)
+
+                        # remaining alliance members
+                        used = set(trade_df["Ruler Name"])
+                        df_rem = st.session_state.get("filtered_df", pd.DataFrame()).copy()
+                        df_rem["Activity"] = pd.to_numeric(df_rem["Activity"], errors="coerce")
+                        df_rem["Days Old"] = pd.to_numeric(df_rem["Days Old"], errors="coerce")
+                        df_rem = df_rem[~df_rem["Ruler Name"].isin(used)]
+                        if maj:
+                            df_rem = df_rem[df_rem["Team"] == maj]
+                        df_rem = df_rem[df_rem["Activity"] < 14]
+                        if "Alliance Status" in df_rem.columns:
+                            df_rem = df_rem[df_rem["Alliance Status"] != "Pending"]
+                        df_rem = df_rem[
+                            ~df_rem["Ruler Name"].str.lower().isin(filter_set) &
+                            ~df_rem["Nation Name"].str.lower().isin(filter_set)
+                        ]
+
+                        if df_rem.empty:
+                            st.info("No remaining members after filtering.")
+                        else:
+                            df_rem = df_rem.sort_values("Ruler Name", key=lambda col: col.str.lower()).reset_index(drop=True)
+                            st.markdown("### Remaining Alliance Members Not in Trade Circles")
+                            st.dataframe(
+                                df_rem[
+                                    ["Ruler Name", "Current Resource 1+2", "Alliance", "Team", "Days Old", "Activity"]
+                                ],
+                                use_container_width=True
+                            )
                     else:
                         st.info("No valid Trade Circle entries found after filtering.")
-
-                # -----------------------
-                # REMAINING ALLIANCE MEMBERS SECTION
-                # -----------------------
-                with st.expander("Remaining Alliance Members"):
-                    used = {r["Ruler Name"] for r in rows}
-                    df_rem = st.session_state.get("filtered_df", pd.DataFrame()).copy()
-                    df_rem["Activity"] = pd.to_numeric(df_rem["Activity"], errors="coerce")
-                    df_rem["Days Old"] = pd.to_numeric(df_rem["Days Old"], errors="coerce")
-                    df_rem = df_rem[~df_rem["Ruler Name"].isin(used)]
-                    if maj:
-                        df_rem = df_rem[df_rem["Team"] == maj]
-                    df_rem = df_rem[df_rem["Activity"] < 14]
-                    if "Alliance Status" in df_rem.columns:
-                        df_rem = df_rem[df_rem["Alliance Status"] != "Pending"]
-                    df_rem = df_rem[
-                        ~df_rem["Ruler Name"].str.lower().isin(filter_set) &
-                        ~df_rem["Nation Name"].str.lower().isin(filter_set)
-                    ]
-                    if df_rem.empty:
-                        st.info("No remaining members after filtering.")
-                    else:
-                        df_rem = df_rem.sort_values("Ruler Name", key=lambda col: col.str.lower()).reset_index(drop=True)
-                        st.dataframe(df_rem[["Ruler Name","Current Resource 1+2","Alliance","Team","Days Old","Activity"]], use_container_width=True)
 
 
                 # -----------------------
