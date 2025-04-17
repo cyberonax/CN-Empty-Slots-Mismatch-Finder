@@ -779,27 +779,29 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                     for name, df_sheet in sheets.items():
                         df = df_sheet.copy()
                     
-                        # ---- coerce your decimal columns ----
+                        # ---- strip commas & coerce your decimal columns to floats ----
                         for col in numeric_cols:
                             if col in df.columns:
                                 df[col] = (
                                     df[col]
-                                    .replace({"N/A": None, "--": None})
+                                    .astype(str)
+                                    .str.replace(",", "", regex=False)
                                     .pipe(pd.to_numeric, errors="coerce")
-                                    .fillna(df[col])   # put the original value back in if it wasn’t numeric
                                 )
                     
-                        # ---- coerce any “%” columns into true floats 0–1 ----
+                        # ---- strip commas & '%' then coerce percentage columns to 0–1 floats ----
                         pct_cols = [c for c in df.columns 
                                     if isinstance(c, str) and c.strip().endswith("%")]
                         for col in pct_cols:
                             df[col] = (
                                 df[col]
                                 .astype(str)
+                                .str.replace(",", "", regex=False)
                                 .str.rstrip("%")
                                 .replace("", pd.NA)
+                                .pipe(pd.to_numeric, errors="coerce")
+                                .div(100)
                             )
-                            df[col] = pd.to_numeric(df[col], errors="coerce").div(100)
                     
                         # write the processed sheet
                         df.to_excel(writer, sheet_name=name, index=False)
@@ -825,7 +827,7 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                 
                     for ws in workbook.worksheets:
                         format_header(ws)
-                
+                        # auto‑fit
                         for col_cells in ws.columns:
                             max_length = max(
                                 len(str(c.value)) if c.value is not None else 0 
@@ -834,24 +836,24 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                             ws.column_dimensions[
                                 get_column_letter(col_cells[0].column)
                             ].width = max_length + 2
-                
+                        # center align
                         for row in ws.iter_rows():
                             for cell in row:
                                 cell.alignment = center
                 
-                    # 6) apply number formatting
+                    # 6) apply number formats (2 dp for numeric, 0.00% for pct)
                     for name, df_sheet in sheets.items():
                         ws = workbook[name]
                         for idx, col_name in enumerate(df_sheet.columns, start=1):
                             if col_name in numeric_cols:
-                                num_fmt = "0.00"
+                                fmt = "0.00"
                             elif isinstance(col_name, str) and col_name.strip().endswith("%"):
-                                num_fmt = "0.00%"
+                                fmt = "0.00%"
                             else:
                                 continue
                             for row in ws.iter_rows(min_row=2, min_col=idx, max_col=idx):
                                 for cell in row:
-                                    cell.number_format = num_fmt
+                                    cell.number_format = fmt
                 
                 # 7) outside the with block, read the buffer once
                 output.seek(0)
