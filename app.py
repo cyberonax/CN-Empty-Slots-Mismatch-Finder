@@ -307,33 +307,30 @@ def main():
                 # -----------------------
                 # PLAYERS WITH EMPTY TRADE SLOTS
                 # -----------------------
-                with st.expander("Players with a complete trade circle (no empty slots)"):
-                    players_full = df_to_use[~mask_empty].copy()
-                
-                    # … your existing calculations for Current Resources, etc. …
-                
-                    # --- NEW: build the Nation Drill Link ---
-                    players_full['Nation Drill Link'] = (
+                with st.expander("Players with empty trade slots (active recently)"):
+                    # 1) make a separate copy for display so we don't mutate the original players_empty
+                    players_empty_display = players_empty.copy()
+                    # 2) append the drill‐link column
+                    players_empty_display['Nation Drill Link'] = (
                         "https://www.cybernations.net/nation_drill_display.asp?Nation_ID="
-                        + players_full['Nation ID'].astype(str)
+                        + players_empty_display['Nation ID'].astype(str)
                     )
                 
-                    # define which columns to show, now including our new link
-                    display_cols_full = [
+                    # 3) define a fresh column list just for this view
+                    display_cols_empty = [
                         'Ruler Name', 'Alliance', 'Alliance Status', 'Team',
                         'Current Resources', 'Current Resource 1+2',
                         'Empty Slots Count', 'Activity', 'Days Old',
                         'Nation Drill Link'
                     ]
                 
-                    # sort & reset index as before
-                    players_full = players_full.sort_values(
+                    # 4) sort & reset index, then show
+                    players_empty_display = players_empty_display.sort_values(
                         by="Ruler Name", key=lambda col: col.str.lower()
                     ).reset_index(drop=True)
                 
-                    # show it!
                     st.dataframe(
-                        players_full[display_cols_full].reset_index(drop=True),
+                        players_empty_display[display_cols_empty],
                         use_container_width=True
                     )
 
