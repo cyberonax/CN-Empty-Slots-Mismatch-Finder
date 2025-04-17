@@ -782,7 +782,12 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                         # ---- coerce your decimal columns ----
                         for col in numeric_cols:
                             if col in df.columns:
-                                df[col] = pd.to_numeric(df[col], errors="coerce")
+                                df[col] = (
+                                    df[col]
+                                    .replace({"N/A": None, "--": None})
+                                    .pipe(pd.to_numeric, errors="coerce")
+                                    .fillna(df[col])   # put the original value back in if it wasn’t numeric
+                                )
                     
                         # ---- coerce any “%” columns into true floats 0–1 ----
                         pct_cols = [c for c in df.columns 
