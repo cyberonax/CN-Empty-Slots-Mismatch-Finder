@@ -664,7 +664,7 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                         if ruler.lower() in filter_set:
                             continue
                         rows.append({
-                            "Trade Circle ID": cid,
+                            "Circle": cid,
                             "Ruler Name": ruler,
                             "Resource 1+2": res,
                             "Alliance": alli,
