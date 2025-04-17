@@ -731,6 +731,32 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                     """)
                     st.markdown(action_plan)
 
+                    # -----------------------
+                    # BUILD SUMMARY OVERVIEW SHEET
+                    # -----------------------
+
+                    summary_data = {
+                        "Metric": [
+                            "Total Alliance Members",
+                            "Members with Empty Trade Slots",
+                            "Members in Complete Trade Circle",
+                            "Unique Peacetime Mismatches",
+                            "Unique Wartime Mismatches",
+                            "Peacetime Mismatch % of Complete",
+                            "Wartime Mismatch % of Complete"
+                        ],
+                        "Value": [
+                            total_players,
+                            len(players_empty),
+                            total_full,
+                            unique_peacetime_mismatch,
+                            unique_wartime_mismatch,
+                            f"{peacetime_mismatch_percentage:.2f}%",
+                            f"{wartime_mismatch_percentage:.2f}%"
+                        ]
+                    }
+                    summary_df = pd.DataFrame(summary_data)
+
                 # -----------------------
                 # WRITE EXCEL FILE FOR DOWNLOAD
                 # -----------------------
@@ -743,8 +769,8 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                         "Full Circles": players_full if 'players_full' in locals() else pd.DataFrame(),
                         "Peacetime Mismatches": peacetime_df,
                         "Wartime Mismatches": wartime_df,
-                        # add Comparative Alliance Stats if you wish:
-                        # "Comparative Alliance Stats": comp_stats_df
+                        "Comparative Alliance Stats": comp_stats_df
+                        "Summary Overview": summary_df
                     }
                     for sheet_name, df_sheet in sheets.items():
                         df_sheet.to_excel(writer, sheet_name=sheet_name, index=False)
