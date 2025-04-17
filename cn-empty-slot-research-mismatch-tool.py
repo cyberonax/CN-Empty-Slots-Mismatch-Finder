@@ -785,18 +785,18 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                                 df[col] = pd.to_numeric(df[col], errors="coerce")
                     
                         # ---- coerce any “%” columns into true floats 0–1 ----
-                        pct_cols = [c for c in df.columns if isinstance(c, str) and c.strip().endswith("%")]
+                        pct_cols = [c for c in df.columns 
+                                    if isinstance(c, str) and c.strip().endswith("%")]
                         for col in pct_cols:
                             df[col] = (
                                 df[col]
                                 .astype(str)
                                 .str.rstrip("%")
                                 .replace("", pd.NA)
-                                .astype(float, errors="ignore")
-                                .div(100)
                             )
+                            df[col] = pd.to_numeric(df[col], errors="coerce").div(100)
                     
-                        # now write
+                        # write the processed sheet
                         df.to_excel(writer, sheet_name=name, index=False)
                 
                     # 3) grab the workbook object
@@ -806,8 +806,8 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                     from openpyxl.styles import Font, Border, Side, Alignment
                     header_font = Font(bold=True)
                     thin_border = Border(
-                        left=Side(style='thin'), right=Side(style='thin'),
-                        top=Side(style='thin'), bottom=Side(style='thin')
+                        left=Side(style="thin"), right=Side(style="thin"),
+                        top=Side(style="thin"), bottom=Side(style="thin")
                     )
                     def format_header(ws):
                         for cell in ws[1]:
@@ -816,27 +816,39 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                 
                     # 5) auto‑fit widths & center align
                     from openpyxl.utils import get_column_letter
-                    center = Alignment(horizontal='center', vertical='center')
+                    center = Alignment(horizontal="center", vertical="center")
                 
                     for ws in workbook.worksheets:
                         format_header(ws)
                 
-                        # auto‑fit
                         for col_cells in ws.columns:
                             max_length = max(
-                                len(str(c.value)) if c.value is not None else 0
+                                len(str(c.value)) if c.value is not None else 0 
                                 for c in col_cells
                             )
                             ws.column_dimensions[
                                 get_column_letter(col_cells[0].column)
                             ].width = max_length + 2
                 
-                        # center align
                         for row in ws.iter_rows():
                             for cell in row:
                                 cell.alignment = center
                 
-                # 6) outside the `with` block, read the buffer once
+                    # 6) apply number formatting
+                    for name, df_sheet in sheets.items():
+                        ws = workbook[name]
+                        for idx, col_name in enumerate(df_sheet.columns, start=1):
+                            if col_name in numeric_cols:
+                                num_fmt = "0.00"
+                            elif isinstance(col_name, str) and col_name.strip().endswith("%"):
+                                num_fmt = "0.00%"
+                            else:
+                                continue
+                            for row in ws.iter_rows(min_row=2, min_col=idx, max_col=idx):
+                                for cell in row:
+                                    cell.number_format = num_fmt
+                
+                # 7) outside the with block, read the buffer once
                 output.seek(0)
                 excel_data = output.read()
                 
