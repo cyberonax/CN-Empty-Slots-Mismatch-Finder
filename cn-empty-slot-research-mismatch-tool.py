@@ -774,11 +774,31 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                         "Summary Overview": summary_df
                     }
                 
-                    # 2) coerce numeric & write each sheet
+                    # 2) coerce only specific columns & write each sheet
+                    numeric_cols = ["Technology", "Infrastructure", "Base Land", "Strength"]
                     for name, df_sheet in sheets.items():
-                        for col in df_sheet.columns:
-                            df_sheet[col] = pd.to_numeric(df_sheet[col], errors='ignore')
-                        df_sheet.to_excel(writer, sheet_name=name, index=False)
+                        df = df_sheet.copy()
+                    
+                        # ---- coerce your decimal columns ----
+                        for col in numeric_cols:
+                            if col in df.columns:
+                                df[col] = pd.to_numeric(df[col], errors="coerce")
+                    
+                        # ---- coerce any “%” columns into true floats 0–1 ----
+                        pct_cols = [c for c in df.columns if isinstance(c, str) and c.strip().endswith("%")]
+                        for col in pct_cols:
+                            # strip the “%”, parse, then divide by 100
+                            df[col] = (
+                                df[col]
+                                .astype(str)
+                                .str.rstrip("%")
+                                .replace("", pd.NA)
+                                .astype(float, errors="ignore")
+                                .div(100)
+                            )
+                    
+                        # now write
+                        df.to_excel(writer, sheet_name=name, index=False)
                 
                     # 3) grab the workbook object
                     workbook = writer.book
