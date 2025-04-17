@@ -686,35 +686,65 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                         trade_df = pd.DataFrame(rows)
                         st.dataframe(trade_df, use_container_width=True)
 
-                        # remaining alliance members
+                        # -----------------------
+                        # REMAINING ALLIANCE MEMBERS NOT IN TRADE CIRCLES
+                        # -----------------------
+
+                        # 1. who we’ve already used:
                         used = set(trade_df["Ruler Name"])
+
+                        # 2. copy the filtered alliance DataFrame
                         df_rem = st.session_state.get("filtered_df", pd.DataFrame()).copy()
-                        df_rem["Activity"] = pd.to_numeric(df_rem["Activity"], errors="coerce")
-                        df_rem["Days Old"] = pd.to_numeric(df_rem["Days Old"], errors="coerce")
+
+                        # 3. parse textual Activity → numeric days
+                        import re, numpy as np
+                        def parse_act(x):
+                            if pd.isna(x): return np.nan
+                            s = str(x).lower()
+                            if "today" in s: return 0
+                            if "yesterday" in s: return 1
+                            m = re.search(r"active\s+(\d+)\s+days?\s+ago", s)
+                            return int(m.group(1)) if m else np.nan
+
+                        df_rem["Activity Days"] = df_rem["Activity"].apply(parse_act)
+
+                        # 4. drop anyone already in a circle
                         df_rem = df_rem[~df_rem["Ruler Name"].isin(used)]
+
+                        # 5. majority‑team filter
                         if maj:
                             df_rem = df_rem[df_rem["Team"] == maj]
-                        df_rem = df_rem[df_rem["Activity"] < 14]
+
+                        # 6. the new numeric‑activity filter
+                        df_rem = df_rem[df_rem["Activity Days"] < 14]
+
+                        # 7. drop pendings
                         if "Alliance Status" in df_rem.columns:
                             df_rem = df_rem[df_rem["Alliance Status"] != "Pending"]
+
+                        # 8. drop any you explicitly “filtered out”
                         df_rem = df_rem[
                             ~df_rem["Ruler Name"].str.lower().isin(filter_set) &
                             ~df_rem["Nation Name"].str.lower().isin(filter_set)
                         ]
 
+                        # 9. finally sort by Ruler Name
+                        df_rem = df_rem.sort_values("Ruler Name", key=lambda c: c.str.lower()).reset_index(drop=True)
+
+                        # 10. show it
                         if df_rem.empty:
                             st.info("No remaining members after filtering.")
                         else:
-                            df_rem = df_rem.sort_values("Ruler Name", key=lambda col: col.str.lower()).reset_index(drop=True)
                             st.markdown("### Remaining Alliance Members Not in Trade Circles")
                             st.dataframe(
                                 df_rem[
-                                    ["Ruler Name", "Current Resource 1+2", "Alliance", "Team", "Days Old", "Activity"]
+                                    ["Ruler Name","Current Resource 1+2","Alliance","Team","Days Old","Activity Days"]
                                 ],
                                 use_container_width=True
                             )
                     else:
                         st.info("No valid Trade Circle entries found after filtering.")
+
 
 
                 # -----------------------
