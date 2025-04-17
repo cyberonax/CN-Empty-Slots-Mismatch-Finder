@@ -778,6 +778,7 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                     workbook = writer.book
                     from openpyxl.utils.dataframe import dataframe_to_rows
                     from openpyxl.styles import Font, Border, Side, Alignment
+                    from openpyxl.utils import get_column_letter
                     header_font = Font(bold=True)
                     thin_border = Border(left=Side(style='thin'), right=Side(style='thin'),
                                         top=Side(style='thin'), bottom=Side(style='thin'))
@@ -786,10 +787,24 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                         for cell in ws[1]:
                             cell.font = header_font
                             cell.border = thin_border
-
-                    # Apply formatting to each sheet
                     for ws in workbook.worksheets:
                         format_header(ws)
+
+                    for ws in workbook.worksheets:
+                        format_header(ws)
+
+                    for ws in workbook.worksheets:
+                        for col_cells in ws.columns:
+                            # find the longest string in this column
+                            max_length = max(
+                                len(str(cell.value)) if cell.value is not None else 0
+                                for cell in col_cells
+                            )
+                            # add a little extra space
+                            adjusted_width = max_length + 2
+                            # get the column letter (e.g. 'A', 'B', …)
+                            col_letter = get_column_letter(col_cells[0].column)
+                            ws.column_dimensions[col_letter].width = adjusted_width
 
                 output.seek(0)
                 excel_data = output.read()
