@@ -787,7 +787,6 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                         # ---- coerce any “%” columns into true floats 0–1 ----
                         pct_cols = [c for c in df.columns if isinstance(c, str) and c.strip().endswith("%")]
                         for col in pct_cols:
-                            # strip the “%”, parse, then divide by 100
                             df[col] = (
                                 df[col]
                                 .astype(str)
@@ -824,8 +823,13 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                 
                         # auto‑fit
                         for col_cells in ws.columns:
-                            max_length = max(len(str(c.value)) if c.value is not None else 0 for c in col_cells)
-                            ws.column_dimensions[get_column_letter(col_cells[0].column)].width = max_length + 2
+                            max_length = max(
+                                len(str(c.value)) if c.value is not None else 0
+                                for c in col_cells
+                            )
+                            ws.column_dimensions[
+                                get_column_letter(col_cells[0].column)
+                            ].width = max_length + 2
                 
                         # center align
                         for row in ws.iter_rows():
