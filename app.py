@@ -634,44 +634,67 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                         height=100
                     )
                     filter_set = {v.strip().lower() for v in filter_text.splitlines() if v.strip()}
-                    selected_alliances = st.session_state.get("selected_alliances", [])
+                    sel_all = st.session_state.get("selected_alliances", [])
                     maj = None
-                    if selected_alliances and (df_all := st.session_state.get("filtered_df")) is not None:
-                        mode = df_all.query("Alliance in @selected_alliances")["Team"].mode()
-                        if not mode.empty: maj = mode.iloc[0]
-                    rows = []
+                    if sel_all and (df_all := st.session_state.get("filtered_df")) is not None:
+                        mode = df_all.query("Alliance in @sel_all")["Team"].mode()
+                        if not mode.empty: maj = mode[0]
+
+                    rows, cid = [], 1
                     for line in trade_circle_text.splitlines():
+                        if not line.strip():
+                            cid += 1
+                            continue
                         parts = [p.strip() for p in line.split("\t")]
                         if len(parts) != 7:
                             continue
                         ruler, res, alli, team, days, url, act = parts
                         if not ruler or ruler.lower().startswith("x"):
                             continue
-                        if selected_alliances and alli not in selected_alliances:
+                        if sel_all and alli not in sel_all:
                             continue
                         if maj and team != maj:
                             continue
                         try:
                             act_val = float(act)
-                        except ValueError:
+                        except:
                             act_val = None
                         if act_val is not None and act_val >= 14:
                             continue
                         if ruler.lower() in filter_set:
                             continue
                         rows.append({
+                            "Trade Circle ID": cid,
                             "Ruler Name": ruler,
                             "Resource 1+2": res,
                             "Alliance": alli,
                             "Team": team,
                             "Days Old": days,
-                            "Nation Drill URL": url,
-                            "Activity": act,
+                            "Nation Drill Link": url,
+                            "Activity": act
                         })
+
                     if rows:
-                        st.dataframe(pd.DataFrame(rows), use_container_width=True)
+                        df_tc = pd.DataFrame(rows)
+                        # ensure numeric
+                        df_tc[["Days Old", "Activity"]] = df_tc[["Days Old", "Activity"]].apply(pd.to_numeric, errors="coerce")
+
+                        # detailed table (without Circle column)
+                        st.dataframe(df_tc.drop(columns="Circle"), use_container_width=True)
+
+                        # summary of distinct circles
+                        st.markdown("### Distinct Trade Circles")
+                        summary = (
+                            df_tc
+                            .groupby("Circle")["Ruler Name"]
+                            .agg(lambda names: ", ".join(names))
+                            .reset_index()
+                        )
+                        summary.columns = ["Circle ID", "Members"]
+                        st.dataframe(summary, use_container_width=True)
                     else:
                         st.info("No valid Trade Circle entries found after filtering.")
+
 
                 # -----------------------
                 # COMPARATIVE ALLIANCE STATS (EXAMPLE)
