@@ -625,7 +625,7 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                 with st.expander("Recommended Trade Circles"):
                     st.markdown("### Paste Trade Circle Data")
                     trade_circle_text = st.text_area(
-                        "Enter Trade Circle data below. Each line: **Ruler Name** | **Resource 1+2** | **Alliance** | **Team** | **Days Old** | **Nation Drill Link** | **Activity**.\n"
+                        "Enter Trade Circle data below. Each line: **Ruler Name | Resource 1+2 | Alliance | Team | Days Old | Nation Drill Link | Activity**.\n"
                         "Separate circles with an empty line. Lines starting with 'x' or blank Ruler Name are skipped.",
                         height=200
                     )
@@ -665,7 +665,7 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                             "Alliance": alli,
                             "Team": team,
                             "Days Old": days,
-                            "Nation Drill URL": url
+                            "Nation Drill URL": url,
                             "Activity": act,
                         })
                     if rows:
