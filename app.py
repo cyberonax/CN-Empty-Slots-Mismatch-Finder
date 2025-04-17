@@ -311,16 +311,16 @@ def main():
                     cols_e = ['Ruler Name','Alliance','Alliance Status','Team',
                               'Current Resources','Current Resource 1+2',
                               'Empty Slots Count','Activity','Days Old','Nation Drill Link']
-                    # filter pending and add link
-                    if 'Alliance Status' in players_empty.columns:
-                        players_empty = players_empty[players_empty['Alliance Status']!='Pending']
-                    players_empty['Nation Drill Link'] = (
+                    df_e = players_empty.copy()
+                    if 'Alliance Status' in df_e.columns:
+                        df_e = df_e[df_e['Alliance Status']!='Pending']
+                    df_e['Nation Drill Link'] = (
                         "https://www.cybernations.net/nation_drill_display.asp?Nation_ID="
-                        + players_empty['Nation ID'].astype(str)
+                        + df_e['Nation ID'].astype(str)
                     )
                     st.dataframe(
-                        players_empty
-                        .sort_values('Empty Slots Count', key=lambda c: c.str.lower())
+                        df_e
+                        .sort_values('Empty Slots Count', ascending=False)
                         .reset_index(drop=True)[cols_e],
                         use_container_width=True
                     )
@@ -332,7 +332,6 @@ def main():
                     cols_f = ['Ruler Name','Alliance','Alliance Status','Team',
                               'Current Resources','Current Resource 1+2',
                               'Empty Slots Count','Activity','Days Old','Nation Drill Link']
-                    # build players_full and compute everything in one go
                     players_full = (df_to_use[~mask_empty]
                         .copy()
                         .assign(
@@ -340,7 +339,8 @@ def main():
                                 'Current Resources': lambda d: d.apply(lambda r: get_current_resources(r, resource_cols), axis=1),
                                 'Current Resource 1+2': lambda d: d.apply(get_resource_1_2, axis=1),
                                 'Empty Slots Count': lambda d: d.apply(lambda r: count_empty_slots(r, resource_cols), axis=1),
-                                'Nation Drill Link': lambda d: "https://www.cybernations.net/nation_drill_display.asp?Nation_ID="+d['Nation ID'].astype(str)
+                                'Nation Drill Link': lambda d: 
+                                    "https://www.cybernations.net/nation_drill_display.asp?Nation_ID="+d['Nation ID'].astype(str)
                             }
                         )
                     )
@@ -348,7 +348,7 @@ def main():
                         players_full = players_full[players_full['Alliance Status']!='Pending']
                     st.dataframe(
                         players_full
-                        .sort_values('Empty Slots Count', key=lambda c: c.str.lower())
+                        .sort_values('Empty Slots Count', ascending=False)
                         .reset_index(drop=True)[cols_f],
                         use_container_width=True
                     )
