@@ -308,51 +308,43 @@ def main():
                 # PLAYERS WITH EMPTY TRADE SLOTS
                 # -----------------------
                 with st.expander("Players with empty trade slots (active recently)"):
-                    # 1) make a separate copy for display so we don't mutate the original players_empty
-                    players_empty_display = players_empty.copy()
-                    # 2) append the drill‐link column
-                    players_empty_display['Nation Drill Link'] = (
-                        "https://www.cybernations.net/nation_drill_display.asp?Nation_ID="
-                        + players_empty_display['Nation ID'].astype(str)
-                    )
-                
-                    # 3) define a fresh column list just for this view
-                    display_cols_empty = [
-                        'Ruler Name', 'Alliance', 'Alliance Status', 'Team',
-                        'Current Resources', 'Current Resource 1+2',
-                        'Empty Slots Count', 'Activity', 'Days Old',
-                        'Nation Drill Link'
+                    cols_e = [
+                        'Ruler Name','Alliance','Alliance Status','Team',
+                        'Current Resources','Current Resource 1+2',
+                        'Empty Slots Count','Activity','Days Old','Nation Drill Link'
                     ]
-                
-                    # 4) sort & reset index, then show
-                    players_empty_display = players_empty_display.sort_values(
-                        by="Ruler Name", key=lambda col: col.str.lower()
-                    ).reset_index(drop=True)
-                
-                    st.dataframe(
-                        players_empty_display[display_cols_empty],
-                        use_container_width=True
+                    df_e = players_empty.copy()
+                    if 'Alliance Status' in df_e:
+                        df_e = df_e[df_e['Alliance Status'] != 'Pending']
+                    df_e['Nation Drill Link'] = (
+                        "https://www.cybernations.net/nation_drill_display.asp?Nation_ID="
+                        + df_e['Nation ID'].astype(str)
                     )
-
-                # ---- New Filter: Exclude players with Alliance Status "Pending" ----
-                if "Alliance Status" in players_empty.columns:
-                    players_empty = players_empty[players_empty["Alliance Status"] != "Pending"]
+                    df_e = df_e.sort_values('Ruler Name', key=lambda c: c.str.lower()).reset_index(drop=True)
+                    st.dataframe(df_e[cols_e], use_container_width=True)
                 
                 # -----------------------
                 # PLAYERS WITH COMPLETE TRADE CIRCLES
                 # -----------------------
                 with st.expander("Players with a complete trade circle (no empty slots)"):
-                    players_full = df_to_use[~mask_empty].copy()
-                    # Compute "Current Resources" for players with complete resource sets
-                    players_full['Current Resources'] = players_full.apply(lambda row: get_current_resources(row, resource_cols), axis=1)
-                    # Use CSV-based "Resource 1" and "Resource 2" for Current Resource 1+2 (if available)
-                    players_full['Current Resource 1+2'] = players_full.apply(lambda row: get_resource_1_2(row), axis=1)
-                    # Also compute "Empty Slots Count" to verify these players have complete resource sets (should be 0)
-                    players_full['Empty Slots Count'] = players_full.apply(lambda row: count_empty_slots(row, resource_cols), axis=1)
-                    players_full = players_full.sort_values(by="Ruler Name", key=lambda col: col.str.lower()).reset_index(drop=True)
-                    if "Alliance Status" in players_full.columns:
-                        players_full = players_full[players_full["Alliance Status"] != "Pending"]
-                    st.dataframe(players_full[display_cols].reset_index(drop=True), use_container_width=True)
+                    cols_f = [
+                        'Ruler Name','Alliance','Alliance Status','Team',
+                        'Current Resources','Current Resource 1+2',
+                        'Empty Slots Count','Activity','Days Old','Nation Drill Link'
+                    ]
+                    df_f = df_to_use[~mask_empty].copy()
+                    # recompute helper columns
+                    df_f['Current Resources']     = df_f.apply(lambda r: get_current_resources(r, resource_cols), axis=1)
+                    df_f['Current Resource 1+2']  = df_f.apply(get_resource_1_2, axis=1)
+                    df_f['Empty Slots Count']     = df_f.apply(lambda r: count_empty_slots(r, resource_cols), axis=1)
+                    if 'Alliance Status' in df_f:
+                        df_f = df_f[df_f['Alliance Status'] != 'Pending']
+                    df_f['Nation Drill Link'] = (
+                        "https://www.cybernations.net/nation_drill_display.asp?Nation_ID="
+                        + df_f['Nation ID'].astype(str)
+                    )
+                    df_f = df_f.sort_values('Ruler Name', key=lambda c: c.str.lower()).reset_index(drop=True)
+                    st.dataframe(df_f[cols_f], use_container_width=True)
 
                 # -----------------------
                 # RESOURCE MISMATCHES
