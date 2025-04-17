@@ -763,7 +763,7 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                 # -----------------------
                 output = io.BytesIO()
                 with pd.ExcelWriter(output, engine='openpyxl') as writer:
-                    # build your sheets dict however you like; e.g.:
+                    # 1) build your sheets dict
                     sheets = {
                         "Filtered Data": st.session_state.get("filtered_df", pd.DataFrame()),
                         "Empty Slots": df_e if 'df_e' in locals() else pd.DataFrame(),
@@ -773,47 +773,64 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                         "Comparative Alliance Stats": comp_stats_df,
                         "Summary Overview": summary_df
                     }
-                    for sheet_name, df_sheet in sheets.items():
-                        df_sheet.to_excel(writer, sheet_name=sheet_name, index=False)
-
-                    workbook = writer.book
-                    header_font = Font(bold=True)
-                    thin_border = Border(left=Side(style='thin'), right=Side(style='thin'),
-                                        top=Side(style='thin'), bottom=Side(style='thin'))
-
-                    for sheet_name, df_sheet in sheets.items():
-                        # coerce any column that pandas thinks can be numeric
+                
+                    # 2) coerce numeric & write each sheet
+                    for name, df_sheet in sheets.items():
                         for col in df_sheet.columns:
                             df_sheet[col] = pd.to_numeric(df_sheet[col], errors='ignore')
-                        df_sheet.to_excel(writer, sheet_name=sheet_name, index=False)
-
+                        df_sheet.to_excel(writer, sheet_name=name, index=False)
+                
+                    # 3) grab the workbook object
+                    workbook = writer.book
+                
+                    # 4) header formatting
+                    from openpyxl.styles import Font, Border, Side, Alignment
+                    header_font = Font(bold=True)
+                    thin_border = Border(
+                        left=Side(style='thin'), right=Side(style='thin'),
+                        top=Side(style='thin'), bottom=Side(style='thin')
+                    )
                     def format_header(ws):
                         for cell in ws[1]:
                             cell.font = header_font
                             cell.border = thin_border
+                
+                    # 5) auto‑fit widths & center align
+                    from openpyxl.utils import get_column_letter
+                    center = Alignment(horizontal='center', vertical='center')
+                
                     for ws in workbook.worksheets:
                         format_header(ws)
-
-                    for ws in workbook.worksheets:
+                
+                        # auto‑fit
                         for col_cells in ws.columns:
-                            # find the longest string in this column
-                            max_length = max(
-                                len(str(cell.value)) if cell.value is not None else 0
-                                for cell in col_cells
-                            )
-                            # add a little extra space
-                            adjusted_width = max_length + 2
-                            # get the column letter (e.g. 'A', 'B', …)
-                            col_letter = get_column_letter(col_cells[0].column)
-                            ws.column_dimensions[col_letter].width = adjusted_width
-
-                    center = Alignment(horizontal='center', vertical='center')
-                    for ws in workbook.worksheets:
+                            max_length = max(len(str(c.value)) if c.value is not None else 0 for c in col_cells)
+                            ws.column_dimensions[get_column_letter(col_cells[0].column)].width = max_length + 2
+                
+                        # center align
                         for row in ws.iter_rows():
                             for cell in row:
                                 cell.alignment = center
-                                output.seek(0)
-                                excel_data = output.read()
+                
+                # 6) outside the `with` block, read the buffer once
+                output.seek(0)
+                excel_data = output.read()
+                
+                # -----------------------
+                # DOWNLOAD BUTTON
+                # -----------------------
+                st.markdown("### Download All Processed Data")
+                if excel_data:
+                    date_str = datetime.now().strftime("%Y-%m-%d")
+                    st.download_button(
+                        "Download Summary Report",
+                        excel_data,
+                        file_name=f"full_summary_report_{date_str}.xlsx",
+                        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                        key="download_report"
+                    )
+                else:
+                    st.info("No data available for download.")
 
                 # -----------------------
                 # DOWNLOAD ALL DATA EXCEL (positioned at the bottom of the page)
