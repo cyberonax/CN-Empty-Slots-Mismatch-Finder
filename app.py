@@ -320,7 +320,7 @@ def main():
                     )
                     st.dataframe(
                         df_e
-                        .sort_values('Empty Slots Count', ascending=False)
+                        .sort_values('Empty Slots Count', ascending=True)
                         .reset_index(drop=True)[cols_e],
                         use_container_width=True
                     )
