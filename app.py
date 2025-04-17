@@ -320,7 +320,7 @@ def main():
                     )
                     st.dataframe(
                         players_empty
-                        .sort_values('Ruler Name', key=lambda c: c.str.lower())
+                        .sort_values('Empty Slots Count', key=lambda c: c.str.lower())
                         .reset_index(drop=True)[cols_e],
                         use_container_width=True
                     )
@@ -348,7 +348,7 @@ def main():
                         players_full = players_full[players_full['Alliance Status']!='Pending']
                     st.dataframe(
                         players_full
-                        .sort_values('Ruler Name', key=lambda c: c.str.lower())
+                        .sort_values('Empty Slots Count', key=lambda c: c.str.lower())
                         .reset_index(drop=True)[cols_f],
                         use_container_width=True
                     )
