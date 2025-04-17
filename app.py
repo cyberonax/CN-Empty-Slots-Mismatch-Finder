@@ -625,83 +625,51 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                 with st.expander("Recommended Trade Circles"):
                     st.markdown("### Paste Trade Circle Data")
                     trade_circle_text = st.text_area(
-                        "Enter Trade Circle data below. Each line should contain the following tab-separated fields:\n"
-                        "Ruler Name | Resource 1+2 | Alliance | Team | Days Old | Nation Drill Link | Activity\n\n"
-                        "Empty slots (lines starting with an 'x' or with an empty Ruler Name) are omitted. "
-                        "Separate Trade Circle blocks with an empty line. Using a spreadsheet for correct formatting is recommended.",
+                        "Enter Trade Circle data below. Each line: Ruler Name | Resource 1+2 | Alliance | Team | Days Old | Nation Drill Link | Activity.\n"
+                        "Separate circles with an empty line. Lines starting with 'x' or blank Ruler Name are skipped.",
                         height=200
                     )
-                
-                    st.markdown("### Filter Out Players")
-                    st.markdown("Enter one value per line to filter out players by matching **Ruler Name** or **Nation Name**:")
-                    filter_text = st.text_area("", height=100)
-                    # Build a lowercase set of exclusion values (only using Ruler Name and Nation Name)
-                    filter_set = set(line.strip().lower() for line in filter_text.splitlines() if line.strip())
-                
-                    # Compute alliance majority Team for additional filtering
+                    filter_text = st.text_area(
+                        "Filter Out Players (one value per line to filter out by **Ruler Name** or **Nation Name**):",
+                        height=100
+                    )
+                    filter_set = {v.strip().lower() for v in filter_text.splitlines() if v.strip()}
                     selected_alliances = st.session_state.get("selected_alliances", [])
-                    majority_team = None
-                    if selected_alliances and "filtered_df" in st.session_state:
-                        alliance_df = st.session_state.filtered_df[
-                            st.session_state.filtered_df["Alliance"].isin(selected_alliances)
-                        ]
-                        if not alliance_df.empty and "Team" in alliance_df.columns:
-                            majority_team = alliance_df["Team"].mode().iloc[0]
-                
-                    # Parse and filter trade circle data
-                    trade_rows = []
-                    circle_id = 1
+                    maj = None
+                    if selected_alliances and (df_all := st.session_state.get("filtered_df")) is not None:
+                        mode = df_all.query("Alliance in @selected_alliances")["Team"].mode()
+                        if not mode.empty: maj = mode.iloc[0]
+                    rows = []
                     for line in trade_circle_text.splitlines():
-                        # Blank line separates trade circles
-                        if not line.strip():
-                            circle_id += 1
-                            continue
-                
-                        parts = line.split("\t")
-                        # Skip invalid or placeholder rows
+                        parts = [p.strip() for p in line.split("\t")]
                         if len(parts) != 7:
                             continue
-                
-                        ruler, resources, alliance, team, days_old, url, activity = [p.strip() for p in parts]
-                
-                        # Filter out rows starting with 'x' or blank ruler
-                        if ruler.lower().startswith('x') or ruler == "":
+                        ruler, res, alli, team, days, url, act = parts
+                        if not ruler or ruler.lower().startswith("x"):
                             continue
-                
-                        # Additional filters:
-                        # - Must be in selected Alliance(s)
-                        if selected_alliances and alliance not in selected_alliances:
+                        if selected_alliances and alli not in selected_alliances:
                             continue
-                        # - Must match alliance majority Team
-                        if majority_team and team != majority_team:
+                        if maj and team != maj:
                             continue
-                        # - Must have Activity less than 14
                         try:
-                            act_val = float(activity)
+                            act_val = float(act)
                         except ValueError:
                             act_val = None
                         if act_val is not None and act_val >= 14:
                             continue
-                        # - Exclude filtered players
                         if ruler.lower() in filter_set:
                             continue
-                
-                        # Build row
-                        trade_rows.append({
-                            "Trade Circle ID": circle_id,
-                            "Ruler Name":      ruler,
-                            "Resources":       resources,
-                            "Alliance":        alliance,
-                            "Team":            team,
-                            "Days Old":        days_old,
-                            "Activity":        activity,
+                        rows.append({
+                            "Ruler Name": ruler,
+                            "Resource 1+2": res,
+                            "Alliance": alli,
+                            "Team": team,
+                            "Days Old": days,
+                            "Activity": act,
                             "Nation Drill URL": url
                         })
-                
-                    # Display results if any
-                    if trade_rows:
-                        trade_df = pd.DataFrame(trade_rows)
-                        st.dataframe(trade_df, use_container_width=True)
+                    if rows:
+                        st.dataframe(pd.DataFrame(rows), use_container_width=True)
                     else:
                         st.info("No valid Trade Circle entries found after filtering.")
 
