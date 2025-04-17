@@ -769,7 +769,7 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                         "Full Circles": players_full if 'players_full' in locals() else pd.DataFrame(),
                         "Peacetime Mismatches": peacetime_df,
                         "Wartime Mismatches": wartime_df,
-                        "Comparative Alliance Stats": comp_stats_df
+                        "Comparative Alliance Stats": comp_stats_df,
                         "Summary Overview": summary_df
                     }
                     for sheet_name, df_sheet in sheets.items():
