@@ -731,63 +731,63 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                     """)
                     st.markdown(action_plan)
 
-                    # -----------------------
-                    # WRITE EXCEL FILE FOR DOWNLOAD
-                    # -----------------------
-                    output = io.BytesIO()
-                    with pd.ExcelWriter(output, engine='openpyxl') as writer:
-                        # build your sheets dict however you like; e.g.:
-                        sheets = {
-                            "Filtered Data": st.session_state.get("filtered_df", pd.DataFrame()),
-                            "Empty Slots": df_e if 'df_e' in locals() else pd.DataFrame(),
-                            "Full Circles": players_full if 'players_full' in locals() else pd.DataFrame(),
-                            "Peacetime Mismatches": peacetime_df,
-                            "Wartime Mismatches": wartime_df,
-                            # add Comparative Alliance Stats if you wish:
-                            # "Comparative Alliance Stats": comp_stats_df
-                        }
-                        for sheet_name, df_sheet in sheets.items():
-                            df_sheet.to_excel(writer, sheet_name=sheet_name, index=False)
+                # -----------------------
+                # WRITE EXCEL FILE FOR DOWNLOAD
+                # -----------------------
+                output = io.BytesIO()
+                with pd.ExcelWriter(output, engine='openpyxl') as writer:
+                    # build your sheets dict however you like; e.g.:
+                    sheets = {
+                        "Filtered Data": st.session_state.get("filtered_df", pd.DataFrame()),
+                        "Empty Slots": df_e if 'df_e' in locals() else pd.DataFrame(),
+                        "Full Circles": players_full if 'players_full' in locals() else pd.DataFrame(),
+                        "Peacetime Mismatches": peacetime_df,
+                        "Wartime Mismatches": wartime_df,
+                        # add Comparative Alliance Stats if you wish:
+                        # "Comparative Alliance Stats": comp_stats_df
+                    }
+                    for sheet_name, df_sheet in sheets.items():
+                        df_sheet.to_excel(writer, sheet_name=sheet_name, index=False)
 
-                        workbook = writer.book
-                        from openpyxl.utils.dataframe import dataframe_to_rows
-                        from openpyxl.styles import Font, Border, Side, Alignment
-                        header_font = Font(bold=True)
-                        thin_border = Border(left=Side(style='thin'), right=Side(style='thin'),
-                                            top=Side(style='thin'), bottom=Side(style='thin'))
+                    workbook = writer.book
+                    from openpyxl.utils.dataframe import dataframe_to_rows
+                    from openpyxl.styles import Font, Border, Side, Alignment
+                    header_font = Font(bold=True)
+                    thin_border = Border(left=Side(style='thin'), right=Side(style='thin'),
+                                        top=Side(style='thin'), bottom=Side(style='thin'))
 
-                        def format_header(ws):
-                            for cell in ws[1]:
-                                cell.font = header_font
-                                cell.border = thin_border
+                    def format_header(ws):
+                        for cell in ws[1]:
+                            cell.font = header_font
+                            cell.border = thin_border
 
-                        # Apply formatting to each sheet
-                        for ws in workbook.worksheets:
-                            format_header(ws)
+                    # Apply formatting to each sheet
+                    for ws in workbook.worksheets:
+                        format_header(ws)
 
-                    output.seek(0)
-                    excel_data = output.read()
+                output.seek(0)
+                excel_data = output.read()
 
-                    # -----------------------
-                    # DOWNLOAD ALL DATA EXCEL (positioned at the bottom of the page)
-                    # -----------------------
-                    # build a date string like "20250417"
-                    date_str = datetime.now().strftime("%Y-%m-%d")
+                # -----------------------
+                # DOWNLOAD ALL DATA EXCEL (positioned at the bottom of the page)
+                # -----------------------
+                # build a date string like "20250417"
+                date_str = datetime.now().strftime("%Y-%m-%d")
 
-                    # then inject it into your filename
-                    file_name = f"full_summary_report_{date_str}.xlsx"
+                # then inject it into your filename
+                file_name = f"full_summary_report_{date_str}.xlsx"
 
-                    st.markdown("### Download All Processed Data")
-                    if excel_data:
-                        st.download_button(
-                            "Download Summary Report",
-                            excel_data,
-                            file_name=file_name,
-                            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                            key="download_report"
-                        )
-                    else:
-                        st.info("No data available for download.")
+                st.markdown("### Download All Processed Data")
+                if excel_data:
+                    st.download_button(
+                        "Download Summary Report",
+                        excel_data,
+                        file_name=file_name,
+                        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                        key="download_report"
+                    )
+                else:
+                    st.info("No data available for download.")
     else:
         st.info("Please enter the correct password to access the functionality.")
 
