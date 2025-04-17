@@ -308,9 +308,14 @@ def main():
                 # PLAYERS WITH EMPTY TRADE SLOTS
                 # -----------------------
                 with st.expander("Players with empty trade slots (active recently)"):
+                    players_empty = players_empty.copy()
+                    players_empty['Nation Drill Link'] = (
+                        "https://www.cybernations.net/nation_drill_display.asp?Nation_ID="
+                        + players_empty['Nation ID'].astype(str)
+                    )
                     display_cols = ['Ruler Name', 'Alliance', 'Alliance Status', 'Team',
                                     'Current Resources', 'Current Resource 1+2',
-                                    'Empty Slots Count', 'Activity', 'Days Old']
+                                    'Empty Slots Count', 'Activity', 'Days Old', 'Nation Drill Link']
                     players_empty = players_empty.sort_values(by="Ruler Name", key=lambda col: col.str.lower()).reset_index(drop=True)
                     st.dataframe(players_empty[display_cols].reset_index(drop=True), use_container_width=True)
 
