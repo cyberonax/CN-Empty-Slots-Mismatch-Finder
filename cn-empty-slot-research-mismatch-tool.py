@@ -862,11 +862,10 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                 # -----------------------
                 # DOWNLOAD ALL DATA EXCEL
                 # -----------------------
-                st.markdown("### Download All Processed Data")
                 if excel_data:
                     date_str = datetime.now().strftime("%Y-%m-%d")
                     st.download_button(
-                        "Download Summary Report",
+                        "Download Summary Report as Excel",
                         excel_data,
                         file_name=f"full_summary_report_{date_str}.xlsx",
                         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
