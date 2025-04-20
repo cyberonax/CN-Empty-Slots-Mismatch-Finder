@@ -165,45 +165,30 @@ def main():
         """
     )
     
-    if "password_verified" not in st.session_state:
-        st.session_state.password_verified = False
-    
-    if not st.session_state.password_verified:
-        password = st.text_input("Enter Password", type="password", key="password_input")
-        if password:
-            if password == "secret":
-                st.session_state.password_verified = True
-                st.rerun()
-            else:
-                st.error("Incorrect password. Please try again.")
-    
-    # Only proceed if the password is verified.
-    if st.session_state.password_verified:
-        # Automatically download the Nation Statistics ZIP on UI load.
-        with st.spinner("Retrieving Nation Statistics..."):
-            today = datetime.now()
-            base_url = "https://www.cybernations.net/assets/CyberNations_SE_Nation_Stats_"
-            # Create a list of dates to try: current day, previous day, and next day.
-            dates_to_try = [today, today - timedelta(days=1), today + timedelta(days=1)]
-            df = None  # to hold the DataFrame if a download succeeds
+    with st.spinner("Retrieving Nation Statistics..."):
+        today = datetime.now()
+        base_url = "https://www.cybernations.net/assets/CyberNations_SE_Nation_Stats_"
+        # Create a list of dates to try: current day, previous day, and next day.
+        dates_to_try = [today, today - timedelta(days=1), today + timedelta(days=1)]
+        df = None  # to hold the DataFrame if a download succeeds
 
-            # Iterate through the dates and try both URL variants
-            for dt in dates_to_try:
-                date_str = f"{dt.month}{dt.day}{dt.year}"
-                url1 = base_url + date_str + "510001.zip"
-                url2 = base_url + date_str + "510002.zip"
-                
-                df = download_and_extract_zip(url1)
-                if df is None:
-                    df = download_and_extract_zip(url2)
-                
-                if df is not None:
-                    break
-
+        # Iterate through the dates and try both URL variants
+        for dt in dates_to_try:
+            date_str = f"{dt.month}{dt.day}{dt.year}"
+            url1 = base_url + date_str + "510001.zip"
+            url2 = base_url + date_str + "510002.zip"
+            
+            df = download_and_extract_zip(url1)
+            if df is None:
+                df = download_and_extract_zip(url2)
+            
             if df is not None:
-                st.session_state.df = df
-            else:
-                st.error("Failed to load data from any of the constructed URLs.")
+                break
+
+        if df is not None:
+            st.session_state.df = df
+        else:
+            st.error("Failed to load data from any of the constructed URLs.")
 
         # Proceed if data is loaded
         if "df" in st.session_state and st.session_state.df is not None:
