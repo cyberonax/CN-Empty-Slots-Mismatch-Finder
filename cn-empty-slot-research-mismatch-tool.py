@@ -856,8 +856,6 @@ Aluminum, Coal, Gold, Iron, Lead, Lumber, Marble, Oil, Pigs, Rubber, Uranium, Wa
                     )
                 else:
                     st.info("No data available for download.")
-    else:
-        st.info("Please enter the correct password to access the functionality.")
-
+                    
 if __name__ == "__main__":
     main()
