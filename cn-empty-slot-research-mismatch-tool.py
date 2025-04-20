@@ -161,9 +161,7 @@ def main():
         """
         **About This Tool:**
         This application downloads and processes nation statistics from CyberNations,
-        providing functionality to filter data and form trade circles for both peacetime
-        and wartime scenarios. It helps organize players into groups based on their available
-        resources and activity status, streamlining trade circle formation.
+        providing insights into empty trade slots and resource mismatches across nations and alliances.
         """
     )
     
